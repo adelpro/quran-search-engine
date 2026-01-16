@@ -3,7 +3,7 @@ import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
-  advancedSearch,
+  search,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -52,7 +52,7 @@ function App() {
   // 2. Search Logic
   useEffect(() => {
     if (!loading && quranData.length > 0 && morphologyMap && wordMap && debouncedQuery.trim()) {
-      const response = advancedSearch(debouncedQuery, quranData, morphologyMap, wordMap, options, {
+      const response = search(debouncedQuery, quranData, morphologyMap, wordMap, options, {
         page: currentPage,
         limit: PAGE_SIZE,
       });

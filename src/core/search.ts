@@ -296,7 +296,7 @@ export const performAdvancedLinguisticSearch = (
  * Combines simple text search with linguistic (lemma/root) analysis and fuzzy fallback.
  * Results are scored, deduplicated, and sorted by relevance.
  */
-export const advancedSearch = (
+export const search = (
   query: string,
   quranData: QuranText[],
   morphologyMap: Map<number, MorphologyAya>,

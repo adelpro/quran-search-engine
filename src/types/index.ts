@@ -40,6 +40,8 @@ export type AdvancedSearchOptions = {
   root: boolean;
 };
 
+export type SearchOptions = AdvancedSearchOptions;
+
 export type SearchCounts = {
   simple: number;
   lemma: number;

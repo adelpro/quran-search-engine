@@ -1,10 +1,5 @@
-import {
-  loadQuranData,
-  loadMorphology,
-  loadWordMap,
-  simpleSearch,
-  advancedSearch,
-} from '../src/index';
+import { loadQuranData, loadMorphology, loadWordMap, search } from '../src/index';
+import { simpleSearch } from '../src/core/search';
 import { getPositiveTokens } from '../src/core/tokenization';
 
 const verify = async () => {
@@ -34,9 +29,9 @@ const verify = async () => {
     const simpleResults = simpleSearch(quranData, 'الله', 'standard');
     console.log(`✅ simpleSearch found ${simpleResults.length} matches.`);
 
-    // 5. Test advancedSearch (Morphological + Scoring + Pagination)
-    console.log('\n🔬 Testing advancedSearch with Pagination (page: 1, limit: 5)...');
-    const searchResponse = advancedSearch(
+    // 5. Test search (Morphological + Scoring + Pagination)
+    console.log('\n🔬 Testing search with Pagination (page: 1, limit: 5)...');
+    const searchResponse = search(
       'كتب',
       quranData,
       morphologyMap,
@@ -51,7 +46,7 @@ const verify = async () => {
 
     if (searchResponse.pagination.totalPages > 1) {
       console.log('\n⏭️  Testing Page 2 (limit: 5)...');
-      const page2Response = advancedSearch(
+      const page2Response = search(
         'كتب',
         quranData,
         morphologyMap,

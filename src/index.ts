@@ -1,8 +1,6 @@
-export * from './types';
-export * from './utils/normalization';
-export * from './core/search';
-export { loadMorphology, loadWordMap, loadQuranData } from './utils/loader';
+export type * from './types';
 
-// Re-export Fuse for convenience
-import Fuse from 'fuse.js';
-export { Fuse };
+export { loadMorphology, loadQuranData, loadWordMap } from './utils/loader';
+export { normalizeArabic, removeTashkeel } from './utils/normalization';
+export { getHighlightRanges, type HighlightRange } from './utils/highlight';
+export { search } from './core/search';

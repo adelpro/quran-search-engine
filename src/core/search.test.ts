@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simpleSearch, advancedSearch, createArabicFuseSearch } from './search';
+import { simpleSearch, search, createArabicFuseSearch } from './search';
 import type { QuranText, WordMap, MorphologyAya } from '../types';
 
 // Mock data for testing
@@ -104,9 +104,9 @@ describe('simpleSearch', () => {
   });
 });
 
-describe('advancedSearch', () => {
+describe('search', () => {
   it('should perform basic search with exact matches', () => {
-    const result = advancedSearch('الله', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap);
 
     expect(result.results).toHaveLength(2);
     expect(result.counts.total).toBe(2);
@@ -115,7 +115,7 @@ describe('advancedSearch', () => {
   });
 
   it('should handle pagination', () => {
-    const result = advancedSearch(
+    const result = search(
       'الله',
       mockQuranData,
       mockMorphologyMap,
@@ -130,7 +130,7 @@ describe('advancedSearch', () => {
   });
 
   it('should handle empty query', () => {
-    const result = advancedSearch('', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('', mockQuranData, mockMorphologyMap, mockWordMap);
 
     expect(result.results).toHaveLength(0);
     expect(result.counts.total).toBe(0);
@@ -138,14 +138,14 @@ describe('advancedSearch', () => {
   });
 
   it('should handle non-Arabic query', () => {
-    const result = advancedSearch('xyz123', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('xyz123', mockQuranData, mockMorphologyMap, mockWordMap);
 
     expect(result.results).toHaveLength(0);
     expect(result.counts.total).toBe(0);
   });
 
   it('should find lemma matches when enabled', () => {
-    const result = advancedSearch('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
       lemma: true,
       root: false,
     });
@@ -155,7 +155,7 @@ describe('advancedSearch', () => {
   });
 
   it('should find root matches when enabled', () => {
-    const result = advancedSearch('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
       lemma: false,
       root: true,
     });
@@ -166,7 +166,7 @@ describe('advancedSearch', () => {
 
   it('should find fuzzy matches for misspelled words', () => {
     // "الحند" is a misspelling of "الحمد"
-    const result = advancedSearch('الحند', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('الحند', mockQuranData, mockMorphologyMap, mockWordMap);
 
     // Should find at least one match (Verse 2: الحمد لله...)
     expect(result.results.length).toBeGreaterThan(0);

@@ -1,163 +1,360 @@
-# Using `quran-search-engine`
+# quran-search-engine
 
-This pure TypeScript library provides advanced searching capabilities for Quranic text, including morphological matching (roots and lemmas) and fuzzy search.
+A stateless, pure TypeScript search engine for Quranic text with:
+
+- Arabic normalization
+- Exact text search
+- Lemma + root matching (via morphology + word map)
+- Highlight ranges (UI-agnostic)
 
 ## Installation
 
 ```bash
 npm install quran-search-engine
-# or
 yarn add quran-search-engine
+pnpm add quran-search-engine
 ```
 
-## Core Concepts
+## Quickstart
 
-The engine is stateless. You provide the data (Quran text) and the query, and it returns results. This ensures maximum flexibility for any framework (React, Node.js, Vue, etc.).
-
-## Public API
-
-### 1. Data Loading
-
-Large datasets like Quranic text, morphology, and word maps are lazy-loaded to keep your initial bundle size small.
-
-```typescript
+```ts
 import {
-  loadQuranData,
+  search,
   loadMorphology,
+  loadQuranData,
   loadWordMap,
-  type WordMap,
-  type MorphologyAya,
-  type QuranText,
+  type SearchResponse,
 } from 'quran-search-engine';
 
-/**
- * loads datasets asynchronously.
- * Returns:
- * - quranData: QuranText[] -> The complete dataset of Quranic verses.
- * - morphologyMap: Map<gid, MorphologyAya> -> Fast lookup for roots/lemmas by verse ID.
- * - wordMap: WordMap -> Dictionary mapping words to their canonical root/lemma.
- */
 const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
 ]);
+// Example output:
+// quranData.length => 6236
+// morphologyMap.size => 6236
+// Object.keys(wordMap).length => (depends on dataset)
+
+const response: SearchResponse = search('الله الرحمن', quranData, morphologyMap, wordMap, {
+  lemma: true,
+  root: true,
+});
+
+response.results.forEach((v) => {
+  console.log(v.sura_id, v.aya_id, v.matchType, v.matchScore);
+});
+// Example output:
+// 1 1 exact 6
+// 1 3 lemma 4
 ```
 
-### 2. Normalization
+## Public API
 
-The library provides a high-performance Arabic normalization utility. It is essential for ensuring that queries (often typed without diacritics) match the indexed text.
+Everything documented below is exported from `quran-search-engine` (aligned with `src/index.ts`).
 
-```typescript
-import { normalizeArabic, removeTashkeel } from 'quran-search-engine';
+### Data loading
 
-// removeTashkeel: Only removes diacritics and Quranic marks
-const simple = removeTashkeel('بِسْمِ'); // "بسم"
+#### `loadQuranData()`
 
-// normalizeArabic: Full normalization (Alef unification, Hamza cleanup, etc.)
-const heavy = normalizeArabic('بِسْمِ ٱللَّهِ'); // "بسم الله"
+Use case: load the Quran dataset once at app startup (browser or Node), then reuse in searches.
+
+```ts
+import { loadQuranData, type QuranText } from 'quran-search-engine';
+
+const quranData: QuranText[] = await loadQuranData();
+// Example output:
+// quranData[0] => { gid: 1, uthmani: '...', standard: '...', sura_id: 1, aya_id: 1, ... }
 ```
 
-### 3. Search Functions
+#### `loadMorphology()`
 
-#### `simpleSearch`
+Use case: enable lemma/root search and scoring.
 
-A fast, straightforward search for filtering arrays based on a specific field.
+```ts
+import { loadMorphology, type MorphologyAya } from 'quran-search-engine';
 
-```typescript
-import { simpleSearch } from 'quran-search-engine';
-
-// simpleSearch<T extends Record<string, unknown>>(items: T[], query: string, field: keyof T)
-const results = simpleSearch(quranData, 'الله', 'standard');
+const morphologyMap: Map<number, MorphologyAya> = await loadMorphology();
+// Example output:
+// morphologyMap.get(1) => { gid: 1, lemmas: ['...'], roots: ['...'] }
 ```
 
-#### `advancedSearch`
+#### `loadWordMap()`
 
-The core engine. It uses `fuse.js` for fuzzy matching and the morphology data for linguistic matching.
-The primary search function. It combines text matching, linguistic analysis (lemma/root), and fuzzy fallback.
+Use case: map normalized query tokens to their canonical lemma/root.
 
-```typescript
-import { advancedSearch, loadQuranData, loadMorphology, loadWordMap } from 'quran-search-engine';
+```ts
+import { loadWordMap, type WordMap } from 'quran-search-engine';
 
-const response = advancedSearch(
-  'كتب',
+const wordMap: WordMap = await loadWordMap();
+// Example output:
+// wordMap['الله'] => { lemma: 'الله', root: 'ا ل ه' }
+```
+
+### Normalization
+
+#### `removeTashkeel(text)`
+
+Use case: stripping diacritics (tashkeel) for display or simple comparisons.
+
+```ts
+import { removeTashkeel } from 'quran-search-engine';
+
+const out = removeTashkeel('بِسْمِ ٱللَّهِ');
+// out => 'بسم الله'
+```
+
+#### `normalizeArabic(text)`
+
+Use case: preparing user input for searching (unifies alef variants, removes tashkeel, etc).
+
+```ts
+import { normalizeArabic } from 'quran-search-engine';
+
+const out = normalizeArabic('بِسْمِ ٱللَّهِ');
+// out => 'بسم الله'
+```
+
+### Search
+
+#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?)`
+
+Main entry point. Combines:
+
+- Exact text matching
+- Lemma/root matching (when enabled and available)
+- Fuzzy fallback (Fuse) per token
+
+Use case: your primary API for Quran search results + scoring + pagination.
+
+```ts
+import { search } from 'quran-search-engine';
+
+const response = search(
+  'الله الرحمن',
   quranData,
   morphologyMap,
   wordMap,
   { lemma: true, root: true },
-  { page: 1, limit: 10 }, // Optional pagination
+  { page: 1, limit: 10 },
 );
-
-console.log(response.results); // ScoredQuranText[] (10 items)
-console.log(response.counts); // Global counts for all matches
-console.log(response.pagination); // { totalResults, totalPages, currentPage, limit }
+// Example output:
+// response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
+// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, total: 42 }
+// response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
 ```
 
-**Scoring System:**
+If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
-- **Exact Match**: 3 points per token.
-- **Lemma Match**: 2 points per token.
-- **Root Match**: 1 point per token.
+```ts
+import { normalizeArabic } from 'quran-search-engine';
 
-#### `getPositiveTokens`
+export function containsAllTokens(value: string, query: string): boolean {
+  const q = normalizeArabic(query);
+  if (!q) return false;
 
-Identify exactly which words in a verse caused the match. Perfect for UI highlighting.
-
-```typescript
-import { getPositiveTokens } from 'quran-search-engine';
-
-const tokens = getPositiveTokens(
-  verse,
-  'lemma',
-  'كتب', // The search query
-  morphologyMap,
-  wordMap['كتب'],
-);
-// Returns: ['فاكتبوه', 'وليكتب', ...]
+  const tokens = q.split(/\s+/);
+  const v = normalizeArabic(value);
+  return tokens.every((t) => v.includes(t));
+}
 ```
 
----
+### Highlighting (UI-agnostic)
 
-### Core Types
+#### `getHighlightRanges(text, matchedTokens, tokenTypes?)`
 
-#### `QuranText`
+Computes non-overlapping highlight ranges. This is pure (no HTML output), so the consumer controls rendering.
 
-The standard structure for Quranic verses.
+Use case: highlight matches in UI without `dangerouslySetInnerHTML`.
 
-```typescript
-type QuranText = {
+```ts
+import { getHighlightRanges } from 'quran-search-engine';
+
+const ranges = getHighlightRanges(verse.uthmani, verse.matchedTokens, verse.tokenTypes);
+// Example output (shape):
+// [
+//   { start: 12, end: 23, token: 'الله', matchType: 'exact' },
+//   { start: 30, end: 45, token: 'الرحمن', matchType: 'lemma' },
+// ]
+```
+
+React rendering example:
+
+```tsx
+import { getHighlightRanges, type ScoredQuranText } from 'quran-search-engine';
+import type { ReactNode } from 'react';
+
+export function Verse({ verse }: { verse: ScoredQuranText }) {
+  const ranges = getHighlightRanges(verse.uthmani, verse.matchedTokens, verse.tokenTypes);
+  if (ranges.length === 0) return <span>{verse.uthmani}</span>;
+
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+
+  ranges.forEach((r, i) => {
+    if (cursor < r.start) parts.push(verse.uthmani.slice(cursor, r.start));
+    parts.push(
+      <span key={`${r.start}-${r.end}-${i}`} className={`highlight highlight-${r.matchType}`}>
+        {verse.uthmani.slice(r.start, r.end)}
+      </span>,
+    );
+    cursor = r.end;
+  });
+
+  if (cursor < verse.uthmani.length) parts.push(verse.uthmani.slice(cursor));
+
+  return <span>{parts}</span>;
+}
+```
+
+## How scoring works
+
+`search` returns `ScoredQuranText` results with `matchScore`, `matchType`, `matchedTokens`, and `tokenTypes`.
+
+- The query is cleaned to Arabic letters/spaces, then normalized, then split by whitespace into tokens.
+- For each query token, scoring accumulates across match layers:
+  - Exact word matches in the verse: `+3` per matched word
+  - Lemma matches (when enabled): `+2` per matched word
+  - Root matches (when enabled): `+1` per matched word
+  - Fuzzy matches: only used as a fallback when the verse has no exact/lemma/root matches; `+0.5` per fuzzy segment extracted from Fuse indices
+- `matchedTokens` is deduplicated (used for highlighting).
+- `matchType` is the best “overall” type seen on that verse (`exact` > `lemma` > `root` > `fuzzy`/`none`).
+
+## Multi-word search
+
+`search` supports multi-word queries.
+
+- Query tokenization: the normalized query is split by whitespace.
+- AND logic:
+  - `search` intersects matches per token, so results must match every token (via exact, lemma/root, or fuzzy fallback for that token).
+
+Example:
+
+```ts
+const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
+  lemma: true,
+  root: true,
+});
+// Example output:
+// response.results => all returned verses match BOTH tokens (AND logic)
+```
+
+## Core types
+
+These are the main types you’ll interact with when calling `search(...)` and rendering results.
+
+```ts
+import type {
+  HighlightRange,
+  MatchType,
+  MorphologyAya,
+  PaginationOptions,
+  QuranText,
+  ScoredQuranText,
+  SearchOptions,
+  SearchCounts,
+  SearchResponse,
+  WordMap,
+} from 'quran-search-engine';
+```
+
+### `QuranText`
+
+One verse record in the dataset (input to `search`).
+
+```ts
+export type QuranText = {
   gid: number;
   uthmani: string;
-  simple: string;
   standard: string;
-  // ... other surah/aya metadata
+  sura_id: number;
+  aya_id: number;
+  aya_id_display: string;
+  page_id: number;
+  juz_id: number;
+  sura_name: string;
+  sura_name_en: string;
+  sura_name_romanization: string;
+  standard_full: string;
 };
 ```
 
-#### `ScoredQuranText`
+### `MorphologyAya`
 
-Extends `QuranText` with search metadata.
+Morphology info for one verse (looked up by `gid` via a `Map<number, MorphologyAya>`).
 
-```typescript
-type ScoredQuranText = QuranText & {
-  matchScore: number;
-  matchType: 'exact' | 'lemma' | 'root' | 'fuzzy' | 'none';
+```ts
+export type MorphologyAya = {
+  gid: number;
+  lemmas: string[];
+  roots: string[];
 };
 ```
 
-#### `SearchResponse`
+### `WordMap`
 
-The structure returned by `advancedSearch`.
+Dictionary mapping a normalized token to lemma/root. Used to resolve query tokens into canonical forms for lemma/root matching.
 
-```typescript
-type SearchResponse = {
-  results: ScoredQuranText[];
-  counts: {
-    simple: number;
-    lemma: number;
-    root: number;
-    total: number;
+```ts
+export type WordMap = {
+  [normalizedToken: string]: {
+    lemma?: string;
+    root?: string;
   };
+};
+```
+
+### `SearchOptions`
+
+Toggles for linguistic matching:
+
+```ts
+export type SearchOptions = {
+  lemma: boolean;
+  root: boolean;
+};
+```
+
+### `PaginationOptions`
+
+Controls paging (defaults are applied if omitted):
+
+```ts
+export type PaginationOptions = {
+  page?: number;
+  limit?: number;
+};
+```
+
+### `MatchType`
+
+Overall “best” match class for a verse:
+
+```ts
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'none';
+```
+
+### `ScoredQuranText`
+
+The verse returned by `search`, including scoring and highlighting metadata:
+
+```ts
+export type ScoredQuranText = QuranText & {
+  matchScore: number;
+  matchType: MatchType;
+  matchedTokens: string[];
+  tokenTypes?: Record<string, MatchType>;
+};
+```
+
+### `SearchResponse`
+
+Full response from `search`:
+
+```ts
+export type SearchResponse = {
+  results: ScoredQuranText[];
+  counts: SearchCounts;
   pagination: {
     totalResults: number;
     totalPages: number;
@@ -167,87 +364,46 @@ type SearchResponse = {
 };
 ```
 
----
+### `HighlightRange`
 
-## Framework Integration
+Range output from `getHighlightRanges(...)`:
 
-### React Example
-
-```tsx
-import { useEffect, useState } from 'react';
-import { advancedSearch, loadMorphology, loadWordMap } from 'quran-search-engine';
-
-export function SearchPage() {
-  const [data, setData] = useState({ morph: null, words: null });
-
-  useEffect(() => {
-    // Load once on mount
-    Promise.all([loadMorphology(), loadWordMap()]).then(([morph, words]) => {
-      setData({ morph, words });
-    });
-  }, []);
-
-  const results = advancedSearch('query', quranJson, data.morph, data.words, { root: true });
-
-  // ... render results
-}
+```ts
+export type HighlightRange = {
+  start: number;
+  end: number;
+  token: string;
+  matchType: MatchType;
+};
 ```
 
----
+## Example app
 
-## Testing & Verification
-
-### Testing & Verification
-
-We provide two ways to test the library:
-
-#### 1. Unit Tests (Recommended)
-
-Comprehensive unit tests using Vitest that cover all core logic:
+A Vite + React demo exists in `example/`.
 
 ```bash
-npm test
-# or
-yarn test
+pnpm -C example install
+pnpm -C example dev
 ```
 
-These tests cover:
-
-- **Normalization**: Ensures correct handling of Arabic diacritics, unification of Alefs/Hamzas.
-- **Tokenization**: Verifies how text is split and matched against queries (Exact/Lemma/Root).
-- **Search Logic**: Validates `simpleSearch` and `advancedSearch` algorithms, including scoring and pagination.
-- **Data Loading**: Ensures the large JSON datasets load correctly and have the expected structure.
-
-#### 2. Verification Script (Manual)
-
-A standalone script to perform a "smoke test" in a real Node.js environment. It loads the actual data files and runs a series of real-world queries.
+## Development
 
 ```bash
-npx tsx scripts/verify-loader.ts
+pnpm run lint
+pnpm run test
+pnpm run build
 ```
 
-This is useful for:
+## Contributing
 
-- Verifying the build/data integrity.
-- Seeing real performance metrics (execution time).
-- Debugging without the test runner overhead.
+- Open an issue to discuss larger changes before starting implementation.
+- Keep changes focused and include tests when applicable.
+- Ensure checks pass locally: `pnpm run lint && pnpm run test && pnpm run build`.
 
----
+## Contact
 
-## Example Application
+- Adel Benyahia — <contact@adelpro.us.kg>
 
-A complete React + TypeScript example is available in the `example/` folder. This demonstrates:
+## License
 
-- Integration with Vite
-- Real-time search implementation
-- UI highlighting of matched tokens
-- Pagination handling
-- Performance optimizations
-
-To run the example:
-
-```bash
-cd example
-npm install
-npm run dev
-```
+MIT
