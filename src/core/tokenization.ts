@@ -57,31 +57,11 @@ export const getPositiveTokens = (
 
   if (mode === 'lemma' && targetLemma) {
     const normTarget = normalizeArabic(targetLemma);
-    const words = (verse.standard || '').trim().split(/\s+/).filter(Boolean);
-    if (words.length === morph.lemmas.length) {
-      const matchedWords = morph.lemmas
-        .map((lemma, index) => ({ lemma, index }))
-        .filter(({ lemma }) => normalizeArabic(lemma).includes(normTarget))
-        .map(({ index }) => words[index])
-        .filter(Boolean);
-      return Array.from(new Set(matchedWords));
-    }
-
     return Array.from(new Set(morph.lemmas.filter((l) => normalizeArabic(l).includes(normTarget))));
   }
 
   if (mode === 'root' && targetRoot) {
     const normTarget = normalizeArabic(targetRoot);
-    const words = (verse.standard || '').trim().split(/\s+/).filter(Boolean);
-    if (words.length === morph.roots.length) {
-      const matchedWords = morph.roots
-        .map((root, index) => ({ root, index }))
-        .filter(({ root }) => normalizeArabic(root).includes(normTarget))
-        .map(({ index }) => words[index])
-        .filter(Boolean);
-      return Array.from(new Set(matchedWords));
-    }
-
     return Array.from(new Set(morph.roots.filter((r) => normalizeArabic(r).includes(normTarget))));
   }
 
