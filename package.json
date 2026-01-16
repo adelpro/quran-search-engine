@@ -1,0 +1,56 @@
+{
+  "name": "quran-search-engine",
+  "version": "0.1.0",
+  "description": "Framework-agnostic advanced Quranic search engine",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
+    "prepare": "husky",
+    "commit": "cz"
+  },
+  "keywords": [
+    "quran",
+    "search",
+    "islam",
+    "morphology"
+  ],
+  "author": "Adel Benyahia",
+  "license": "MIT",
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "prettier": "^3.2.5",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "@commitlint/cli": "^19.0.3",
+    "@commitlint/config-conventional": "^19.0.3",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0"
+  },
+  "dependencies": {
+    "fuse.js": "^7.0.0"
+  }
+}
