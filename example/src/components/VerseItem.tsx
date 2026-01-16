@@ -16,62 +16,115 @@ export function VerseItem({ verse }: VerseItemProps) {
   const highlightVerse = (text: string, matchedTokens: string[]) => {
     if (!matchedTokens || matchedTokens.length === 0) return text;
 
-    // Determine the highlight class based on the verse match type
-    const matchType = verse.matchType === 'none' ? 'fuzzy' : verse.matchType;
-    const highlightClass = `highlight highlight-${matchType}`;
+    // 1. Identify all matches in the original text
+    type MatchRange = {
+      start: number;
+      end: number;
+      token: string;
+      priority: number; // Higher length = Higher priority
+      type: string;
+    };
 
-    // Sort tokens by length (longer first) to avoid partial matches
-    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
+    const matches: MatchRange[] = [];
 
-    // Create a regex to match the token with optional diacritics between letters
+    // Create a regex to match the token with optional diacritics
     const createDiacriticRegex = (token: string) => {
-      // 1. Normalize the token (remove alef variants, etc.) to match the library's behavior
       const normalizedToken = normalizeArabic(token);
-
-      // 2. Escape special characters for regex
       const escaped = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-      // 3. Arabic diacritics range (Tashkeel + others) including Tatweel (\u0640)
       const tashkeel = '[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]*?';
 
-      // 4. Create regex that allows diacritics between every letter
-      // We map normalized characters to their possible Uthmani variants
       const letters = escaped.split('').map((char) => {
-        if (char === 'ا') return '[اأإآٱ\\u0670]'; // Match all Alef forms + Dagger Alif
-        if (char === 'ي') return '[يى]'; // Match Ya / Alef Maqsura
-        if (char === 'ى') return '[ىي]';
-        if (char === 'ة') return '[ةه]'; // Match Ta Marbuta / Ha
+        if (char === 'ا') return '[اأإآٱ\\u0670و]';
+        if (char === 'ي') return '[يى\\u06CC\\u0626]';
+        if (char === 'ى') return '[ىي\\u06CC\\u0626]';
+        if (char === 'ة') return '[ةهت]';
         if (char === 'ه') return '[هة]';
+        if (char === 'ك') return '[ك\\u06AC\\u06AD\\u06AE\\u06AF\\u06B0]';
+        if (char === 'ء') return '[ءؤئ]';
+        if (char === 'و') return '[وؤ]';
         return char;
       });
 
-      // 5. Build the regex part for the token itself
       const tokenPattern = letters.join(tashkeel);
-
-      // 6. EXPAND MATCH to the FULL WORD
-      // The strategy is:
-      // - Find the token pattern
-      // - Look ahead and behind for any connected Arabic letters/diacritics until a separator (space/punctuation) is found.
-      //
-      // Arabic "word characters" range roughly: [\u0600-\u06FF]
-      // We want to greedily grab any surrounding Arabic characters.
-      //
-      // \b is tricky with non-ASCII.
-      // Instead, we can use:
-      // [^\s]* + tokenPattern + [^\s]*
-      // This means "match the token, plus any non-whitespace chars attached to it".
-
+      // Capture the full word boundary
       return new RegExp(`([^\\s]*${tokenPattern}[^\\s]*)`, 'g');
     };
 
-    let highlighted = text;
-    for (const token of sortedTokens) {
-      // Use the diacritic-aware regex
+    for (const token of matchedTokens) {
       const regex = createDiacriticRegex(token);
-      // Use $1 to preserve the actual matched text (with its diacritics)
-      highlighted = highlighted.replace(regex, `<span class="${highlightClass}">$1</span>`);
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          token,
+          priority: token.length,
+          type: verse.tokenTypes?.[token] ?? 'fuzzy',
+        });
+      }
     }
-    return <div dangerouslySetInnerHTML={{ __html: highlighted }} />;
+
+    // 2. Resolve Overlaps
+    // We want to keep the longest match for any given range.
+    // If ranges overlap, we can either merge them or pick the "best" one.
+    // Simple strategy: Sort by length (desc) then position.
+    // Iterate and mask out occupied regions.
+
+    matches.sort((a, b) => {
+      if (a.priority !== b.priority) return b.priority - a.priority; // Longest first
+      return a.start - b.start;
+    });
+
+    const finalRanges: MatchRange[] = [];
+    const occupied = new Array(text.length).fill(false);
+
+    for (const m of matches) {
+      // Check if range is fully free (or maybe allow nesting? No, flat highlighting is safer for now)
+      // Actually, if we have "Word" and "Subword", "Word" comes first (longer).
+      // We mark "Word" region as occupied. "Subword" will be ignored.
+      // This solves the double-highlighting bug.
+
+      let isFree = true;
+      for (let i = m.start; i < m.end; i++) {
+        if (occupied[i]) {
+          isFree = false;
+          break;
+        }
+      }
+
+      if (isFree) {
+        finalRanges.push(m);
+        for (let i = m.start; i < m.end; i++) {
+          occupied[i] = true;
+        }
+      }
+    }
+
+    // 3. Reconstruct the string
+    // Sort ranges by start position for reconstruction
+    finalRanges.sort((a, b) => a.start - b.start);
+
+    let result = '';
+    let cursor = 0;
+
+    for (const range of finalRanges) {
+      // Append non-highlighted text before this range
+      result += text.slice(cursor, range.start);
+
+      // Append highlighted text
+      const segment = text.slice(range.start, range.end);
+      const matchType = range.type === 'none' ? 'fuzzy' : range.type;
+      const highlightClass = `highlight highlight-${matchType}`;
+
+      result += `<span class="${highlightClass}">${segment}</span>`;
+
+      cursor = range.end;
+    }
+
+    // Append remaining text
+    result += text.slice(cursor);
+
+    return <div dangerouslySetInnerHTML={{ __html: result }} />;
   };
 
   return (
