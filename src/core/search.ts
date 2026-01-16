@@ -62,6 +62,7 @@ export const computeScore = (
 ): ScoredQuranText => {
   let score = 0;
   let matchType: MatchType = 'none';
+  let matchedTokens: string[] = [];
 
   // 1. Text (Exact) Matches - Weight: 3
   const textMatches = getPositiveTokens(
@@ -75,6 +76,7 @@ export const computeScore = (
   if (textMatches.length > 0) {
     score += textMatches.length * 3;
     matchType = 'exact';
+    matchedTokens = [...matchedTokens, ...textMatches];
   }
 
   // 2. Lemma Matches - Weight: 2
@@ -90,6 +92,7 @@ export const computeScore = (
     if (lemmaMatches.length > 0) {
       score += lemmaMatches.length * 2;
       if (matchType !== 'exact') matchType = 'lemma';
+      matchedTokens = [...matchedTokens, ...lemmaMatches];
     }
   }
 
@@ -106,10 +109,14 @@ export const computeScore = (
     if (rootMatches.length > 0) {
       score += rootMatches.length;
       if (matchType !== 'exact' && matchType !== 'lemma') matchType = 'root';
+      matchedTokens = [...matchedTokens, ...rootMatches];
     }
   }
 
-  return { ...verse, matchScore: score, matchType };
+  // Deduplicate tokens
+  matchedTokens = Array.from(new Set(matchedTokens));
+
+  return { ...verse, matchScore: score, matchType, matchedTokens };
 };
 
 export const performAdvancedLinguisticSearch = (

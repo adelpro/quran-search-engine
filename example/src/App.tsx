@@ -4,15 +4,14 @@ import {
   loadMorphology,
   loadWordMap,
   advancedSearch,
-  getPositiveTokens,
   type QuranText,
   type MorphologyAya,
   type WordMap,
-  type ScoredQuranText,
   type SearchResponse,
 } from 'quran-search-engine';
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from './useDebounce';
+import { VerseItem } from './components/VerseItem';
 import './App.css';
 
 function App() {
@@ -215,29 +214,6 @@ function App() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function VerseItem({
-  verse,
-}: {
-  verse: ScoredQuranText;
-  query: string;
-  morphologyMap: Map<number, MorphologyAya>;
-  wordMap: WordMap;
-}) {
-  return (
-    <div className="verse-card">
-      <div className="verse-card-header">
-        <span>
-          {verse.sura_name} ({verse.sura_id}:{verse.aya_id})
-        </span>
-        <span className={`match-tag tag-${verse.matchType}`}>
-          {verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: {verse.matchScore})
-        </span>
-      </div>
-      <div className="verse-arabic">{verse.uthmani}</div>
     </div>
   );
 }

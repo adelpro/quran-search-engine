@@ -31,6 +31,7 @@ export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'none';
 export type ScoredQuranText = QuranText & {
   matchScore: number;
   matchType: MatchType;
+  matchedTokens: string[];
 };
 
 export type AdvancedSearchOptions = {
