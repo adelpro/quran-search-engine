@@ -63,6 +63,7 @@ export const computeScore = (
   let score = 0;
   let matchType: MatchType = 'none';
   let matchedTokens: string[] = [];
+  const tokenTypes: Record<string, MatchType> = {};
 
   // 1. Text (Exact) Matches - Weight: 3
   const textMatches = getPositiveTokens(
@@ -77,6 +78,7 @@ export const computeScore = (
     score += textMatches.length * 3;
     matchType = 'exact';
     matchedTokens = [...matchedTokens, ...textMatches];
+    textMatches.forEach((t) => (tokenTypes[t] = 'exact'));
   }
 
   // 2. Lemma Matches - Weight: 2
@@ -93,6 +95,9 @@ export const computeScore = (
       score += lemmaMatches.length * 2;
       if (matchType !== 'exact') matchType = 'lemma';
       matchedTokens = [...matchedTokens, ...lemmaMatches];
+      lemmaMatches.forEach((t) => {
+        if (!tokenTypes[t]) tokenTypes[t] = 'lemma';
+      });
     }
   }
 
@@ -110,13 +115,16 @@ export const computeScore = (
       score += rootMatches.length;
       if (matchType !== 'exact' && matchType !== 'lemma') matchType = 'root';
       matchedTokens = [...matchedTokens, ...rootMatches];
+      rootMatches.forEach((t) => {
+        if (!tokenTypes[t]) tokenTypes[t] = 'root';
+      });
     }
   }
 
   // Deduplicate tokens
   matchedTokens = Array.from(new Set(matchedTokens));
 
-  return { ...verse, matchScore: score, matchType, matchedTokens };
+  return { ...verse, matchScore: score, matchType, matchedTokens, tokenTypes };
 };
 
 export const performAdvancedLinguisticSearch = (

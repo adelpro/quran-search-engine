@@ -32,6 +32,7 @@ export type ScoredQuranText = QuranText & {
   matchScore: number;
   matchType: MatchType;
   matchedTokens: string[];
+  tokenTypes?: Record<string, MatchType>;
 };
 
 export type AdvancedSearchOptions = {

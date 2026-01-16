@@ -90,7 +90,8 @@ export function VerseItem({ verse }: VerseItemProps) {
               borderRadius: '4px',
             }}
           >
-            Tokens: {verse.matchedTokens?.join(', ')}
+            Tokens:{' '}
+            {verse.matchedTokens?.map((t) => `${t} (${verse.tokenTypes?.[t] ?? '?'})`).join(', ')}
           </span>
           <span className={`match-tag tag-${verse.matchType}`}>
             {verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: {verse.matchScore})
