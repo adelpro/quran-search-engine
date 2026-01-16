@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   loadQuranData,
   loadMorphology,
@@ -66,15 +66,6 @@ function App() {
         const filteredCount = filteredResults.length;
         const newTotalPages = Math.ceil(filteredCount / PAGE_SIZE);
 
-        // Since pagination is done in the library, we might have fewer results than PAGE_SIZE if we filter here.
-        // For a perfect implementation, the library should handle this flag.
-        // But for this demo, filtering the current page's results is a visual fix.
-        // A better approach is to pass this option to the library if supported.
-        // Since the library currently returns a page slice, client-side filtering after pagination is tricky
-        // because it reduces the page size.
-        // Ideally, we should update the library to accept a 'fuzzy' option.
-        // For now, let's just visually hide them or accept that the page might be shorter.
-
         setSearchResponse({
           ...response,
           results: filteredResults,
@@ -82,6 +73,10 @@ function App() {
             ...response.pagination,
             totalResults: response.counts.total - response.counts.fuzzy, // approximate update
             totalPages: newTotalPages,
+          },
+          counts: {
+            ...response.counts,
+            fuzzy: 0,
           },
         });
       } else {
@@ -226,77 +221,12 @@ function App() {
 
 function VerseItem({
   verse,
-  query,
-  morphologyMap,
-  wordMap,
 }: {
   verse: ScoredQuranText;
   query: string;
   morphologyMap: Map<number, MorphologyAya>;
   wordMap: WordMap;
 }) {
-  const tokens = useMemo(() => {
-    const cleanQuery = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
-    const mode =
-      verse.matchType === 'root' || verse.matchType === 'lemma' ? verse.matchType : 'text';
-
-    const wordEntry = wordMap[cleanQuery];
-    return getPositiveTokens(
-      verse,
-      mode,
-      wordEntry?.lemma,
-      wordEntry?.root,
-      cleanQuery,
-      morphologyMap,
-    );
-  }, [verse, query, morphologyMap, wordMap]);
-
-  const highlightVerse = (text: string, matchedTokens: string[]) => {
-    if (matchedTokens.length === 0) return text;
-
-    // Determine the highlight class based on the verse match type
-    const matchType = verse.matchType === 'none' ? 'fuzzy' : verse.matchType;
-    const highlightClass = `highlight highlight-${matchType}`;
-
-    // Sort tokens by length (longer first) to avoid partial matches
-    const sortedTokens = [...matchedTokens].sort((a, b) => b.length - a.length);
-
-    // Create a regex to match the token with optional diacritics between letters
-    const createDiacriticRegex = (token: string) => {
-      // Normalize Alefs in the token first to handle simple vs standard mismatch
-      const normalizedToken = token.replace(/[أإآ]/g, 'ا');
-      const escaped = normalizedToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-      // Arabic diacritics range (Tashkeel + others) INCLUDING Dagger Alif and Tatweel
-      // We use non-greedy matching (*?)
-      // \u0640 is Tatweel (Kashida)
-      const tashkeel = '[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]*?';
-
-      // Match Alef variants (أ, إ, آ, ٱ, ا) interchangeably if the token has 'ا'
-      // Match Ya/Alef Maqsura variants (ي, ى) interchangeably
-      // Match Ta Marbuta/Ha variants (ة, ه) interchangeably (optional but robust)
-      const letters = escaped.split('').map((char) => {
-        if (char === 'ا') return '[اأإآٱ\\u0670]';
-        if (char === 'ي') return '[يى]';
-        if (char === 'ى') return '[ىي]';
-        if (char === 'ة') return '[ةه]';
-        if (char === 'ه') return '[هة]';
-        return char;
-      });
-
-      return new RegExp(`(${letters.join(tashkeel)})`, 'g');
-    };
-
-    let highlighted = text;
-    for (const token of sortedTokens) {
-      // Use the diacritic-aware regex
-      const regex = createDiacriticRegex(token);
-      // Use $1 to preserve the actual matched text (with its diacritics)
-      highlighted = highlighted.replace(regex, `<span class="${highlightClass}">$1</span>`);
-    }
-    return <div dangerouslySetInnerHTML={{ __html: highlighted }} />;
-  };
-
   return (
     <div className="verse-card">
       <div className="verse-card-header">
@@ -307,7 +237,7 @@ function VerseItem({
           {verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: {verse.matchScore})
         </span>
       </div>
-      <div className="verse-arabic">{highlightVerse(verse.uthmani, tokens)}</div>
+      <div className="verse-arabic">{verse.uthmani}</div>
     </div>
   );
 }
