@@ -544,6 +544,9 @@ It focuses strictly on deterministic Quran text search.
 
 ## Example apps
 
+> [!IMPORTANT]
+> **Note for Developers**: This project uses a pnpm workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `pnpm build` (or run it in watch mode with `pnpm build --watch`) for those changes to be reflected in the example applications.
+
 Several example applications are available in the `examples/` directory:
 
 - **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
