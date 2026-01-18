@@ -1,5 +1,10 @@
 # quran-search-engine
 
+![npm](https://img.shields.io/npm/v/quran-search-engine)
+![TypeScript](https://img.shields.io/badge/ts-yes-blue)
+![downloads](https://img.shields.io/npm/dm/quran-search-engine)
+![license](https://img.shields.io/npm/l/quran-search-engine)
+
 A stateless, pure TypeScript search engine for Quranic text with:
 
 - Arabic normalization
@@ -7,15 +12,77 @@ A stateless, pure TypeScript search engine for Quranic text with:
 - Lemma + root matching (via morphology + word map)
 - Highlight ranges (UI-agnostic)
 
+## Why this library
+
+Most Quran search solutions are:
+
+- tightly coupled to a UI
+- server-bound or stateful
+- hard to customize or extend
+- weakly typed
+
+**quran-search-engine** is designed to be:
+
+- UI-agnostic (React, Vue, React Native, Node)
+- fully client-side or server-side
+- stateless and deterministic
+- TypeScript-first and strongly typed
+
+You control the data, rendering, and persistence.
+
 ## Installation
 
+This project uses **pnpm** as the default package manager for optimal performance, caching, and workspace management. pnpm provides:
+
+- **Faster installs** through global content-addressable storage
+- **Efficient disk usage** by hard-linking packages from a global store
+- **Better workspace support** for monorepo management
+- **Strict dependency resolution** preventing phantom dependencies
+
 ```bash
-npm install quran-search-engine
-yarn add quran-search-engine
-pnpm add quran-search-engine
+pnpm install quran-search-engine
+```
+
+<details> <summary>Other package managers</summary>
+<br>
+npm install quran-search-engine <br>
+yarn add quran-search-engine <br>
+
+</details>
+
+## Development Setup
+
+This is a **pnpm workspace** monorepo containing the main library and example applications. The workspace is configured in `pnpm-workspace.yaml` to include:
+
+- The main library (root package)
+- All examples in the `examples/` directory
+
+### Prerequisites
+
+Install pnpm if you haven't already:
+
+```bash
+npm install -g pnpm
+# or
+corepack enable pnpm
+```
+
+### Setup Commands
+
+```bash
+# Install all dependencies for the workspace and examples
+pnpm install
+
+# Build the main library
+pnpm build
+
+# Run tests across the workspace
+pnpm test
 ```
 
 ## Quickstart
+
+> Note: examples assume an async context (Node 18+, ESM, or browser).
 
 ```ts
 import {
@@ -167,18 +234,25 @@ const response = search(
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
 ```
 
+| Match type | Score per hit        |
+| ---------- | -------------------- |
+| Exact      | +3                   |
+| Lemma      | +2                   |
+| Root       | +1                   |
+| Fuzzy      | +0.5 (fallback only) |
+
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
 ```ts
 import { normalizeArabic } from 'quran-search-engine';
 
 export function containsAllTokens(value: string, query: string): boolean {
-  const q = normalizeArabic(query);
-  if (!q) return false;
+  const query = normalizeArabic(query);
+  if (!query) return false;
 
-  const tokens = q.split(/\s+/);
-  const v = normalizeArabic(value);
-  return tokens.every((t) => v.includes(t));
+  const tokens = query.split(/\s+/);
+  const value = normalizeArabic(value);
+  return tokens.every((token) => value.includes(token));
 }
 ```
 
@@ -457,13 +531,100 @@ export type HighlightRange = {
 };
 ```
 
-## Example app
+## Non-goals
 
-A Vite + React demo exists in `example/`.
+This library does not aim to provide:
+
+- AI or semantic interpretation
+- Tafsir or meaning inference
+- Opinionated UI rendering
+- Server-side indexing infrastructure
+
+It focuses strictly on deterministic Quran text search.
+
+## Example apps
+
+Several example applications are available in the `examples/` directory:
+
+- **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
+- **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
+- **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
+
+To run any example:
 
 ```bash
-pnpm -C example install
-pnpm -C example dev
+pnpm -C examples/<example-name> install
+pnpm -C examples/<example-name> dev  # or start for Node.js
+```
+
+## Testing
+
+This project includes comprehensive test coverage and verification tools.
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test --watch
+
+# Run tests with coverage
+pnpm test --coverage
+```
+
+### Test Coverage
+
+The test suite covers:
+
+- **Core Search Logic**: `search()` and `simpleSearch()` functions
+- **Tokenization**: Exact, lemma, and root matching algorithms
+- **Arabic Normalization**: Text processing utilities (`removeTashkeel`, `normalizeArabic`)
+- **Data Loading**: Quran data, morphology, and word map loading utilities
+- **Highlighting**: UI-agnostic highlight range generation
+
+**Note**: These are **unit tests** that test individual functions in isolation. For integration testing, see the Verification Script below.
+
+### Verification Script
+
+For comprehensive end-to-end verification, run the included verification script:
+
+```bash
+# Build the library first
+pnpm build
+
+# Then run verification (requires tsx or similar TypeScript runner)
+pnpm tsx scripts/verify-loader.ts
+```
+
+This script performs **integration testing** that validates the complete search pipeline:
+
+- **Data Loading**: Tests Quran data, morphology, and word map loading with performance timing
+- **Simple Search**: Validates basic text search functionality
+- **Advanced Search**: Tests morphological matching (lemma/root), scoring, and pagination
+- **Pagination**: Verifies page navigation and result differentiation across pages
+- **Highlighting**: Tests token extraction for UI highlighting features
+
+**Key Differences from Unit Tests:**
+
+- **Scope**: Integration test vs. isolated unit tests
+- **Dependencies**: Tests real data loading and full function pipelines
+- **Performance**: Measures actual loading times and search performance
+- **End-to-End**: Validates the complete user workflow from data to results
+- **Purpose**: Catches integration issues that unit tests might miss
+
+### Test Structure
+
+```
+src/
+├── core/
+│   ├── search.test.ts       # Search algorithm tests
+│   └── tokenization.test.ts # Token matching tests
+└── utils/
+    ├── loader.test.ts       # Data loading tests
+    ├── normalization.test.ts # Text processing tests
+    └── highlight.ts         # Highlighting utilities
 ```
 
 ## Development
