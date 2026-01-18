@@ -31,6 +31,7 @@
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "prepare": "husky",
+    "prepublishOnly": "pnpm run build",
     "commit": "cz"
   },
   "keywords": [
