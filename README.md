@@ -165,6 +165,8 @@ Everything documented below is exported from `quran-search-engine` (aligned with
 
 ### Data loading
 
+> Note: The bundled lemma (morphology) data and word map were downloaded from Quranic Arabic Corpus v4.0: <https://corpus.quran.com>
+
 #### `loadQuranData()`
 
 Use case: load the Quran dataset once at app startup (browser or Node), then reuse in searches.
