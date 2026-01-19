@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5]
+
 ### Added
 
 - **Documentation**: Added a changelog badge to `README.md` linking to GitHub releases
 - **CI/CD**: Added `prepublishOnly` script to `package.json` to automate builds before npm publishing
 - **Distribution**: Configured package to include `CHANGELOG.md` in the published npm bundle
+- **Assets**: Added assets images (png, svg) to the `assets` directory
+- **Readme**: Added a logo to the top of `README.md`
 
 ### Fixed
 

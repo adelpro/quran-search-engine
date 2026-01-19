@@ -1,17 +1,38 @@
+<p align="center">
+  <img src="./assets/800x450.png" width="850" height="400" alt="quran-search-engine logo" />
+</p>
+
 # quran-search-engine
 
-![npm](https://img.shields.io/npm/v/quran-search-engine)
+[![npm](https://img.shields.io/npm/v/quran-search-engine)](https://www.npmjs.com/package/quran-search-engine)
+[![downloads](https://img.shields.io/npm/dm/quran-search-engine)](https://www.npmjs.com/package/quran-search-engine)
 ![TypeScript](https://img.shields.io/badge/ts-yes-blue)
-![downloads](https://img.shields.io/npm/dm/quran-search-engine)
 [![Changelog](https://img.shields.io/badge/changelog-view-brightgreen)](https://github.com/adelpro/quran-search-engine/releases)
 ![license](https://img.shields.io/npm/l/quran-search-engine)
 
-A stateless, pure TypeScript search engine for Quranic text with:
+Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
 - Highlight ranges (UI-agnostic)
+
+## Table of contents
+
+- [Why this library](#why-this-library)
+- [Installation](#installation)
+- [Development Setup](#development-setup)
+- [Quickstart](#quickstart)
+- [Public API](#public-api)
+- [How scoring works](#how-scoring-works)
+- [Multi-word search](#multi-word-search)
+- [Core types](#core-types)
+- [Non-goals](#non-goals)
+- [Example apps](#example-apps)
+- [Testing](#testing)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Why this library
 
@@ -248,12 +269,12 @@ If you need a simple “contains all tokens in a field” filter for your own da
 import { normalizeArabic } from 'quran-search-engine';
 
 export function containsAllTokens(value: string, query: string): boolean {
-  const query = normalizeArabic(query);
-  if (!query) return false;
+  const normalizedQuery = normalizeArabic(query);
+  if (!normalizedQuery) return false;
 
-  const tokens = query.split(/\s+/);
-  const value = normalizeArabic(value);
-  return tokens.every((token) => value.includes(token));
+  const tokens = normalizedQuery.split(/\s+/);
+  const normalizedValue = normalizeArabic(value);
+  return tokens.every((token) => normalizedValue.includes(token));
 }
 ```
 
