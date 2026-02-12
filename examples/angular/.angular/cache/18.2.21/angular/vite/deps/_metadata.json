@@ -1,0 +1,58 @@
+{
+  "hash": "0b9323ac",
+  "configHash": "8bf0dfae",
+  "lockfileHash": "a0bf0d3f",
+  "browserHash": "5743a8f5",
+  "optimized": {
+    "@angular/common": {
+      "src": "../../../../../../../../node_modules/.pnpm/@angular+common@18.2.14_@an_69f3d8b9ddb6ef39d200653a98a37501/node_modules/@angular/common/fesm2022/common.mjs",
+      "file": "@angular_common.js",
+      "fileHash": "e234da10",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../../../node_modules/.pnpm/@angular+core@18.2.14_rxjs@7.8.2_zone.js@0.14.10/node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "59f3a0c8",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../../../node_modules/.pnpm/@angular+forms@18.2.14_@ang_c33b6168027034cf75c4e2eafcec950c/node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "4a862fd8",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../../../node_modules/.pnpm/@angular+platform-browser@1_6bb4c30ed579515bb814369de0237a71/node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "e624983a",
+      "needsInterop": false
+    },
+    "quran-search-engine": {
+      "src": "../../../../../../../../dist/index.mjs",
+      "file": "quran-search-engine.js",
+      "fileHash": "971ae42d",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-3HCJG636": {
+      "file": "chunk-3HCJG636.js"
+    },
+    "chunk-GYPLUZQO": {
+      "file": "chunk-GYPLUZQO.js"
+    },
+    "morphology-QCASLOZB-SKYVJWXW": {
+      "file": "morphology-QCASLOZB-SKYVJWXW.js"
+    },
+    "word-map-7GKBHIQA-W2V7ULD4": {
+      "file": "word-map-7GKBHIQA-W2V7ULD4.js"
+    },
+    "quran-IEIJ6Y6C-BEUGOST3": {
+      "file": "quran-IEIJ6Y6C-BEUGOST3.js"
+    },
+    "chunk-WDMUDEB6": {
+      "file": "chunk-WDMUDEB6.js"
+    }
+  }
+}

@@ -575,14 +575,22 @@ Several example applications are available in the `examples/` directory:
 
 - **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
 - **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
+- **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
 - **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
 
-To run any example:
+To run an example:
 
 ```bash
-pnpm -C examples/<example-name> install
-pnpm -C examples/<example-name> dev  # or start for Node.js
+pnpm install
+pnpm -C examples/<example-name> dev
 ```
+
+Scripts by example:
+
+- `examples/vite-react`: `pnpm -C examples/vite-react dev`
+- `examples/vanilla-ts`: `pnpm -C examples/vanilla-ts dev`
+- `examples/angular`: `pnpm -C examples/angular start`
+- `examples/nodejs`: `pnpm -C examples/nodejs start`
 
 ## Testing
 
