@@ -24,7 +24,14 @@ function App() {
   const debouncedQuery = useDebounce(query, 300);
 
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
-  const [options, setOptions] = useState({ lemma: true, root: true, fuzzy: true });
+  const [options, setOptions] = useState({
+    lemma: true,
+    root: true,
+    fuzzy: true,
+    suraId: undefined as number | undefined,
+    juzId: undefined as number | undefined,
+    suraName: "" // Advanced filter by Surah name
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -121,6 +128,34 @@ function App() {
             onChange={(e) => setOptions({ ...options, fuzzy: e.target.checked })}
           />
           Fuzzy Search
+        </label>
+        <label className="option-item">
+          Sura ID:
+          <input
+            type="number"
+            min="1" max="114"
+            onChange={(e) => setOptions({ ...options, suraId: e.target.value ? parseInt(e.target.value) : undefined })}
+            style={{ width: '60px', marginLeft: '5px' }}
+          />
+        </label>
+        <label className="option-item">
+          Juz ID:
+          <input
+            type="number"
+            min="1" max="30"
+            onChange={(e) => setOptions({ ...options, juzId: e.target.value ? parseInt(e.target.value) : undefined })}
+            style={{ width: '60px', marginLeft: '5px' }}
+          />
+        </label>
+        <label className="option-item">
+          Sura Name:
+        <input
+            type="text"
+            placeholder="Ex: الفاتحة ou Fatiha"
+            value={options.suraName}
+            onChange={(e) => setOptions({ ...options, suraName: e.target.value })}
+            style={{marginLeft: '8px',padding: '4px 8px',border: '1px solid #ddd',borderRadius: '4px',fontSize: '0.9rem',width: '140px'}}
+        />
         </label>
       </div>
 

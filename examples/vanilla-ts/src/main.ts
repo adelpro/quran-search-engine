@@ -20,6 +20,9 @@ class QuranSearchApp {
   private lemmaCheckbox: HTMLInputElement;
   private rootCheckbox: HTMLInputElement;
   private fuzzyCheckbox: HTMLInputElement;
+  private suraIdInput: HTMLInputElement; 
+  private juzIdInput: HTMLInputElement;
+  private suraNameInput: HTMLInputElement;
   private resultsDiv: HTMLDivElement;
 
   constructor() {
@@ -27,6 +30,9 @@ class QuranSearchApp {
     this.lemmaCheckbox = document.getElementById('lemma') as HTMLInputElement;
     this.rootCheckbox = document.getElementById('root') as HTMLInputElement;
     this.fuzzyCheckbox = document.getElementById('fuzzy') as HTMLInputElement;
+    this.suraIdInput = document.getElementById('sura-id') as HTMLInputElement;
+    this.juzIdInput = document.getElementById('juz-id') as HTMLInputElement;
+    this.suraNameInput = document.getElementById('sura-name') as HTMLInputElement;
     this.resultsDiv = document.getElementById('results') as HTMLDivElement;
 
     this.init();
@@ -79,6 +85,10 @@ class QuranSearchApp {
       lemma: this.lemmaCheckbox.checked,
       root: this.rootCheckbox.checked,
       fuzzy: this.fuzzyCheckbox.checked,
+      //new
+      suraId: this.suraIdInput.value ? parseInt(this.suraIdInput.value) : undefined,
+      juzId: this.juzIdInput.value ? parseInt(this.juzIdInput.value) : undefined,
+      suraName: this.suraNameInput.value || undefined
     };
 
     try {

@@ -16,6 +16,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Exact text search
 - Lemma + root matching (via morphology + word map)
 - Highlight ranges (UI-agnostic)
+- Surah and Juz filtering 
 
 ## Table of contents
 
@@ -128,6 +129,7 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const response: SearchResponse = search('الله الرحمن', quranData, morphologyMap, wordMap, {
   lemma: true,
   root: true,
+  suraId: 1, //
 });
 
 response.results.forEach((v) => {
@@ -249,7 +251,7 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true },
+  { lemma: true, root: true ,suraId: 114,juzId: 30}, 
   { page: 1, limit: 10 },
 );
 // Example output:
@@ -490,6 +492,9 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  suraId?: number; 
+  juzId?: number; 
+  suraName?: string;
 };
 ```
 

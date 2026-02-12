@@ -203,3 +203,60 @@ describe('createArabicFuseSearch', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 });
+// =================================================================
+// TESTS FOR ISSUE #14: Surah and Juz Filtering
+// =================================================================
+describe('search filtering (Issue #14)', () => {
+  /**
+   * Test 1: Positive Sura Filtering
+   */
+  it('should return results from Surah 1 when suraId is set to 1', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraId: 1,
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((v) => v.sura_id === 1)).toBe(true);
+  });
+  /**
+   * Test 2: Negative Sura Filtering
+   * This ensures the filter REALLY works by checking a sura that is NOT in our mocks.
+   */
+  it('should return 0 results when filtering for a non-existent suraId (e.g., 114)', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraId: 114, // Mock data only contains Surah 1
+    });
+
+    expect(result.results).toHaveLength(0);
+  });
+  /**
+   * Test 3: Juz Filtering
+   */
+  it('should return results from Juz 1 when juzId is set to 1', () => {
+    const result = search('الحمد', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      juzId: 1,
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((v) => v.juz_id === 1)).toBe(true);
+  });
+  /**
+   * Test 4: Surah Name Filtering
+   */
+  it('should filter results by Arabic Surah name correctly', () => {
+    const result = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraName: 'الفاتحة',
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].sura_name).toBe('الفاتحة');
+  });
+});

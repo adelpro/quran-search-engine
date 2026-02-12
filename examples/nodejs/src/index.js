@@ -20,6 +20,8 @@ async function main() {
             { query: 'الله', description: 'Search for "Allah"' },
             { query: 'رحم', description: 'Search for root "رحم" (mercy)' },
             { query: 'كتب', description: 'Search for "kataba" (wrote)' },
+            { query: 'الله', description: 'Search for "Allah" in Al-Fatiha (Sura 1)', suraId: 1 }, //+
+            { query: 'الناس', description: 'Search for "An-Nas" (Sura 114)', suraId: 114 }, //+
         ];
 
         for (const example of examples) {
@@ -35,6 +37,9 @@ async function main() {
                     lemma: true,
                     root: true,
                     fuzzy: true,
+                    suraId: example.suraId, //+  dynamic Injection
+                    juzId: example.juzId,  //+  dynami Injection
+                    
                 },
                 {
                     page: 1,

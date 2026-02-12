@@ -37,6 +37,39 @@ export const createArabicFuseSearch = <T>(
 
 // ==================== Utilities ====================
 
+// ==================== Filtering Logic ====================
+
+// Filters a collection of verses by Surah and Juz IDs
+
+export const filterVerses = <TVerse extends VerseInput>(
+  data: TVerse[],
+  suraId?: number,
+  juzId?: number,
+  suraName?: string,
+): TVerse[] => {
+  // If no filters are requested, return original data to avoid unnecessary iteration
+  if (suraId === undefined && juzId === undefined && suraName === undefined) return data;
+  // Apply cumulative filtering
+
+  const normalizedQueryName = suraName ? normalizeArabic(suraName).toLowerCase().trim() : undefined;
+  return data.filter((verse) => {
+    const matchesSura = suraId === undefined || verse.sura_id === suraId;
+    const matchesJuz = juzId === undefined || verse.juz_id === juzId;
+    // Verify Name (Arabe + Anglais + Romanisation)
+    let matchesSuraName = true;
+    if (normalizedQueryName) {
+      const normalizedSuraName = verse.sura_name ? normalizeArabic(verse.sura_name) : '';
+      const enName = (verse.sura_name_en || '').toLowerCase();
+      const romName = (verse.sura_name_romanization || '').toLowerCase();
+      matchesSuraName =
+        normalizedSuraName.includes(normalizedQueryName) ||
+        enName.includes(normalizedQueryName) ||
+        romName.includes(normalizedQueryName);
+    }
+
+    return matchesSura && matchesJuz && matchesSuraName;
+  });
+};
 // ==================== Simple Search ====================
 export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
@@ -326,16 +359,17 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuzzyEnabled = options.fuzzy !== false;
+  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName); //+ Filter collection based on Surah and Juz identifiers
+  //  replace quranData with filteredData
   const fuseInstance = fuzzyEnabled
-    ? createArabicFuseSearch(quranData, ['standard', 'uthmani'])
+    ? createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
     : null;
 
-  // 3. Run search layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
-
+  // 3. Run search layers  +remplacez quranData par filteredData
+  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
-    quranData,
+    filteredData, //remplacez quranData par filteredData
     options,
     fuseInstance,
     wordMap,
