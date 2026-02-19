@@ -239,7 +239,15 @@ Main entry point. Combines:
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
-Set `options.fuzzy = false` to disable fuzzy fallback.
+#### Filter Priority
+
+The API enforces a **strict deterministic priority** when multiple structural filters are provided:
+
+1.  **`suraId`**: If a valid number (`> 0`), it overrides all other structural filters.
+2.  **`suraName`**: Used if `suraId` is invalid or missing.
+3.  **`juzId`**: Used only if both Surah filters are invalid or missing.
+
+No combinations (AND logic) are applied between these three.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -249,13 +257,13 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true },
+  { lemma: true, root: true, suraId: 114, juzId: 30 },
   { page: 1, limit: 10 },
 );
 // Example output:
-// response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
-// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, total: 42 }
-// response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
+// response.pagination => { totalResults: 6, totalPages: 1, currentPage: 1, limit: 10 }
+// response.counts => { simple: 2, lemma: 3, root: 4, fuzzy: 0, total: 6 }
+// response.results[0] => { gid: 6231, sura_id: 114, ... } (Results restricted to Surah 114)
 ```
 
 | Match type | Score per hit        |
@@ -490,6 +498,9 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  suraId?: number;
+  juzId?: number;
+  suraName?: string;
 };
 ```
 
@@ -575,14 +586,22 @@ Several example applications are available in the `examples/` directory:
 
 - **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
 - **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
+- **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
 - **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
 
-To run any example:
+To run an example:
 
 ```bash
-pnpm -C examples/<example-name> install
-pnpm -C examples/<example-name> dev  # or start for Node.js
+pnpm install
+pnpm -C examples/<example-name> dev
 ```
+
+Scripts by example:
+
+- `examples/vite-react`: `pnpm -C examples/vite-react dev`
+- `examples/vanilla-ts`: `pnpm -C examples/vanilla-ts dev`
+- `examples/angular`: `pnpm -C examples/angular start`
+- `examples/nodejs`: `pnpm -C examples/nodejs start`
 
 ## Testing
 

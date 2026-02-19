@@ -203,7 +203,10 @@ describe('createArabicFuseSearch', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 });
+<<<<<<< feature/fuse-preindexing
 
+=======
+>>>>>>> develop
 // =================================================================
 // TESTS FOR ISSUE #14: Surah and Juz Filtering
 // =================================================================
@@ -261,6 +264,7 @@ describe('search filtering (Issue #14)', () => {
     expect(result.results[0].sura_name).toBe('الفاتحة');
   });
 });
+<<<<<<< feature/fuse-preindexing
 
 // =================================================================
 // TESTS FOR ISSUE #7: Fuse.js Pre-indexing
@@ -354,3 +358,5 @@ describe('search with pre-computed Fuse index (Issue #7)', () => {
     expect(result.results[0].sura_name).toBe('الفاتحة');
   });
 });
+=======
+>>>>>>> develop
