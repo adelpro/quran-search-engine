@@ -229,7 +229,7 @@ const out = normalizeArabic('بِسْمِ ٱللَّهِ');
 
 ### Search
 
-#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?)`
+#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, preComputedFuseIndex?)`
 
 Main entry point. Combines:
 
@@ -239,15 +239,7 @@ Main entry point. Combines:
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
-#### Filter Priority
-
-The API enforces a **strict deterministic priority** when multiple structural filters are provided:
-
-1.  **`suraId`**: If a valid number (`> 0`), it overrides all other structural filters.
-2.  **`suraName`**: Used if `suraId` is invalid or missing.
-3.  **`juzId`**: Used only if both Surah filters are invalid or missing.
-
-No combinations (AND logic) are applied between these three.
+Set `options.fuzzy = false` to disable fuzzy fallback.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -288,6 +280,16 @@ export function containsAllTokens(value: string, query: string): boolean {
 }
 ```
 
+#### `createArabicFuseSearch(data, keys, options?)`
+
+Use case: pre-compute the Fuse.js index for performance (see [Performance Optimization](#performance-optimization-advanced)).
+
+```ts
+import { createArabicFuseSearch } from 'quran-search-engine';
+
+const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+```
+
 #### Custom datasets
 
 `search` accepts any dataset shape as long as each record satisfies `VerseInput`:
@@ -297,6 +299,11 @@ export type VerseInput = {
   gid: number;
   uthmani: string;
   standard: string;
+  sura_id?: number;
+  juz_id?: number;
+  sura_name?: string;
+  sura_name_en?: string;
+  sura_name_romanization?: string;
 };
 ```
 
@@ -498,9 +505,6 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
-  suraId?: number;
-  juzId?: number;
-  suraName?: string;
 };
 ```
 
