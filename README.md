@@ -15,6 +15,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
+- Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 
 ## Table of contents
@@ -254,7 +255,7 @@ const response = search(
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
-// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, total: 42 }
+// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, range: 0, total: 42 }
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
 ```
 
@@ -264,6 +265,37 @@ const response = search(
 | Lemma      | +2                   |
 | Root       | +1                   |
 | Fuzzy      | +0.5 (fallback only) |
+| Range      | 1 (direct lookup)    |
+
+#### Range search
+
+`search` also supports range queries that return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline.
+
+| Query   | Result                                      |
+| ------- | ------------------------------------------- |
+| `2:255` | Single verse (Al-Baqarah, verse 255)        |
+| `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7)|
+| `2:`    | Entire sura (all verses of Al-Baqarah)      |
+
+Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
+
+```ts
+import { search } from 'quran-search-engine';
+
+// Single verse
+const verse = search('2:255', quranData, morphologyMap, wordMap);
+// verse.results[0] => Ayat Al-Kursi
+// verse.results[0].matchType => 'range'
+
+// Verse range
+const range = search('1:1-7', quranData, morphologyMap, wordMap);
+// range.results => all 7 verses of Al-Fatihah
+
+// Entire sura
+const sura = search('1:', quranData, morphologyMap, wordMap);
+// sura.results => all verses of Al-Fatihah
+// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 7, total: 7 }
+```
 
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
@@ -289,6 +321,8 @@ export type VerseInput = {
   gid: number;
   uthmani: string;
   standard: string;
+  sura_id?: number;
+  aya_id?: number;
 };
 ```
 
@@ -509,7 +543,7 @@ export type PaginationOptions = {
 Overall “best” match class for a verse:
 
 ```ts
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
 ```
 
 ### `ScoredQuranText`
@@ -654,6 +688,7 @@ This script performs **integration testing** that validates the complete search 
 ```bash
 src/
 ├── core/
+│   ├── range-parser.test.ts # Range search parsing tests
 │   ├── search.test.ts       # Search algorithm tests
 │   └── tokenization.test.ts # Token matching tests
 └── utils/
