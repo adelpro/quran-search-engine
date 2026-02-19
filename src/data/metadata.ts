@@ -405,7 +405,7 @@ export const SURAS: SuraMetadata[] = [
     id: 44,
     sura_name: 'الدخان',
     sura_name_en: 'The Smoke',
-    sura_name_romanization: "Ad-Dukhan'",
+    sura_name_romanization: 'Ad-Dukhan',
     total_verses: 59,
     juz_id: [25],
     page_id: 496,
