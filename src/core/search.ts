@@ -37,6 +37,56 @@ export const createArabicFuseSearch = <T>(
 
 // ==================== Utilities ====================
 
+// ==================== Filtering Logic ====================
+
+// Filters a collection of verses by Surah and Juz IDs
+
+export const filterVerses = <TVerse extends VerseInput>(
+  data: TVerse[],
+  suraId?: number,
+  juzId?: number,
+  suraName?: string,
+): TVerse[] => {
+  // 1. Priority: suraId
+  if (typeof suraId === 'number' && suraId > 0) {
+    return data.filter((v) => v['sura_id'] === suraId);
+  }
+
+  // 2. Priority: suraName
+  if (suraName) {
+    const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
+    if (normalizedQuery) {
+      const results = data.filter((verse) => {
+        const normalizedSuraName = verse['sura_name']
+          ? normalizeArabic(verse['sura_name'] as string)
+          : '';
+        const enName = ((verse['sura_name_en'] as string) || '').toLowerCase();
+        const romName = ((verse['sura_name_romanization'] as string) || '').toLowerCase();
+        return (
+          normalizedSuraName.includes(normalizedQuery) ||
+          enName.includes(normalizedQuery) ||
+          romName.includes(normalizedQuery)
+        );
+      });
+      // Logic for suraName: If we found matches by name, use them.
+      // If we didn't find matches by name, should we fall through to Juz?
+      // README says: "Used if suraId is invalid or missing".
+      // But if suraName IS provided but no match found?
+      // Strict interpretation: Strict filter. But "fuzzy" name search might imply "try to find".
+      // Let's keep it strict for now to be safe, or follow the pattern.
+      // Actually, for suraName, if I type "Baqara" and it matches nothing, I expect 0 results.
+      return results;
+    }
+  }
+
+  // 3. Priority: juzId
+  if (juzId !== undefined) {
+    return data.filter((v) => v['juz_id'] === juzId);
+  }
+
+  // 4. Fallback: Return original data (no structural filter matched)
+  return data;
+};
 // ==================== Simple Search ====================
 export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
@@ -307,6 +357,7 @@ export const search = <TVerse extends VerseInput>(
   wordMap: WordMap,
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
+  preComputedFuseIndex?: Fuse<TVerse>,
 ): SearchResponse<TVerse> => {
   // 1. Prepare query
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
@@ -326,16 +377,18 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuzzyEnabled = options.fuzzy !== false;
+  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName);
+
   const fuseInstance = fuzzyEnabled
-    ? createArabicFuseSearch(quranData, ['standard', 'uthmani'])
+    ? preComputedFuseIndex || createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
     : null;
 
   // 3. Run search layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
+  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
-    quranData,
+    filteredData,
     options,
     fuseInstance,
     wordMap,

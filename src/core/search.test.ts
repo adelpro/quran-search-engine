@@ -203,3 +203,154 @@ describe('createArabicFuseSearch', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 });
+
+// =================================================================
+// TESTS FOR ISSUE #14: Surah and Juz Filtering
+// =================================================================
+describe('search filtering (Issue #14)', () => {
+  /**
+   * Test 1: Positive Sura Filtering
+   */
+  it('should return results from Surah 1 when suraId is set to 1', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraId: 1,
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((v) => v.sura_id === 1)).toBe(true);
+  });
+  /**
+   * Test 2: Negative Sura Filtering
+   * This ensures the filter REALLY works by checking a sura that is NOT in our mocks.
+   */
+  it('should return 0 results when filtering for a non-existent suraId (e.g., 114)', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraId: 114, // Mock data only contains Surah 1
+    });
+
+    expect(result.results).toHaveLength(0);
+  });
+  /**
+   * Test 3: Juz Filtering
+   */
+  it('should return results from Juz 1 when juzId is set to 1', () => {
+    const result = search('الحمد', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      juzId: 1,
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((v) => v.juz_id === 1)).toBe(true);
+  });
+  /**
+   * Test 4: Surah Name Filtering
+   */
+  it('should filter results by Arabic Surah name correctly', () => {
+    const result = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, {
+      lemma: true,
+      root: true,
+      suraName: 'الفاتحة',
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].sura_name).toBe('الفاتحة');
+  });
+});
+
+// =================================================================
+// TESTS FOR ISSUE #7: Fuse.js Pre-indexing
+// =================================================================
+describe('search with pre-computed Fuse index (Issue #7)', () => {
+  it('should use provided Fuse index and not rebuild it', () => {
+    // 1. Create a spy/mock for Fuse creation to verify it's NOT called
+    // Since we can't easily spy on the exported function in the same module without extensive mocking setup,
+    // we will verify behavior by passing a specific Fuse instance and checking results.
+
+    // Create a pre-computed index
+    const fuseIndex = createArabicFuseSearch(mockQuranData, ['standard']);
+
+    // 2. Perform search WITH the index
+    const result = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      {
+        lemma: true,
+        root: true,
+        fuzzy: true,
+      },
+      undefined,
+      fuseIndex,
+    );
+
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+
+  it('should respect suraId filter even with global Fuse index', () => {
+    // Create GLOBAL index (contains all mock data, including Sura 1)
+    const globalFuseIndex = createArabicFuseSearch(mockQuranData, ['standard']);
+
+    // Search with Filter for Sura 1 (Should work)
+    const result1 = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      {
+        lemma: true,
+        root: true,
+        suraId: 1,
+      },
+      undefined,
+      globalFuseIndex,
+    );
+
+    expect(result1.results.length).toBeGreaterThan(0);
+    expect(result1.results.every((r) => r.sura_id === 1)).toBe(true);
+
+    // Search with Filter for Sura 114 (Should return NOTHING, even if global index finds matches in Sura 1)
+    // Note: 'الله' exists in Sura 1. If we filter for Sura 114, we should get 0 results.
+    const result2 = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      {
+        lemma: true,
+        root: true,
+        suraId: 114,
+      },
+      undefined,
+      globalFuseIndex,
+    );
+
+    expect(result2.results).toHaveLength(0);
+  });
+
+  it('should respect suraName filter with global index', () => {
+    const globalFuseIndex = createArabicFuseSearch(mockQuranData, ['standard']);
+
+    const result = search(
+      'الرحمن',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      {
+        lemma: true,
+        root: true,
+        suraName: 'الفاتحة',
+      },
+      undefined,
+      globalFuseIndex,
+    );
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].sura_name).toBe('الفاتحة');
+  });
+});

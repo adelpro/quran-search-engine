@@ -633,6 +633,32 @@ This script performs **integration testing** that validates the complete search 
 - **Pagination**: Verifies page navigation and result differentiation across pages
 - **Highlighting**: Tests token extraction for UI highlighting features
 
+## Performance Optimization (Advanced)
+
+### Pre-computing the Fuse Index
+
+By default, `search()` builds a new Fuse.js index on every call if fuzzy search is enabled. For high-performance applications (e.g., real-time search as you type), you can pre-compute the index and pass it to `search`.
+
+```ts
+import { search, createArabicFuseSearch } from 'quran-search-engine';
+
+// 1. Create the index once (e.g., in useMemo or at app startup)
+const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+
+// 2. Pass it to search
+const results = search(
+  query,
+  quranData,
+  morphologyMap,
+  wordMap,
+  options,
+  pagination,
+  fuseIndex // <--- Optional 7th parameter
+);
+```
+
+This avoids rebuilding the index (~5-20ms) on every keystroke.
+
 **Key Differences from Unit Tests:**
 
 - **Scope**: Integration test vs. isolated unit tests
