@@ -74,3 +74,15 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
     limit: number;
   };
 };
+
+
+export interface Sura {
+  id: number;
+  sura_name: string;
+  sura_name_en: string;
+  sura_name_romanization: string;
+  total_verses: number;
+  juz_ids: number[]; 
+  page_start: number;
+  page_end?: number; 
+}
