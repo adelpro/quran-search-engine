@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline
+- **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries
+- **New type**: `ParsedRange` type for structured range query representation
+- **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
+
 ## [0.1.5]
 
 ### Added
