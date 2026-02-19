@@ -241,6 +241,8 @@ Use case: your primary API for Quran search results + scoring + pagination.
 
 Set `options.fuzzy = false` to disable fuzzy fallback.
 
+**Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search.
+
 ```ts
 import { search } from 'quran-search-engine';
 
@@ -249,13 +251,14 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true, suraId: 114, juzId: 30 },
-  { page: 1, limit: 10 },
+  { lemma: true, root: true }, // options
+  { page: 1, limit: 10 },      // pagination
+  undefined                    // preComputedFuseIndex (optional)
 );
 // Example output:
 // response.pagination => { totalResults: 6, totalPages: 1, currentPage: 1, limit: 10 }
 // response.counts => { simple: 2, lemma: 3, root: 4, fuzzy: 0, total: 6 }
-// response.results[0] => { gid: 6231, sura_id: 114, ... } (Results restricted to Surah 114)
+// response.results[0] => { gid: 1, sura_id: 1, matchType: 'exact', ... }
 ```
 
 | Match type | Score per hit        |

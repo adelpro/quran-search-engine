@@ -81,12 +81,7 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-<<<<<<< feature/fuse-preindexing
     return data.filter((v) => v['juz_id'] === juzId);
-=======
-    const results = data.filter((v) => v['juz_id'] === juzId);
-    if (results.length > 0) return results;
->>>>>>> develop
   }
 
   // 4. Fallback: Return original data (no structural filter matched)
@@ -382,32 +377,17 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuzzyEnabled = options.fuzzy !== false;
-<<<<<<< feature/fuse-preindexing
-  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName);
 
   const fuseInstance = fuzzyEnabled
-    ? preComputedFuseIndex || createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
+    ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])
     : null;
 
   // 3. Run search layers
-  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
+  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
-    filteredData,
-=======
-  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName); //+ Filter collection based on Surah and Juz identifiers
-  //  replace quranData with filteredData
-  const fuseInstance = fuzzyEnabled
-    ? createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
-    : null;
-
-  // 3. Run search layers  +remplacez quranData par filteredData
-  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
-  const advancedMatches = performAdvancedLinguisticSearch(
-    cleanQuery,
-    filteredData, //remplacez quranData par filteredData
->>>>>>> develop
+    quranData,
     options,
     fuseInstance,
     wordMap,
