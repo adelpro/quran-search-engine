@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
+
+### Fixed
+- **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
+
 ## [0.1.5]
 
 ### Added
