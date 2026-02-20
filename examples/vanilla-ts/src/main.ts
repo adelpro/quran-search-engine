@@ -3,6 +3,7 @@ import {
   loadMorphology,
   loadWordMap,
   search,
+  LRUCache,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -15,11 +16,16 @@ class QuranSearchApp {
   private morphologyMap: Map<number, MorphologyAya> | null = null;
   private wordMap: WordMap | null = null;
   private loading = true;
+  private cache = new LRUCache<string, SearchResponse>(50);
+
 
   private searchInput: HTMLInputElement;
   private lemmaCheckbox: HTMLInputElement;
   private rootCheckbox: HTMLInputElement;
   private fuzzyCheckbox: HTMLInputElement;
+  private suraIdInput: HTMLInputElement;
+  private juzIdInput: HTMLInputElement;
+  private suraNameInput: HTMLInputElement;
   private resultsDiv: HTMLDivElement;
 
   constructor() {
@@ -27,6 +33,9 @@ class QuranSearchApp {
     this.lemmaCheckbox = document.getElementById('lemma') as HTMLInputElement;
     this.rootCheckbox = document.getElementById('root') as HTMLInputElement;
     this.fuzzyCheckbox = document.getElementById('fuzzy') as HTMLInputElement;
+    this.suraIdInput = document.getElementById('sura-id') as HTMLInputElement;
+    this.juzIdInput = document.getElementById('juz-id') as HTMLInputElement;
+    this.suraNameInput = document.getElementById('sura-name') as HTMLInputElement;
     this.resultsDiv = document.getElementById('results') as HTMLDivElement;
 
     this.init();
@@ -79,13 +88,24 @@ class QuranSearchApp {
       lemma: this.lemmaCheckbox.checked,
       root: this.rootCheckbox.checked,
       fuzzy: this.fuzzyCheckbox.checked,
+      //new
+      suraId: this.suraIdInput.value ? parseInt(this.suraIdInput.value) : undefined,
+      juzId: this.juzIdInput.value ? parseInt(this.juzIdInput.value) : undefined,
+      suraName: this.suraNameInput.value || undefined
     };
 
     try {
-      const response = search(query, this.quranData, this.morphologyMap!, this.wordMap!, options, {
-        page: 1,
-        limit: 20,
-      });
+      const response = search(
+        query,
+        this.quranData,
+        this.morphologyMap!,
+        this.wordMap!,
+        options,
+        { page: 1, limit: 20 },
+        this.cache, // LRU cache — identical queries return cached results
+      );
+
+
 
       this.renderResults(response);
     } catch (error) {
@@ -176,6 +196,8 @@ class QuranSearchApp {
   private showError(message: string) {
     this.resultsDiv.innerHTML = `<div style="color: red; padding: 20px;">${message}</div>`;
   }
+
+
 }
 
 // Initialize the app when DOM is loaded
