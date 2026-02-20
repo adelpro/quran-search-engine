@@ -49,15 +49,14 @@ export const filterVerses = <TVerse extends VerseInput>(
 ): TVerse[] => {
   // 1. Priority: suraId
   if (typeof suraId === 'number' && suraId > 0) {
-    const results = data.filter((v) => v['sura_id'] === suraId);
-    if (results.length > 0) return results;
+    return data.filter((v) => v['sura_id'] === suraId);
   }
 
   // 2. Priority: suraName
   if (suraName) {
     const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
     if (normalizedQuery) {
-      const results = data.filter((verse) => {
+      return data.filter((verse) => {
         const normalizedSuraName = verse['sura_name']
           ? normalizeArabic(verse['sura_name'] as string)
           : '';
@@ -69,14 +68,12 @@ export const filterVerses = <TVerse extends VerseInput>(
           romName.includes(normalizedQuery)
         );
       });
-      if (results.length > 0) return results;
     }
   }
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-    const results = data.filter((v) => v['juz_id'] === juzId);
-    if (results.length > 0) return results;
+    return data.filter((v) => v['juz_id'] === juzId);
   }
 
   // 4. Fallback: Return original data (no structural filter matched)
