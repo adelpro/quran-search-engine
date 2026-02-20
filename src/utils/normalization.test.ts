@@ -57,7 +57,7 @@ describe('Normalization Utils', () => {
 
     it('should handle complex mixed text', () => {
       const input = 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ';
-      // removeTashkeel -> الحمد لله رب العالمين
+      // removeTashkeel --> الحمد لله رب العالمين
       // normalize -> الحمد لله رب العالمين (assuming standard alefs)
       expect(normalizeArabic(input)).toBe('الحمد لله رب العالمين');
     });
