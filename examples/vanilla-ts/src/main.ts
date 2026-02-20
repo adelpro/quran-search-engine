@@ -3,6 +3,7 @@ import {
   loadMorphology,
   loadWordMap,
   search,
+  LRUCache,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -15,6 +16,7 @@ class QuranSearchApp {
   private morphologyMap: Map<number, MorphologyAya> | null = null;
   private wordMap: WordMap | null = null;
   private loading = true;
+  private cache = new LRUCache<string, SearchResponse>(50);
 
 
   private searchInput: HTMLInputElement;
@@ -93,10 +95,15 @@ class QuranSearchApp {
     };
 
     try {
-      const response = search(query, this.quranData, this.morphologyMap!, this.wordMap!, options, {
-        page: 1,
-        limit: 20,
-      });
+      const response = search(
+        query,
+        this.quranData,
+        this.morphologyMap!,
+        this.wordMap!,
+        options,
+        { page: 1, limit: 20 },
+        this.cache, // LRU cache — identical queries return cached results
+      );
 
 
 

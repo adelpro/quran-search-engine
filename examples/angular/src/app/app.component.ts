@@ -7,6 +7,7 @@ import {
   loadQuranData,
   loadWordMap,
   search,
+  LRUCache,
   type AdvancedSearchOptions,
   type MatchType,
   type MorphologyAya,
@@ -332,6 +333,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private uthmaniHighlightPartsByGid = new Map<number, readonly HighlightPart[]>();
 
   private debounceHandle: number | null = null;
+  private searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
   async ngOnInit(): Promise<void> {
     this.loadState = 'loading';
@@ -399,6 +401,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.wordMap,
       searchOptions,
       { page: this.page, limit: this.limit },
+      this.searchCache, // LRU cache — identical queries return cached results
     );
 
 

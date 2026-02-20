@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeTashkeel, normalizeArabic } from './normalization';
+import { removeTashkeel, normalizeArabic, isArabic } from './normalization';
 
 describe('Normalization Utils', () => {
   describe('removeTashkeel', () => {
@@ -60,6 +60,18 @@ describe('Normalization Utils', () => {
       // removeTashkeel -> الحمد لله رب العالمين
       // normalize -> الحمد لله رب العالمين (assuming standard alefs)
       expect(normalizeArabic(input)).toBe('الحمد لله رب العالمين');
+    });
+  });
+
+  describe('isArabic', () => {
+    it('Should return true for Arabic text', () => {
+      const input = 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ';
+      expect(isArabic(input)).toBe(true);
+    });
+
+    it('Should return false for non-Arabic text', () => {
+      const input = 'Hello World';
+      expect(isArabic(input)).toBe(false);
     });
   });
 });

@@ -17,6 +17,7 @@ export type VerseInput = {
   gid: number;
   uthmani: string;
   standard: string;
+  aya_id?: number;
   sura_id?: number; // Allows the engine to read the Surah ID from the JSON data
   juz_id?: number; // Allows the engine to read the Juz ID
   sura_name?: string;
@@ -37,7 +38,7 @@ export type WordMap = {
   };
 };
 
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;
@@ -66,6 +67,7 @@ export type SearchCounts = {
   lemma: number;
   root: number;
   fuzzy: number;
+  range: number;
   total: number;
 };
 
@@ -83,4 +85,37 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
     currentPage: number;
     limit: number;
   };
+};
+
+
+export interface Sura {
+  id: number;
+  sura_name: string;
+  sura_name_en: string;
+  sura_name_romanization: string;
+  total_verses: number;
+  juz_ids: number[]; 
+  page_start: number;
+  page_end?: number; 
+}
+/**
+ * Represents a parsed range query targeting specific sura/aya coordinates.
+ *
+ * @example
+ * // Single verse: "2:255"
+ * { sura: 2, startAya: 255 }
+ *
+ * // Verse range: "1:1-7"
+ * { sura: 1, startAya: 1, endAya: 7 }
+ *
+ * // Entire sura: "2:"
+ * { sura: 2 }
+ */
+export type ParsedRange = {
+  /** Sura number (1–114). */
+  sura: number;
+  /** Starting aya number. Undefined when the entire sura is requested. */
+  startAya?: number;
+  /** Ending aya number (inclusive). Only present for range queries like `1:1-7`. */
+  endAya?: number;
 };

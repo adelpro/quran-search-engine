@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline
+- **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries
+- **New type**: `ParsedRange` type for structured range query representation
+- **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
+- **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
+- **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
+
+### Fixed
+
+- **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
+
 ## [0.1.5]
 
 ### Added

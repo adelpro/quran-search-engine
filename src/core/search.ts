@@ -1,6 +1,8 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
+import { LRUCache } from './lru-cache';
 import { normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
+import { parseRangeQuery, filterVersesByRange } from './range-parser';
 import type {
   WordMap,
   MorphologyAya,
@@ -47,7 +49,7 @@ export const filterVerses = <TVerse extends VerseInput>(
   juzId?: number,
   suraName?: string,
 ): TVerse[] => {
-  // 1. Priority: suraId
+  // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
     return data.filter((v) => v['sura_id'] === suraId);
   }
@@ -56,7 +58,7 @@ export const filterVerses = <TVerse extends VerseInput>(
   if (suraName) {
     const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
     if (normalizedQuery) {
-      const results = data.filter((verse) => {
+      return data.filter((verse) => {
         const normalizedSuraName = verse['sura_name']
           ? normalizeArabic(verse['sura_name'] as string)
           : '';
@@ -358,7 +360,41 @@ export const search = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
   preComputedFuseIndex?: Fuse<TVerse>,
+  cache?: LRUCache<string, SearchResponse<TVerse>>,
 ): SearchResponse<TVerse> => {
+  // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
+  const parsedRange = parseRangeQuery(query);
+  if (parsedRange) {
+    const page = Math.max(1, pagination.page || 1);
+    const limit = Math.max(1, pagination.limit || 20);
+
+    const rangeMatches = filterVersesByRange(quranData, parsedRange);
+    const totalResults = rangeMatches.length;
+    const totalPages = Math.ceil(totalResults / limit);
+    const offset = (page - 1) * limit;
+
+    const results: ScoredVerse<TVerse>[] = rangeMatches
+      .slice(offset, offset + limit)
+      .map((verse) => ({
+        ...verse,
+        matchScore: 1,
+        matchType: 'range' as const,
+        matchedTokens: [],
+      }));
+
+    return {
+      results,
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: totalResults, total: totalResults },
+      pagination: { totalResults, totalPages, currentPage: page, limit },
+    };
+  }
+
+  // Cache lookup
+  const cacheKey = cache ? JSON.stringify({ query, options, pagination }) : '';
+  if (cache) {
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+  }
   // 1. Prepare query
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
@@ -366,7 +402,7 @@ export const search = <TVerse extends VerseInput>(
   if (!cleanQuery) {
     return {
       results: [],
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, total: 0 },
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0 },
       pagination: {
         totalResults: 0,
         totalPages: 0,
@@ -429,10 +465,11 @@ export const search = <TVerse extends VerseInput>(
     lemma: combined.filter((v) => v.matchType === 'lemma').length,
     root: combined.filter((v) => v.matchType === 'root').length,
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
+    range: 0,
     total: combined.length,
   };
 
-  return {
+  const response: SearchResponse<TVerse> = {
     results,
     counts,
     pagination: {
@@ -442,4 +479,10 @@ export const search = <TVerse extends VerseInput>(
       limit,
     },
   };
+
+  if (cache) {
+    cache.set(cacheKey, response);
+  }
+
+  return response;
 };
