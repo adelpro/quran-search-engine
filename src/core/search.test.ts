@@ -294,3 +294,35 @@ describe('search with LRUCache', () => {
     expect(result.results.length).toBeGreaterThan(0);
   });
 });
+
+describe('transliterated search', () => {
+  it('should find verses when searching with Latin "Allah"', () => {
+    const result = search('Allah', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+    // Should find at least gid:1 which has "بسم الله"
+    expect(result.results.some((r) => r.gid === 1)).toBe(true);
+  });
+
+  it('should find verses when searching with Latin "Rahman"', () => {
+    const result = search('Rahman', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+    // Should find gid:1 and/or gid:3 which have "الرحمن"
+    const gids = result.results.map((r) => r.gid);
+    expect(gids.some((g) => g === 1 || g === 3)).toBe(true);
+  });
+
+  it('should still work with Arabic queries (backward compatible)', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+
+  it('should return empty for nonsensical Latin input', () => {
+    const result = search('xyzqwerty', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(0);
+  });
+
+  it('should handle mixed case Latin input', () => {
+    const result = search('ALLAH', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+});

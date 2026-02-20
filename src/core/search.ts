@@ -1,6 +1,7 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { LRUCache } from './lru-cache';
 import { normalizeArabic } from '../utils/normalization';
+import { isLatinInput, transliterate } from '../utils/transliteration';
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
 import type {
@@ -389,14 +390,17 @@ export const search = <TVerse extends VerseInput>(
     };
   }
 
+  // 0b. Transliterate Latin input to Arabic before processing
+  const effectiveQuery = isLatinInput(query) ? transliterate(query) : query;
+
   // Cache lookup
-  const cacheKey = cache ? JSON.stringify({ query, options, pagination }) : '';
+  const cacheKey = cache ? JSON.stringify({ query: effectiveQuery, options, pagination }) : '';
   if (cache) {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
   }
   // 1. Prepare query
-  const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
+  const arabicOnly = effectiveQuery.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
 
   if (!cleanQuery) {
