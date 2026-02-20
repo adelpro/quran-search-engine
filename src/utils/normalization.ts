@@ -56,3 +56,8 @@ export const isArabic = (text: string): boolean => {
   if (!text) return false;
   return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF]/.test(text);
 };
+
+export const buildArabicWholeWordRegex = (word: string): RegExp => {
+  const cleanWord = word.trim();
+  return new RegExp(`(^|\\s)(و|ف|ب|ال|بال)*${cleanWord}(\\s|$)`, 'g');
+};
