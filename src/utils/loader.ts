@@ -6,10 +6,10 @@ import type { MorphologyAya, WordMap, QuranText } from '../types';
  *
  * @returns A Promise that resolves to a Map where the key is the verse GID and value is morphology data.
  */
-export const loadMorphology = async (): Promise<Map<number, MorphologyAya>> => {
+export const loadMorphology = async (path?: string): Promise<Map<number, MorphologyAya>> => {
   try {
     // Dynamic import for code splitting
-    const morphologyModule = await import('../data/morphology.json');
+    const morphologyModule = await import(path || '../data/morphology.json');
 
     // The JSON is likely an array (or has a 'default' property if it's a module).
     // We handle both cases to be safe with different bundlers.
@@ -36,9 +36,9 @@ export const loadMorphology = async (): Promise<Map<number, MorphologyAya>> => {
  *
  * @returns A Promise that resolves to the WordMap object.
  */
-export const loadWordMap = async (): Promise<WordMap> => {
+export const loadWordMap = async (path?: string): Promise<WordMap> => {
   try {
-    const wordMapModule = await import('../data/word-map.json');
+    const wordMapModule = await import(path || '../data/word-map.json');
     return (wordMapModule.default || wordMapModule) as WordMap;
   } catch (error) {
     console.error('Failed to load word map:', error);
@@ -51,9 +51,9 @@ export const loadWordMap = async (): Promise<WordMap> => {
  *
  * @returns A Promise that resolves to an array of QuranText objects.
  */
-export const loadQuranData = async (): Promise<QuranText[]> => {
+export const loadQuranData = async (path?: string): Promise<QuranText[]> => {
   try {
-    const quranModule = await import('../data/quran.json');
+    const quranModule = await import(path || '../data/quran.json');
     return (quranModule.default || quranModule) as QuranText[];
   } catch (error) {
     console.error('Failed to load Quran data:', error);
