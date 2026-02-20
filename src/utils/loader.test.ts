@@ -31,7 +31,7 @@ describe('Loader Functions', () => {
       expect(morphology).toBeInstanceOf(Map);
       expect(quranData).toBeInstanceOf(Array);
       expect(wordMap).toBeInstanceOf(Object);
-    } catch (error: any) {
+    } catch (error: unknown) {
       expect(error).toBeInstanceOf(Error);
     } finally {
       // Delete the corrupted file
@@ -99,9 +99,11 @@ describe('Loader Functions', () => {
 
       const morphology = await loadMorphology();
       expect(morphology).toBeInstanceOf(Map);
-    } catch (error: any) {
+    } catch (error: unknown) {
       expect(error).toBeInstanceOf(Error);
-      expect(error.message).toContain('Could not load morphology data');
+      if (error instanceof Error) {
+        expect(error.message).toContain('Failed to parse data file');
+      }
     } finally {
       // Restore the original file
       await fs.promises.rename(tempPath, originalPath);
@@ -135,9 +137,11 @@ describe('Loader Functions', () => {
 
       const wordMap = await loadWordMap();
       expect(typeof wordMap).toBe('object');
-    } catch (error: any) {
+    } catch (error: unknown) {
       expect(error).toBeInstanceOf(Error);
-      expect(error.message).toContain('Could not load word map data');
+      if (error instanceof Error) {
+        expect(error.message).toContain('Failed to parse data file');
+      }
     } finally {
       // Restore the original file
       await fs.promises.rename(tempPath, originalPath);

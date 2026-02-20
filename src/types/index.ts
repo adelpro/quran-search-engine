@@ -87,16 +87,15 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
   };
 };
 
-
 export interface Sura {
   id: number;
   sura_name: string;
   sura_name_en: string;
   sura_name_romanization: string;
   total_verses: number;
-  juz_ids: number[]; 
+  juz_ids: number[];
   page_start: number;
-  page_end?: number; 
+  page_end?: number;
 }
 /**
  * Represents a parsed range query targeting specific sura/aya coordinates.
@@ -118,4 +117,10 @@ export type ParsedRange = {
   startAya?: number;
   /** Ending aya number (inclusive). Only present for range queries like `1:1-7`. */
   endAya?: number;
+};
+
+export type ErrorShape = {
+  message: string;
+  code: string;
+  type: string;
 };

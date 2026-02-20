@@ -51,7 +51,13 @@ export const filterVerses = <TVerse extends VerseInput>(
 ): TVerse[] => {
   // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
+<<<<<<< HEAD
     return data.filter((v) => v['sura_id'] === suraId);
+=======
+    const results = data.filter((v) => v['sura_id'] === suraId);
+    // Return results even if empty - user explicitly filtered by suraId
+    return results;
+>>>>>>> 4999c62 (feat: add comprehensive error handling system)
   }
 
   // 2. Priority: suraName
@@ -70,6 +76,7 @@ export const filterVerses = <TVerse extends VerseInput>(
           romName.includes(normalizedQuery)
         );
       });
+<<<<<<< HEAD
       // Logic for suraName: If we found matches by name, use them.
       // If we didn't find matches by name, should we fall through to Juz?
       // README says: "Used if suraId is invalid or missing".
@@ -78,15 +85,25 @@ export const filterVerses = <TVerse extends VerseInput>(
       // Let's keep it strict for now to be safe, or follow the pattern.
       // Actually, for suraName, if I type "Baqara" and it matches nothing, I expect 0 results.
       // return results;
+=======
+      // Return results even if empty - user explicitly filtered by suraName
+      return results;
+>>>>>>> 4999c62 (feat: add comprehensive error handling system)
     }
   }
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
+<<<<<<< HEAD
     return data.filter((v) => v['juz_id'] === juzId);
+=======
+    const results = data.filter((v) => v['juz_id'] === juzId);
+    // Return results even if empty - user explicitly filtered by juzId
+    return results;
+>>>>>>> 4999c62 (feat: add comprehensive error handling system)
   }
 
-  // 4. Fallback: Return original data (no structural filter matched)
+  // 4. Fallback: Return original data (no filter was provided)
   return data;
 };
 // ==================== Simple Search ====================

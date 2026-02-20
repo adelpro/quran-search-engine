@@ -26,6 +26,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Development Setup](#development-setup)
 - [Quickstart](#quickstart)
 - [Public API](#public-api)
+- [Error Handling](#error-handling)
 - [How scoring works](#how-scoring-works)
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
@@ -465,6 +466,85 @@ export function Verse({ verse }: { verse: ScoredQuranText }) {
   return <span>{parts}</span>;
 }
 ```
+
+## Error Handling
+
+The library provides a comprehensive error handling system with **16 specialized error classes** organized into 4 categories. All errors include structured error codes, types, and actionable messages with context.
+
+### Error Categories
+
+- **DataLoadError** - File loading and schema validation errors
+- **SearchError** - Query and search operation errors
+- **ValidationError** - Input validation errors
+- **TokenizationError** - Text processing errors
+
+### Basic Usage
+
+```ts
+import {
+  loadMorphology,
+  DataFileNotFoundError,
+  DataParseError,
+  ErrorCode,
+} from 'quran-search-engine';
+
+try {
+  const morphology = await loadMorphology();
+} catch (error) {
+  if (error instanceof DataFileNotFoundError) {
+    console.error('Missing file:', error.filePath);
+    // Use fallback data
+  } else if (error instanceof DataParseError) {
+    console.error('Corrupted file:', error.filePath);
+    // Re-download data
+  }
+}
+```
+
+### Error Codes
+
+All errors include type-safe error codes:
+
+```ts
+import { search, ErrorCode } from 'quran-search-engine';
+
+try {
+  const results = await search(query, data, morphology, wordMap);
+} catch (error) {
+  if (error.code === ErrorCode.DATA_FILE_NOT_FOUND) {
+    // Handle missing file
+  } else if (error.code === ErrorCode.SEARCH_INVALID_QUERY) {
+    // Handle invalid query
+  }
+}
+```
+
+### Available Error Classes
+
+**Data Loading Errors:**
+- `DataFileNotFoundError` - Missing data files (includes `filePath`)
+- `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
+- `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
+
+**Search Errors:**
+- `InvalidQueryError` - Invalid search queries
+- `MissingDependenciesError` - Missing required dependencies
+- `SearchOperationFailedError` - Search operation failures
+
+**Validation Errors:**
+- `NonArabicInputError` - Non-Arabic input text
+- `InvalidPaginationError` - Invalid pagination parameters
+- `InvalidOptionsError` - Invalid search options
+- `InvalidVerseStructureError` - Malformed verse structure
+
+**Tokenization Errors:**
+- `MissingMorphologyError` - Missing morphology data (includes `gid`)
+- `InvalidModeError` - Invalid tokenization mode
+- `MissingWordMapError` - Missing word map
+
+### Documentation
+
+For complete error handling documentation, architecture details, and best practices, see [Error Handling Documentation](./src/errors/README.md).
 
 ## How scoring works
 
