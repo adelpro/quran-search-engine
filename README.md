@@ -9,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/ts-yes-blue)
 [![Changelog](https://img.shields.io/badge/changelog-view-brightgreen)](https://github.com/adelpro/quran-search-engine/releases)
 ![license](https://img.shields.io/npm/l/quran-search-engine)
-[![bundle size](https://img.shields.io/badge/bundle%20size-2%20MB-max)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L81)
+[![bundle limit](https://img.shields.io/badge/bundle%20limit-2%20MB-blue)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L81)
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
