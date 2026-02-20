@@ -204,6 +204,50 @@ describe('createArabicFuseSearch', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 });
+
+describe('range search', () => {
+  it('should return a single verse for 1:1', () => {
+    const result = search('1:1', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].gid).toBe(1);
+    expect(result.results[0].matchType).toBe('range');
+    expect(result.results[0].matchScore).toBe(1);
+    expect(result.results[0].matchedTokens).toEqual([]);
+    expect(result.counts.range).toBe(1);
+    expect(result.counts.total).toBe(1);
+    expect(result.counts.simple).toBe(0);
+  });
+
+  it('should return a range of verses for 1:1-3', () => {
+    const result = search('1:1-3', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(3);
+    expect(result.results.map((r) => r.gid)).toEqual([1, 2, 3]);
+    expect(result.counts.range).toBe(3);
+    expect(result.counts.total).toBe(3);
+  });
+
+  it('should return a partial range for 1:2-3', () => {
+    const result = search('1:2-3', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(2);
+    expect(result.results.map((r) => r.gid)).toEqual([2, 3]);
+  });
+
+  it('should return all sura verses for 1:', () => {
+    const result = search('1:', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(3);
+    expect(result.counts.range).toBe(3);
+  });
+
+  it('should return empty results for a sura not in data', () => {
+    const result = search('2:255', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(0);
+    expect(result.counts.range).toBe(0);
+    expect(result.counts.total).toBe(0);
+  });
+
+  it('should paginate range results', () => {
+    const result = search(
+      '1:',
 // =================================================================
 // TESTS FOR ISSUE #14: Surah and Juz Filtering
 // =================================================================
@@ -309,6 +353,20 @@ describe('search with LRUCache', () => {
       mockMorphologyMap,
       mockWordMap,
       { lemma: true, root: true },
+      { page: 1, limit: 2 },
+    );
+    expect(result.results).toHaveLength(2);
+    expect(result.pagination.totalResults).toBe(3);
+    expect(result.pagination.totalPages).toBe(2);
+    expect(result.pagination.currentPage).toBe(1);
+    expect(result.pagination.limit).toBe(2);
+  });
+
+  it('should fall through to text search for invalid range', () => {
+    // 0:1 is invalid (sura 0), so it should fall through to text search
+    const result = search('0:1', mockQuranData, mockMorphologyMap, mockWordMap);
+    // Falls through to Arabic-only filter which strips digits, yielding empty query
+    expect(result.results).toHaveLength(0);
       { page: 1, limit: 20 },
       cache,
     );
