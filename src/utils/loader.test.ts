@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { loadQuranData, loadMorphology, loadWordMap } from './loader';
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  buildInvertedIndex,
+  loadInvertedIndex,
+} from './loader';
 
 describe('Loader Functions', () => {
   it('should load Quran data', async () => {
@@ -62,5 +68,80 @@ describe('Loader Functions', () => {
     expect(Array.isArray(quranData)).toBe(true);
     expect(morphology).toBeInstanceOf(Map);
     expect(typeof wordMap).toBe('object');
+  });
+});
+
+describe('buildInvertedIndex', () => {
+  it('should build indices from real data', async () => {
+    const [morphologyMap, wordMap, quranData] = await Promise.all([
+      loadMorphology(),
+      loadWordMap(),
+      loadQuranData(),
+    ]);
+    const index = buildInvertedIndex(morphologyMap, wordMap, quranData);
+
+    expect(index.lemmaIndex).toBeInstanceOf(Map);
+    expect(index.rootIndex).toBeInstanceOf(Map);
+    expect(index.wordIndex).toBeInstanceOf(Map);
+    expect(index.lemmaIndex.size).toBeGreaterThan(0);
+    expect(index.rootIndex.size).toBeGreaterThan(0);
+    expect(index.wordIndex.size).toBeGreaterThan(0);
+  });
+
+  it('should have GID sets as values', async () => {
+    const [morphologyMap, wordMap, quranData] = await Promise.all([
+      loadMorphology(),
+      loadWordMap(),
+      loadQuranData(),
+    ]);
+    const index = buildInvertedIndex(morphologyMap, wordMap, quranData);
+
+    // Check a lemma entry has a Set of numbers
+    const firstLemmaEntry = index.lemmaIndex.values().next().value;
+    expect(firstLemmaEntry).toBeInstanceOf(Set);
+    expect(firstLemmaEntry!.size).toBeGreaterThan(0);
+
+    // Check a root entry has a Set of numbers
+    const firstRootEntry = index.rootIndex.values().next().value;
+    expect(firstRootEntry).toBeInstanceOf(Set);
+    expect(firstRootEntry!.size).toBeGreaterThan(0);
+
+    // Check a word entry has a Set of numbers
+    const firstWordEntry = index.wordIndex.values().next().value;
+    expect(firstWordEntry).toBeInstanceOf(Set);
+    expect(firstWordEntry!.size).toBeGreaterThan(0);
+  });
+});
+
+describe('loadInvertedIndex', () => {
+  it('should load pre-built indices from JSON files', async () => {
+    const index = await loadInvertedIndex();
+
+    expect(index.lemmaIndex).toBeInstanceOf(Map);
+    expect(index.rootIndex).toBeInstanceOf(Map);
+    expect(index.lemmaIndex.size).toBeGreaterThan(0);
+    expect(index.rootIndex.size).toBeGreaterThan(0);
+  });
+
+  it('should have Set<number> values matching buildInvertedIndex output', async () => {
+    const [loaded, morphologyMap, wordMap, quranData] = await Promise.all([
+      loadInvertedIndex(),
+      loadMorphology(),
+      loadWordMap(),
+      loadQuranData(),
+    ]);
+    const built = buildInvertedIndex(morphologyMap, wordMap, quranData);
+
+    // Same number of entries
+    expect(loaded.lemmaIndex.size).toBe(built.lemmaIndex.size);
+    expect(loaded.rootIndex.size).toBe(built.rootIndex.size);
+    expect(loaded.wordIndex.size).toBe(built.wordIndex.size);
+
+    // Spot-check a few lemma entries match
+    for (const [key, builtSet] of Array.from(built.lemmaIndex.entries()).slice(0, 5)) {
+      const loadedSet = loaded.lemmaIndex.get(key);
+      expect(loadedSet).toBeDefined();
+      expect(loadedSet!.size).toBe(builtSet.size);
+    }
   });
 });
