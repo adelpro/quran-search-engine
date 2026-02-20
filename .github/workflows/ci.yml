@@ -13,6 +13,33 @@ on:
       - staging
 
 jobs:
+  package-manager-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+
+      - name: Detect package manager
+        id: detect
+        run: |
+          if [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+          elif [ -f "pnpm-lock.yaml" ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+          elif [ -f "package-lock.json" ]; then
+            echo "manager=npm" >> $GITHUB_OUTPUT
+          else
+            echo "manager=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate package manager
+        run: |
+          if [ "${{ steps.detect.outputs.manager }}" != "pnpm" ]; then
+            echo "Expected pnpm but found: ${{ steps.detect.outputs.manager }}"
+            echo "Please use pnpm for this project (pnpm-lock.yaml not found)"
+            exit 1
+          fi
+
   test-and-build:
     runs-on: ubuntu-latest
 
