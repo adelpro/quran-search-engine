@@ -4,6 +4,7 @@ import {
   loadMorphology,
   loadWordMap,
   search,
+  LRUCache,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -13,6 +14,9 @@ import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from './useDebounce';
 import { VerseItem } from './components/VerseItem';
 import './App.css';
+
+// Module-level cache — persists across React re-renders
+const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
 function App() {
   const [quranData, setQuranData] = useState<QuranText[]>([]);
@@ -62,10 +66,15 @@ function App() {
   // 2. Search Logic
   useEffect(() => {
     if (!loading && quranData.length > 0 && morphologyMap && wordMap && debouncedQuery.trim()) {
-      const response = search(debouncedQuery, quranData, morphologyMap, wordMap, options, {
-        page: currentPage,
-        limit: PAGE_SIZE,
-      });
+      const response = search(
+        debouncedQuery,
+        quranData,
+        morphologyMap,
+        wordMap,
+        options,
+        { page: currentPage, limit: PAGE_SIZE },
+        searchCache, // LRU cache — identical queries return cached results instantly
+      );
 
       setSearchResponse(response);
 

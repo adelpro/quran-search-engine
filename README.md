@@ -16,6 +16,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Exact text search
 - Lemma + root matching (via morphology + word map)
 - Highlight ranges (UI-agnostic)
+- Built-in LRU cache for repeated queries
 
 ## Table of contents
 
@@ -26,6 +27,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Public API](#public-api)
 - [How scoring works](#how-scoring-works)
 - [Multi-word search](#multi-word-search)
+- [Caching with LRUCache](#caching-with-lrucache)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
 - [Example apps](#example-apps)
@@ -138,6 +140,30 @@ response.results.forEach((v) => {
 // 1 3 lemma 4
 ```
 
+With caching (recommended for apps with repeated searches):
+
+```ts
+import { search, LRUCache, loadQuranData, loadMorphology, loadWordMap } from 'quran-search-engine';
+import type { SearchResponse, QuranText } from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+]);
+
+// Create a cache that holds the last 50 search results
+const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
+
+// First call: computes and caches the result
+const result1 = search('الله', quranData, morphologyMap, wordMap, { lemma: true, root: true }, { page: 1, limit: 20 }, cache);
+
+// Second call with same params: returns cached result instantly (same reference)
+const result2 = search('الله', quranData, morphologyMap, wordMap, { lemma: true, root: true }, { page: 1, limit: 20 }, cache);
+
+console.log(result1 === result2); // true — cache hit
+```
+
 JavaScript (Node / ESM):
 
 ```js
@@ -229,7 +255,7 @@ const out = normalizeArabic('بِسْمِ ٱللَّهِ');
 
 ### Search
 
-#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?)`
+#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, cache?)`
 
 Main entry point. Combines:
 
@@ -238,6 +264,7 @@ Main entry point. Combines:
 - Fuzzy fallback (Fuse) per token
 
 Use case: your primary API for Quran search results + scoring + pagination.
+Pass an optional `LRUCache` instance as the last argument to cache results by query+options+pagination key.
 
 #### Filter Priority
 
@@ -422,6 +449,92 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
 });
 // Example output:
 // response.results => all returned verses match BOTH tokens (AND logic)
+```
+
+## Caching with LRUCache
+
+`quran-search-engine` ships a generic `LRUCache<K, V>` class that you can pass into `search()` to avoid recomputing identical queries. The cache uses JavaScript `Map` internally for **O(1)** `get`, `set`, and eviction.
+
+### Why use it?
+
+- **Instant repeat lookups** — paginating through pages 2, 3, … of the same query won't re-run the search pipeline.
+- **Configurable capacity** — set the max number of cached results to control memory.
+- **Zero setup** — create the cache once, pass it to every `search()` call.
+
+### LRUCache API
+
+```ts
+import { LRUCache } from 'quran-search-engine';
+
+const cache = new LRUCache<string, any>(100); // capacity = 100 entries
+
+cache.set('key', value);     // Store a value
+cache.get('key');             // Retrieve (moves to most-recent)
+cache.has('key');             // Check existence
+cache.delete('key');          // Remove one entry
+cache.clear();                // Remove all entries
+cache.size;                   // Current number of entries
+```
+
+When the cache reaches capacity, the **least recently used** entry is automatically evicted.
+
+### Using with `search()`
+
+Pass the cache as the **7th argument** to `search()`:
+
+```ts
+import { search, LRUCache } from 'quran-search-engine';
+import type { SearchResponse, QuranText } from 'quran-search-engine';
+
+// Create once (e.g., at app startup or module scope)
+const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
+
+// Every search call reuses the same cache
+function handleSearch(query: string, page: number) {
+  return search(
+    query,
+    quranData,
+    morphologyMap,
+    wordMap,
+    { lemma: true, root: true },
+    { page, limit: 20 },
+    searchCache, // ← cache instance
+  );
+}
+
+// First call for "الله" page 1 — computed
+const r1 = handleSearch('الله', 1);
+
+// Same query + same page — returned from cache (same object reference)
+const r2 = handleSearch('الله', 1);
+console.log(r1 === r2); // true
+
+// Different page — computed and cached separately
+const r3 = handleSearch('الله', 2);
+console.log(r1 === r3); // false
+
+// Different query — computed and cached separately
+const r4 = handleSearch('الحمد', 1);
+console.log(searchCache.size); // 3
+```
+
+### Cache key behavior
+
+The cache key is derived from `JSON.stringify({ query, options, pagination })`. Two calls produce a cache hit only when **all three** match exactly:
+
+| Parameter  | Different value = different cache entry |
+| ---------- | --------------------------------------- |
+| `query`    | `"الله"` vs `"الحمد"` |
+| `options`  | `{ lemma: true }` vs `{ lemma: false }` |
+| `pagination` | `{ page: 1 }` vs `{ page: 2 }` |
+
+### Without cache (backward compatible)
+
+The cache parameter is fully optional. Omit it and `search()` works exactly as before:
+
+```ts
+// No cache — works the same as always
+const result = search('الله', quranData, morphologyMap, wordMap);
 ```
 
 ## Core types
@@ -666,6 +779,7 @@ This script performs **integration testing** that validates the complete search 
 src/
 ├── core/
 │   ├── search.test.ts       # Search algorithm tests
+│   ├── lru-cache.test.ts    # LRU cache tests
 │   └── tokenization.test.ts # Token matching tests
 └── utils/
     ├── loader.test.ts       # Data loading tests

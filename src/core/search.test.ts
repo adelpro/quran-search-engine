@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { simpleSearch, search, createArabicFuseSearch } from './search';
-import type { QuranText, WordMap, MorphologyAya } from '../types';
+import { LRUCache } from './lru-cache';
+import type { QuranText, WordMap, MorphologyAya, SearchResponse } from '../types';
 
 // Mock data for testing
 const mockQuranData: QuranText[] = [
@@ -258,5 +259,116 @@ describe('search filtering (Issue #14)', () => {
 
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].sura_name).toBe('الفاتحة');
+  });
+});
+
+describe('search with LRUCache', () => {
+  it('should return cached result on identical query', () => {
+    const cache = new LRUCache<string, SearchResponse<QuranText>>(10);
+    const options = { lemma: true, root: true };
+    const pagination = { page: 1, limit: 20 };
+
+    const first = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      options,
+      pagination,
+      cache,
+    );
+    const second = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      options,
+      pagination,
+      cache,
+    );
+
+    expect(second).toBe(first); // Same reference = cache hit
+    expect(cache.size).toBe(1);
+  });
+
+  it('should cache different queries as separate entries', () => {
+    const cache = new LRUCache<string, SearchResponse<QuranText>>(10);
+
+    search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 20 },
+      cache,
+    );
+    search(
+      'الحمد',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 20 },
+      cache,
+    );
+
+    expect(cache.size).toBe(2);
+  });
+
+  it('should cache different options as separate entries', () => {
+    const cache = new LRUCache<string, SearchResponse<QuranText>>(10);
+
+    const withLemma = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: false },
+      { page: 1, limit: 20 },
+      cache,
+    );
+    const withRoot = search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: false, root: true },
+      { page: 1, limit: 20 },
+      cache,
+    );
+
+    expect(cache.size).toBe(2);
+    expect(withLemma).not.toBe(withRoot);
+  });
+
+  it('should cache different pagination as separate entries', () => {
+    const cache = new LRUCache<string, SearchResponse<QuranText>>(10);
+
+    search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 10 },
+      cache,
+    );
+    search(
+      'الله',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 2, limit: 10 },
+      cache,
+    );
+
+    expect(cache.size).toBe(2);
+  });
+
+  it('should work without cache (backward compatible)', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
   });
 });
