@@ -256,6 +256,7 @@ const out = normalizeArabic('بِسْمِ ٱللَّهِ');
 
 ### Search
 
+#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, preComputedFuseIndex?)`
 #### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, cache?)`
 
 Main entry point. Combines:
@@ -267,15 +268,9 @@ Main entry point. Combines:
 Use case: your primary API for Quran search results + scoring + pagination.
 Pass an optional `LRUCache` instance as the last argument to cache results by query+options+pagination key.
 
-#### Filter Priority
+Set `options.fuzzy = false` to disable fuzzy fallback.
 
-The API enforces a **strict deterministic priority** when multiple structural filters are provided:
-
-1.  **`suraId`**: If a valid number (`> 0`), it overrides all other structural filters.
-2.  **`suraName`**: Used if `suraId` is invalid or missing.
-3.  **`juzId`**: Used only if both Surah filters are invalid or missing.
-
-No combinations (AND logic) are applied between these three.
+**Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -285,8 +280,9 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true, suraId: 114, juzId: 30 },
-  { page: 1, limit: 10 },
+  { lemma: true, root: true }, // options
+  { page: 1, limit: 10 },      // pagination
+  undefined                    // preComputedFuseIndex (optional)
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
@@ -294,7 +290,7 @@ const response = search(
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
 // response.pagination => { totalResults: 6, totalPages: 1, currentPage: 1, limit: 10 }
 // response.counts => { simple: 2, lemma: 3, root: 4, fuzzy: 0, total: 6 }
-// response.results[0] => { gid: 6231, sura_id: 114, ... } (Results restricted to Surah 114)
+// response.results[0] => { gid: 1, sura_id: 1, matchType: 'exact', ... }
 ```
 
 | Match type | Score per hit        |
@@ -350,6 +346,16 @@ export function containsAllTokens(value: string, query: string): boolean {
 }
 ```
 
+#### `createArabicFuseSearch(data, keys, options?)`
+
+Use case: pre-compute the Fuse.js index for performance (see [Performance Optimization](#performance-optimization-advanced)).
+
+```ts
+import { createArabicFuseSearch } from 'quran-search-engine';
+
+const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+```
+
 #### Custom datasets
 
 `search` accepts any dataset shape as long as each record satisfies `VerseInput`:
@@ -360,6 +366,10 @@ export type VerseInput = {
   uthmani: string;
   standard: string;
   sura_id?: number;
+  juz_id?: number;
+  sura_name?: string;
+  sura_name_en?: string;
+  sura_name_romanization?: string;
   aya_id?: number;
 };
 ```
@@ -648,9 +658,6 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
-  suraId?: number;
-  juzId?: number;
-  suraName?: string;
 };
 ```
 
@@ -801,6 +808,32 @@ This script performs **integration testing** that validates the complete search 
 - **Advanced Search**: Tests morphological matching (lemma/root), scoring, and pagination
 - **Pagination**: Verifies page navigation and result differentiation across pages
 - **Highlighting**: Tests token extraction for UI highlighting features
+
+## Performance Optimization (Advanced)
+
+### Pre-computing the Fuse Index
+
+By default, `search()` builds a new Fuse.js index on every call if fuzzy search is enabled. For high-performance applications (e.g., real-time search as you type), you can pre-compute the index and pass it to `search`.
+
+```ts
+import { search, createArabicFuseSearch } from 'quran-search-engine';
+
+// 1. Create the index once (e.g., in useMemo or at app startup)
+const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+
+// 2. Pass it to search
+const results = search(
+  query,
+  quranData,
+  morphologyMap,
+  wordMap,
+  options,
+  pagination,
+  fuseIndex // <--- Optional 7th parameter
+);
+```
+
+This avoids rebuilding the index (~5-20ms) on every keystroke.
 
 **Key Differences from Unit Tests:**
 

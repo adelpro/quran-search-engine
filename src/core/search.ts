@@ -70,6 +70,14 @@ export const filterVerses = <TVerse extends VerseInput>(
           romName.includes(normalizedQuery)
         );
       });
+      // Logic for suraName: If we found matches by name, use them.
+      // If we didn't find matches by name, should we fall through to Juz?
+      // README says: "Used if suraId is invalid or missing".
+      // But if suraName IS provided but no match found?
+      // Strict interpretation: Strict filter. But "fuzzy" name search might imply "try to find".
+      // Let's keep it strict for now to be safe, or follow the pattern.
+      // Actually, for suraName, if I type "Baqara" and it matches nothing, I expect 0 results.
+      return results;
     }
   }
 
@@ -351,6 +359,7 @@ export const search = <TVerse extends VerseInput>(
   wordMap: WordMap,
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
+  preComputedFuseIndex?: Fuse<TVerse>,
   cache?: LRUCache<string, SearchResponse<TVerse>>,
 ): SearchResponse<TVerse> => {
   // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
@@ -404,17 +413,17 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuzzyEnabled = options.fuzzy !== false;
-  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName); //+ Filter collection based on Surah and Juz identifiers
-  //  replace quranData with filteredData
+
   const fuseInstance = fuzzyEnabled
-    ? createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
+    ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])
     : null;
 
-  // 3. Run search layers  +remplacez quranData par filteredData
-  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
+  // 3. Run search layers
+  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
+
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
-    filteredData, //remplacez quranData par filteredData
+    quranData,
     options,
     fuseInstance,
     wordMap,
