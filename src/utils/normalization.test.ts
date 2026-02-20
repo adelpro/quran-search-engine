@@ -69,7 +69,7 @@ describe('Normalization Utils', () => {
     it('should handle strings with only spaces', () => {
       const output = normalizeArabic('     ');
       // Strings with only spaces should be trimmed and result in an empty string
-      expect(output.trim()).toBe('');
+      expect(output).toBe('');
     });
 
     it('should handle mixed Arabic and Latin characters', () => {
@@ -78,15 +78,23 @@ describe('Normalization Utils', () => {
       const output = normalizeArabic(input);
 
       expect(output).toContain('السلام');
+      // Latin characters should be removed
+      expect(output).not.toContain('Hello');
+      expect(output).not.toContain('World');
     });
 
     it('should handle strings with numbers', () => {
       const input = 'رقم 1234';
       const output = normalizeArabic(input);
-      // Numbers should be removed; Arabic words should remain
+
+      // Numbers should be removed
+      expect(output).not.toContain('1234');
+
+      // Arabic words should remain
       expect(output).toContain('رقم');
-      // The output should not be empty
-      expect(output.length).toBeGreaterThanOrEqual(0);
+
+      // Ensure output is not empty
+      expect(output.length).toBeGreaterThan(0);
     });
 
     it('should process very long strings without crashing', () => {
