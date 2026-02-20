@@ -24,6 +24,7 @@ async function main() {
             { query: 'الله', description: 'Search for "Allah"' },
             { query: 'رحم', description: 'Search for root "رحم" (mercy)' },
             { query: 'كتب', description: 'Search for "kataba" (wrote)' },
+            { query: 'إنسان', description: 'Semantic search for human (finding "بشر")', semantic: true },
             { query: 'الله', description: 'Search for "Allah" in Al-Fatiha (Sura 1)', suraId: 1 },
             { query: 'الناس', description: 'Search for "An-Nas" (Sura 114)', suraId: 114 },
         ];
@@ -41,6 +42,7 @@ async function main() {
                     lemma: true,
                     root: true,
                     fuzzy: true,
+                    semantic: example.semantic || false,
                     suraId: example.suraId,
                     juzId: example.juzId,
                 },
@@ -56,6 +58,7 @@ async function main() {
             console.log(`   - Lemma: ${results.counts.lemma}`);
             console.log(`   - Root: ${results.counts.root}`);
             console.log(`   - Fuzzy: ${results.counts.fuzzy}`);
+            console.log(`   - Semantic: ${results.counts.semantic}`);
 
             // Display top results
             results.results.forEach((verse, index) => {

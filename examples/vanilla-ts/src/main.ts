@@ -25,6 +25,7 @@ class QuranSearchApp {
   private fuzzyCheckbox: HTMLInputElement;
   private suraIdInput: HTMLInputElement;
   private juzIdInput: HTMLInputElement;
+  private semanticCheckbox: HTMLInputElement;
   private suraNameInput: HTMLInputElement;
   private resultsDiv: HTMLDivElement;
 
@@ -33,6 +34,7 @@ class QuranSearchApp {
     this.lemmaCheckbox = document.getElementById('lemma') as HTMLInputElement;
     this.rootCheckbox = document.getElementById('root') as HTMLInputElement;
     this.fuzzyCheckbox = document.getElementById('fuzzy') as HTMLInputElement;
+    this.semanticCheckbox = document.getElementById('semantic') as HTMLInputElement;
     this.suraIdInput = document.getElementById('sura-id') as HTMLInputElement;
     this.juzIdInput = document.getElementById('juz-id') as HTMLInputElement;
     this.suraNameInput = document.getElementById('sura-name') as HTMLInputElement;
@@ -67,6 +69,7 @@ class QuranSearchApp {
     this.lemmaCheckbox.addEventListener('change', this.handleSearch.bind(this));
     this.rootCheckbox.addEventListener('change', this.handleSearch.bind(this));
     this.fuzzyCheckbox.addEventListener('change', this.handleSearch.bind(this));
+    this.semanticCheckbox.addEventListener('change', this.handleSearch.bind(this));
   }
 
   private debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
@@ -88,6 +91,7 @@ class QuranSearchApp {
       lemma: this.lemmaCheckbox.checked,
       root: this.rootCheckbox.checked,
       fuzzy: this.fuzzyCheckbox.checked,
+      semantic: this.semanticCheckbox.checked,
       //new
       suraId: this.suraIdInput.value ? parseInt(this.suraIdInput.value) : undefined,
       juzId: this.juzIdInput.value ? parseInt(this.juzIdInput.value) : undefined,
@@ -102,7 +106,8 @@ class QuranSearchApp {
         this.wordMap!,
         options,
         { page: 1, limit: 20 },
-        this.cache, // LRU cache — identical queries return cached results
+        undefined, // preComputedFuseIndex
+        this.cache, // LRU cache
       );
 
 
@@ -139,6 +144,10 @@ class QuranSearchApp {
           <span class="stat-item">
             <span class="indicator indicator-fuzzy"></span>
             <span>Fuzzy: ${response.counts.fuzzy}</span>
+          </span>
+          <span class="stat-item">
+            <span class="indicator indicator-semantic"></span>
+            <span>Semantic: ${response.counts.semantic}</span>
           </span>
         </div>
       </div>
