@@ -61,5 +61,35 @@ describe('Normalization Utils', () => {
       // normalize -> الحمد لله رب العالمين (assuming standard alefs)
       expect(normalizeArabic(input)).toBe('الحمد لله رب العالمين');
     });
+    it('should handle empty string input', () => {
+      expect(normalizeArabic('')).toBe('');
+    });
+
+    it('should handle strings with only spaces', () => {
+      const output = normalizeArabic('     ');
+      expect(output.trim()).toBe('');
+    });
+
+    it('should handle mixed Arabic and Latin characters', () => {
+      const input = 'السلام Hello World';
+      const output = normalizeArabic(input);
+
+      expect(output).toContain('السلام');
+    });
+
+    it('should handle strings with numbers', () => {
+      const input = 'رقم 1234';
+      const output = normalizeArabic(input);
+
+      expect(output).toContain('رقم');
+      expect(output.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should process very long strings without crashing', () => {
+      const input = 'بسم الله '.repeat(10000);
+      const output = normalizeArabic(input);
+
+      expect(output.length).toBeGreaterThan(0);
+    });
   });
 });
