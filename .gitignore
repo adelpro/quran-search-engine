@@ -12,6 +12,9 @@ coverage
 dist
 *.tsbuildinfo
 
+# Angular
+.angular
+
 # Misc
 .DS_Store
 .env

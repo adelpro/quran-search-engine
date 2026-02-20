@@ -17,8 +17,12 @@ export type VerseInput = {
   gid: number;
   uthmani: string;
   standard: string;
-  sura_id?: number;
   aya_id?: number;
+  sura_id?: number; // Allows the engine to read the Surah ID from the JSON data
+  juz_id?: number; // Allows the engine to read the Juz ID
+  sura_name?: string;
+  sura_name_en?: string;
+  sura_name_romanization?: string;
 };
 
 export type MorphologyAya = {
@@ -49,6 +53,11 @@ export type AdvancedSearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  suraId?: number;
+  juzId?: number;
+  suraName?: string;
+  sura_name_en?: string;
+  sura_name_romanization?: string;
 };
 
 export type SearchOptions = AdvancedSearchOptions;

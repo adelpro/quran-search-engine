@@ -1,6 +1,8 @@
 packages:
-  - '.'
-  - 'examples/*'
+  - .
+  - examples/*
 
 onlyBuiltDependencies:
   - esbuild
+  - lmdb
+  - msgpackr-extract

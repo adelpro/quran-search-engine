@@ -1,4 +1,5 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
+import { LRUCache } from './lru-cache';
 import { normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
@@ -38,6 +39,48 @@ export const createArabicFuseSearch = <T>(
 
 // ==================== Utilities ====================
 
+// ==================== Filtering Logic ====================
+
+// Filters a collection of verses by Surah and Juz IDs
+
+export const filterVerses = <TVerse extends VerseInput>(
+  data: TVerse[],
+  suraId?: number,
+  juzId?: number,
+  suraName?: string,
+): TVerse[] => {
+  // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
+  if (typeof suraId === 'number' && suraId > 0) {
+    return data.filter((v) => v['sura_id'] === suraId);
+  }
+
+  // 2. Priority: suraName
+  if (suraName) {
+    const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
+    if (normalizedQuery) {
+      return data.filter((verse) => {
+        const normalizedSuraName = verse['sura_name']
+          ? normalizeArabic(verse['sura_name'] as string)
+          : '';
+        const enName = ((verse['sura_name_en'] as string) || '').toLowerCase();
+        const romName = ((verse['sura_name_romanization'] as string) || '').toLowerCase();
+        return (
+          normalizedSuraName.includes(normalizedQuery) ||
+          enName.includes(normalizedQuery) ||
+          romName.includes(normalizedQuery)
+        );
+      });
+    }
+  }
+
+  // 3. Priority: juzId
+  if (juzId !== undefined) {
+    return data.filter((v) => v['juz_id'] === juzId);
+  }
+
+  // 4. Fallback: Return original data (no structural filter matched)
+  return data;
+};
 // ==================== Simple Search ====================
 export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
@@ -308,6 +351,7 @@ export const search = <TVerse extends VerseInput>(
   wordMap: WordMap,
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
+  cache?: LRUCache<string, SearchResponse<TVerse>>,
 ): SearchResponse<TVerse> => {
   // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
   const parsedRange = parseRangeQuery(query);
@@ -336,6 +380,12 @@ export const search = <TVerse extends VerseInput>(
     };
   }
 
+  // Cache lookup
+  const cacheKey = cache ? JSON.stringify({ query, options, pagination }) : '';
+  if (cache) {
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+  }
   // 1. Prepare query
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
@@ -354,16 +404,17 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuzzyEnabled = options.fuzzy !== false;
+  const filteredData = filterVerses(quranData, options.suraId, options.juzId, options.suraName); //+ Filter collection based on Surah and Juz identifiers
+  //  replace quranData with filteredData
   const fuseInstance = fuzzyEnabled
-    ? createArabicFuseSearch(quranData, ['standard', 'uthmani'])
+    ? createArabicFuseSearch(filteredData, ['standard', 'uthmani'])
     : null;
 
-  // 3. Run search layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
-
+  // 3. Run search layers  +remplacez quranData par filteredData
+  const simpleMatches = simpleSearch(filteredData, cleanQuery, 'standard');
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
-    quranData,
+    filteredData, //remplacez quranData par filteredData
     options,
     fuseInstance,
     wordMap,
@@ -409,7 +460,7 @@ export const search = <TVerse extends VerseInput>(
     total: combined.length,
   };
 
-  return {
+  const response: SearchResponse<TVerse> = {
     results,
     counts,
     pagination: {
@@ -419,4 +470,10 @@ export const search = <TVerse extends VerseInput>(
       limit,
     },
   };
+
+  if (cache) {
+    cache.set(cacheKey, response);
+  }
+
+  return response;
 };
