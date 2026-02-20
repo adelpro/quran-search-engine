@@ -110,7 +110,7 @@ function App() {
         <div style={{ position: 'relative', flex: 1 }}>
           <input
             type="text"
-            placeholder="Search for a word (e.g., كتب, الله, رحم)..."
+            placeholder="Search in Arabic or English (e.g., كتب, الله, Bismillah, Rahman)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
