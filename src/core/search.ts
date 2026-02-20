@@ -77,7 +77,7 @@ export const filterVerses = <TVerse extends VerseInput>(
       // Strict interpretation: Strict filter. But "fuzzy" name search might imply "try to find".
       // Let's keep it strict for now to be safe, or follow the pattern.
       // Actually, for suraName, if I type "Baqara" and it matches nothing, I expect 0 results.
-      return results;
+      // return results;
     }
   }
 
