@@ -38,7 +38,7 @@ export type WordMap = {
   };
 };
 
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none' | 'semantic';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;
@@ -58,6 +58,7 @@ export type AdvancedSearchOptions = {
   suraName?: string;
   sura_name_en?: string;
   sura_name_romanization?: string;
+  semantic?: boolean;
 };
 
 export type SearchOptions = AdvancedSearchOptions;
@@ -68,6 +69,7 @@ export type SearchCounts = {
   root: number;
   fuzzy: number;
   range: number;
+  semantic: number;
   total: number;
 };
 
@@ -87,6 +89,11 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
   };
 };
 
+export type ErrorShape = {
+  message: string;
+  code: string;
+  type: string;
+};
 
 export interface Sura {
   id: number;
@@ -94,9 +101,9 @@ export interface Sura {
   sura_name_en: string;
   sura_name_romanization: string;
   total_verses: number;
-  juz_ids: number[]; 
+  juz_ids: number[];
   page_start: number;
-  page_end?: number; 
+  page_end?: number;
 }
 /**
  * Represents a parsed range query targeting specific sura/aya coordinates.
@@ -118,4 +125,20 @@ export type ParsedRange = {
   startAya?: number;
   /** Ending aya number (inclusive). Only present for range queries like `1:1-7`. */
   endAya?: number;
+};
+
+/** Normalized lemma string → Set of verse GIDs containing that lemma */
+export type LemmaIndex = Map<string, Set<number>>;
+
+/** Normalized root string → Set of verse GIDs containing that root */
+export type RootIndex = Map<string, Set<number>>;
+
+/** Normalized word string → Set of verse GIDs containing that word */
+export type WordIndex = Map<string, Set<number>>;
+
+/** Container for all inverted indices */
+export type InvertedIndex = {
+  lemmaIndex: LemmaIndex;
+  rootIndex: RootIndex;
+  wordIndex: WordIndex;
 };

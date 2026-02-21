@@ -33,6 +33,7 @@ function App() {
     lemma: true,
     root: true,
     fuzzy: true,
+    semantic: true,
     suraId: undefined as number | undefined,
     juzId: undefined as number | undefined,
     suraName: "" // Advanced filter by Surah name
@@ -73,6 +74,7 @@ function App() {
         wordMap,
         options,
         { page: currentPage, limit: PAGE_SIZE },
+        undefined, // preComputedFuseIndex
         searchCache, // LRU cache — identical queries return cached results instantly
       );
 
@@ -144,6 +146,14 @@ function App() {
           Fuzzy Search
         </label>
         <label className="option-item">
+          <input
+            type="checkbox"
+            checked={options.semantic}
+            onChange={(e) => setOptions({ ...options, semantic: e.target.checked })}
+          />
+          Semantic Search
+        </label>
+        <label className="option-item">
           Sura ID:
           <input
             type="number"
@@ -202,6 +212,11 @@ function App() {
                 <span className="indicator indicator-fuzzy"></span>
                 <span className="stat-label">Fuzzy:</span>
                 <span className="stat-value">{searchResponse.counts.fuzzy}</span>
+              </span>
+              <span className="stat-item">
+                <span className="indicator indicator-semantic"></span>
+                <span className="stat-label">Semantic:</span>
+                <span className="stat-value">{searchResponse.counts.semantic}</span>
               </span>
             </div>
           </div>

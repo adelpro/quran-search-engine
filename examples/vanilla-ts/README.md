@@ -5,8 +5,9 @@ A simple vanilla TypeScript example demonstrating the Quran Search Engine librar
 ## Features
 
 - Search through Quran verses
-- Multiple search modes: exact, lemma, root, and fuzzy matching
+- Multiple search modes: exact, lemma, root, semantic, and fuzzy matching
 - Real-time search with debouncing
+
 - Highlighted search results
 
 ## Getting Started
