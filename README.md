@@ -528,18 +528,18 @@ try {
 
 ### Error Codes
 
-All errors include type-safe error codes:
+All data loading errors include type-safe error codes:
 
 ```ts
-import { search, ErrorCode } from 'quran-search-engine';
+import { loadMorphology, ErrorCode } from 'quran-search-engine';
 
 try {
-  const results = await search(query, data, morphology, wordMap);
+  const morphology = await loadMorphology();
 } catch (error) {
   if (error.code === ErrorCode.DATA_FILE_NOT_FOUND) {
     // Handle missing file
-  } else if (error.code === ErrorCode.SEARCH_INVALID_QUERY) {
-    // Handle invalid query
+  } else if (error.code === ErrorCode.DATA_PARSE_ERROR) {
+    // Handle corrupted file
   }
 }
 ```
@@ -551,24 +551,9 @@ try {
 - `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
 - `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
 
-**Search Errors:**
-- `InvalidQueryError` - Invalid search queries
-- `MissingDependenciesError` - Missing required dependencies
-- `SearchOperationFailedError` - Search operation failures
-
-**Validation Errors:**
-- `InvalidPaginationError` - Invalid pagination parameters
-- `InvalidOptionsError` - Invalid search options
-- `InvalidVerseStructureError` - Malformed verse structure
-
-**Tokenization Errors:**
-- `MissingMorphologyError` - Missing morphology data (includes `gid`)
-- `InvalidModeError` - Invalid tokenization mode
-- `MissingWordMapError` - Missing word map
-
 ### Documentation
 
-For complete error handling documentation, architecture details, and best practices, see [Error Handling Documentation](./src/errors/README.md).
+For complete error handling documentation and usage examples, see [Error Handling Documentation](./src/errors/README.md).
 
 ## How scoring works
 

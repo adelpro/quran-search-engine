@@ -16,17 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
 - **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
-- **Error Handling System**: Implemented comprehensive hierarchical error handling architecture with 15 domain-specific error classes organized into 4 categories:
-  - **DataLoadError**: File loading and schema validation errors (`DataFileNotFoundError`, `DataParseError`, `DataSchemaInvalidError`) - **fully integrated**
-  - **SearchError**: Query and search operation errors (`InvalidQueryError`, `MissingDependenciesError`, `SearchOperationFailedError`) - infrastructure-only
-  - **ValidationError**: Input validation errors (`InvalidPaginationError`, `InvalidOptionsError`, `InvalidVerseStructureError`) - infrastructure-only
-  - **TokenizationError**: Text processing errors (`MissingMorphologyError`, `InvalidModeError`, `MissingWordMapError`) - infrastructure-only
-- **Error Codes**: Added type-safe error code enums with 12 structured error codes across all categories
-- **Error Documentation**: Added comprehensive error handling documentation in `src/errors/README.md` with architecture details, usage examples, and best practices
-- **Schema Validation**: Implemented data schema validation for all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
-- **Loader Tests**: Added comprehensive error handling tests for loader functions covering corrupted JSON files, malformed entries, missing files, and concurrent loading scenarios
-- **Error Tests**: Added 20 error-specific unit tests covering all error classes with full test coverage
-- **Documentation**: Updated main `README.md` with Error Handling section including basic usage examples, error codes, and link to detailed documentation
+- **Error Handling for Data Loaders**: Implemented structured error handling for data loading operations:
+  - **BaseError**: Foundation error class with type-safe error codes
+  - **DataLoadError**: Base class for data loading errors with 3 specific error types:
+    - `DataFileNotFoundError` - Missing data files
+    - `DataParseError` - JSON parsing failures
+    - `DataSchemaInvalidError` - Invalid data structure
+  - **Error Codes**: Type-safe error code enums (`ErrorCode`, `ErrorType`)
+  - **Schema Validation**: Data structure validation in all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
+  - **Comprehensive Tests**: Full test coverage for error classes and loader error scenarios
+  - **Documentation**: Error handling guide in `src/errors/README.md`
 - **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
 
 ### Fixed
