@@ -246,8 +246,16 @@ describe('range search', () => {
   });
 
   it('should paginate range results', () => {
-    const result = search(
-      '1:',
+    const result = search('1:', mockQuranData, mockMorphologyMap, mockWordMap, undefined, {
+      page: 1,
+      limit: 2,
+    });
+    expect(result.results).toHaveLength(2);
+    expect(result.pagination.totalResults).toBe(3);
+    expect(result.pagination.totalPages).toBe(2);
+  });
+});
+
 // =================================================================
 // TESTS FOR ISSUE #7: Fuse.js Pre-indexing
 // =================================================================
@@ -292,6 +300,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       options,
       pagination,
+      undefined,
       cache,
     );
     const second = search(
@@ -301,6 +310,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       options,
       pagination,
+      undefined,
       cache,
     );
 
@@ -318,6 +328,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
     search(
@@ -326,13 +337,12 @@ describe('search with LRUCache', () => {
       mockMorphologyMap,
       mockWordMap,
       { lemma: true, root: true },
-      { page: 1, limit: 2 },
+      { page: 1, limit: 20 },
+      undefined,
+      cache,
     );
-    expect(result.results).toHaveLength(2);
-    expect(result.pagination.totalResults).toBe(3);
-    expect(result.pagination.totalPages).toBe(2);
-    expect(result.pagination.currentPage).toBe(1);
-    expect(result.pagination.limit).toBe(2);
+
+    expect(cache.size).toBe(2);
   });
 
   it('should fall through to text search for invalid range', () => {
@@ -340,11 +350,6 @@ describe('search with LRUCache', () => {
     const result = search('0:1', mockQuranData, mockMorphologyMap, mockWordMap);
     // Falls through to Arabic-only filter which strips digits, yielding empty query
     expect(result.results).toHaveLength(0);
-      { page: 1, limit: 20 },
-      cache,
-    );
-
-    expect(cache.size).toBe(2);
   });
 
   it('should cache different options as separate entries', () => {
@@ -357,6 +362,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: false },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
     const withRoot = search(
@@ -366,6 +372,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: false, root: true },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
 
@@ -383,6 +390,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 1, limit: 10 },
+      undefined,
       cache,
     );
     search(
@@ -392,6 +400,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 2, limit: 10 },
+      undefined,
       cache,
     );
 
