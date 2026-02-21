@@ -78,7 +78,7 @@ describe('buildInvertedIndex', () => {
       loadWordMap(),
       loadQuranData(),
     ]);
-    const index = buildInvertedIndex(morphologyMap, wordMap, quranData);
+    const index = buildInvertedIndex(morphologyMap, quranData);
 
     expect(index.lemmaIndex).toBeInstanceOf(Map);
     expect(index.rootIndex).toBeInstanceOf(Map);
@@ -94,7 +94,7 @@ describe('buildInvertedIndex', () => {
       loadWordMap(),
       loadQuranData(),
     ]);
-    const index = buildInvertedIndex(morphologyMap, wordMap, quranData);
+    const index = buildInvertedIndex(morphologyMap, quranData);
 
     // Check a lemma entry has a Set of numbers
     const firstLemmaEntry = index.lemmaIndex.values().next().value;
@@ -130,7 +130,7 @@ describe('loadInvertedIndex', () => {
       loadWordMap(),
       loadQuranData(),
     ]);
-    const built = buildInvertedIndex(morphologyMap, wordMap, quranData);
+    const built = buildInvertedIndex(morphologyMap, quranData);
 
     // Same number of entries
     expect(loaded.lemmaIndex.size).toBe(built.lemmaIndex.size);

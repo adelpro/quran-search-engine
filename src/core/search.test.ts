@@ -347,6 +347,27 @@ describe('range search', () => {
   it('should paginate range results', () => {
     const result = search(
       '1:',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 2 },
+    );
+    expect(result.results).toHaveLength(2);
+    expect(result.pagination.totalResults).toBe(3);
+    expect(result.pagination.totalPages).toBe(2);
+    expect(result.pagination.currentPage).toBe(1);
+    expect(result.pagination.limit).toBe(2);
+  });
+
+  it('should fall through to text search for invalid range', () => {
+    // 0:1 is invalid (sura 0), so it should fall through to text search
+    const result = search('0:1', mockQuranData, mockMorphologyMap, mockWordMap);
+    // Falls through to Arabic-only filter which strips digits, yielding empty query
+    expect(result.results).toHaveLength(0);
+  });
+});
+
 // =================================================================
 // TESTS FOR ISSUE #7: Fuse.js Pre-indexing
 // =================================================================
@@ -391,6 +412,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       options,
       pagination,
+      undefined,
       cache,
     );
     const second = search(
@@ -400,6 +422,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       options,
       pagination,
+      undefined,
       cache,
     );
 
@@ -417,6 +440,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
     search(
@@ -425,21 +449,8 @@ describe('search with LRUCache', () => {
       mockMorphologyMap,
       mockWordMap,
       { lemma: true, root: true },
-      { page: 1, limit: 2 },
-    );
-    expect(result.results).toHaveLength(2);
-    expect(result.pagination.totalResults).toBe(3);
-    expect(result.pagination.totalPages).toBe(2);
-    expect(result.pagination.currentPage).toBe(1);
-    expect(result.pagination.limit).toBe(2);
-  });
-
-  it('should fall through to text search for invalid range', () => {
-    // 0:1 is invalid (sura 0), so it should fall through to text search
-    const result = search('0:1', mockQuranData, mockMorphologyMap, mockWordMap);
-    // Falls through to Arabic-only filter which strips digits, yielding empty query
-    expect(result.results).toHaveLength(0);
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
 
@@ -456,6 +467,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: false },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
     const withRoot = search(
@@ -465,6 +477,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: false, root: true },
       { page: 1, limit: 20 },
+      undefined,
       cache,
     );
 
@@ -482,6 +495,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 1, limit: 10 },
+      undefined,
       cache,
     );
     search(
@@ -491,6 +505,7 @@ describe('search with LRUCache', () => {
       mockWordMap,
       { lemma: true, root: true },
       { page: 2, limit: 10 },
+      undefined,
       cache,
     );
 
@@ -505,7 +520,7 @@ describe('search with LRUCache', () => {
 
 describe('buildInvertedIndex', () => {
   it('should build lemma and root indices from morphology map', () => {
-    const index = buildInvertedIndex(mockMorphologyMap, mockWordMap, mockQuranData);
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
 
     expect(index.lemmaIndex).toBeInstanceOf(Map);
     expect(index.rootIndex).toBeInstanceOf(Map);
@@ -514,7 +529,7 @@ describe('buildInvertedIndex', () => {
   });
 
   it('should map normalized lemmas to correct GIDs', () => {
-    const index = buildInvertedIndex(mockMorphologyMap, mockWordMap, mockQuranData);
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
 
     // "الله" appears as a lemma in gid 1 and gid 2 ("لله")
     const allahGids = index.lemmaIndex.get('الله');
@@ -529,7 +544,7 @@ describe('buildInvertedIndex', () => {
   });
 
   it('should map normalized roots to correct GIDs', () => {
-    const index = buildInvertedIndex(mockMorphologyMap, mockWordMap, mockQuranData);
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
 
     // Root "ر ح م" appears in gid 1 and gid 3
     // After normalizeArabic, spaces are kept
@@ -541,11 +556,13 @@ describe('buildInvertedIndex', () => {
 
   it('should handle empty morphology map', () => {
     const emptyMap = new Map<number, MorphologyAya>();
-    const index = buildInvertedIndex(emptyMap, {}, []);
+    const index = buildInvertedIndex(emptyMap, mockQuranData);
 
     expect(index.lemmaIndex.size).toBe(0);
     expect(index.rootIndex.size).toBe(0);
-    expect(index.wordIndex.size).toBe(0);
+    // wordIndex is built from quranData regardless of morphologyMap,
+    // so it will have entries from the provided verses.
+    expect(index.wordIndex.size).toBeGreaterThan(0);
   });
 });
 
@@ -579,7 +596,7 @@ describe('search with inverted index', () => {
 
 describe('search with invertedIndex param', () => {
   it('should use inverted index when passed as argument', () => {
-    const invertedIndex = buildInvertedIndex(mockMorphologyMap, mockWordMap, mockQuranData);
+    const invertedIndex = buildInvertedIndex(mockMorphologyMap, mockQuranData);
     const result = search(
       'الله',
       mockQuranData,
@@ -590,6 +607,8 @@ describe('search with invertedIndex param', () => {
         root: true,
       },
       { page: 1, limit: 20 },
+      undefined,
+      undefined,
       invertedIndex,
     );
 
@@ -608,7 +627,7 @@ describe('search with invertedIndex param', () => {
   });
 
   it('should produce consistent results with and without invertedIndex', () => {
-    const invertedIndex = buildInvertedIndex(mockMorphologyMap, mockWordMap, mockQuranData);
+    const invertedIndex = buildInvertedIndex(mockMorphologyMap, mockQuranData);
     const withIndex = search(
       'الرحمن',
       mockQuranData,
@@ -620,6 +639,8 @@ describe('search with invertedIndex param', () => {
         fuzzy: false,
       },
       { page: 1, limit: 20 },
+      undefined,
+      undefined,
       invertedIndex,
     );
     const withoutIndex = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, {

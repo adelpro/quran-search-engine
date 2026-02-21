@@ -76,7 +76,6 @@ export const loadQuranData = async (): Promise<QuranText[]> => {
  */
 export const buildInvertedIndex = (
   morphologyMap: Map<number, MorphologyAya>,
-  wordMap: WordMap,
   quranData: QuranText[],
 ): InvertedIndex => {
   const lemmaIndex = new Map<string, Set<number>>();
