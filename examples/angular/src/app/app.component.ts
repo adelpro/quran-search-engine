@@ -7,6 +7,7 @@ import {
   loadQuranData,
   loadWordMap,
   search,
+  LRUCache,
   type AdvancedSearchOptions,
   type MatchType,
   type MorphologyAya,
@@ -65,6 +66,27 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             <input type="checkbox" [(ngModel)]="options.fuzzy" (ngModelChange)="runSearch(true)" />
             Fuzzy
           </label>
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="options.semantic" (ngModelChange)="runSearch(true)" />
+            Semantic
+          </label>
+          <label class="label">
+            Sura ID:
+            <input type="number" class="input" style="width: 80px;" 
+                  [(ngModel)]="options.suraId" (ngModelChange)="runSearch(true)" />
+          </label>
+  
+          <label class="label">
+            Juz ID:
+              <input type="number" class="input" style="width: 80px;" 
+                  [(ngModel)]="options.juzId" (ngModelChange)="runSearch(true)" />
+          </label>
+          <label class="label">
+            Sura Name:
+            <input type="text" class="input" style="width: 150px;" 
+                  placeholder="Ex: الفاتحة"
+                  [(ngModel)]="options.suraName" (ngModelChange)="runSearch(true)" />
+          </label>
         </fieldset>
       </section>
 
@@ -73,6 +95,8 @@ type HighlightPart = { text: string; matchType: MatchType | null };
         <div *ngIf="loadState === 'error'" class="error" role="alert">
           {{ errorMessage }}
         </div>
+
+
 
         <ng-container *ngIf="loadState === 'ready'">
           <div *ngIf="!response" class="muted">Type an Arabic query to see results.</div>
@@ -84,7 +108,8 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                 <strong>{{ response.counts.simple }}</strong> • Lemma:
                 <strong>{{ response.counts.lemma }}</strong> • Root:
                 <strong>{{ response.counts.root }}</strong> • Fuzzy:
-                <strong>{{ response.counts.fuzzy }}</strong>
+                <strong>{{ response.counts.fuzzy }}</strong> • Semantic:
+                <strong>{{ response.counts.semantic }}</strong>
               </div>
               <div class="pager" aria-label="Pagination controls">
                 <button
@@ -286,6 +311,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
       .highlight-fuzzy {
         background: rgba(220, 53, 69, 0.35);
       }
+      .highlight-semantic {
+        background: rgba(108, 117, 125, 0.35);
+      }
     `,
   ],
 })
@@ -297,13 +325,15 @@ export class AppComponent implements OnInit, OnDestroy {
   page = 1;
   limit = 20;
 
-  options: { lemma: boolean; root: boolean; fuzzy: boolean } = {
+  options: { lemma: boolean; root: boolean; fuzzy: boolean; semantic: boolean; suraId?: number; juzId?: number; suraName?: string; } = {
     lemma: true,
     root: true,
     fuzzy: true,
+    semantic: true,
   };
 
   response: SearchResponse<QuranText> | null = null;
+
 
   private quranData: QuranText[] | null = null;
   private morphologyMap: Map<number, MorphologyAya> | null = null;
@@ -311,6 +341,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private uthmaniHighlightPartsByGid = new Map<number, readonly HighlightPart[]>();
 
   private debounceHandle: number | null = null;
+  private searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
   async ngOnInit(): Promise<void> {
     this.loadState = 'loading';
@@ -365,6 +396,11 @@ export class AppComponent implements OnInit, OnDestroy {
       lemma: this.options.lemma,
       root: this.options.root,
       fuzzy: this.options.fuzzy,
+      //+
+      suraId: this.options.suraId,
+      juzId: this.options.juzId,
+      suraName: this.options.suraName,
+      semantic: this.options.semantic,
     };
 
     this.response = search(
@@ -374,7 +410,11 @@ export class AppComponent implements OnInit, OnDestroy {
       this.wordMap,
       searchOptions,
       { page: this.page, limit: this.limit },
+      undefined, // preComputedFuseIndex
+      this.searchCache, // LRU cache — identical queries return cached results
     );
+
+
 
     this.rebuildHighlightCache();
   }
