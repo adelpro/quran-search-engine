@@ -89,6 +89,12 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
   };
 };
 
+export type ErrorShape = {
+  message: string;
+  code: string;
+  type: string;
+};
+
 export interface Sura {
   id: number;
   sura_name: string;
