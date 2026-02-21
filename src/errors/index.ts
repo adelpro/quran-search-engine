@@ -8,3 +8,17 @@ export {
   DataParseError,
   DataSchemaInvalidError,
 } from './data-load.error';
+
+// Search errors
+export {
+  SearchError,
+  InvalidQueryError,
+  MissingDependenciesError,
+  SearchOperationFailedError,
+} from './search.error';
+
+// Validation errors
+export { ValidationError, InvalidPaginationError, InvalidOptionsError } from './validation.error';
+
+// Tokenization errors
+export { TokenizationError, MissingMorphologyError, InvalidModeError } from './tokenization.error';

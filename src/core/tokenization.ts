@@ -1,4 +1,5 @@
 import { normalizeArabic } from '../utils/normalization';
+import { InvalidModeError } from '../errors';
 import type { VerseInput, MorphologyAya, WordMap } from '../types';
 
 export const getPositiveTokens = (
@@ -10,6 +11,12 @@ export const getPositiveTokens = (
   morphologyMap: Map<number, MorphologyAya>,
   wordMap?: WordMap,
 ): string[] => {
+  // Validate mode parameter
+  const validModes = ['text', 'lemma', 'root'];
+  if (!validModes.includes(mode)) {
+    throw new InvalidModeError(mode);
+  }
+
   if (!cleanQuery) return [];
 
   const normalizedQuery = normalizeArabic(cleanQuery);
