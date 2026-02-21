@@ -15,9 +15,11 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
+- Semantic search (concept-based mapping)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
+
 
 ## Table of contents
 
@@ -132,7 +134,9 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const response: SearchResponse = search('الله الرحمن', quranData, morphologyMap, wordMap, {
   lemma: true,
   root: true,
+  semantic: true,
 });
+
 
 response.results.forEach((v) => {
   console.log(v.sura_id, v.aya_id, v.matchType, v.matchScore);
@@ -180,7 +184,9 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
   lemma: true,
   root: true,
+  semantic: true,
 });
+
 
 console.log(response.results[0]);
 // Example output (shape):
@@ -281,7 +287,8 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true }, // options
+  { lemma: true, root: true, semantic: true }, // options
+
   { page: 1, limit: 10 },      // pagination
   undefined                    // preComputedFuseIndex (optional)
 );
@@ -298,9 +305,12 @@ const response = search(
 | ---------- | -------------------- |
 | Exact      | +3                   |
 | Lemma      | +2                   |
+| Semantic   | +0.8                 |
 | Root       | +1                   |
 | Fuzzy      | +0.5 (fallback only) |
 | Range      | 1 (direct lookup)    |
+
+
 
 #### Range search
 
@@ -329,8 +339,23 @@ const range = search('1:1-7', quranData, morphologyMap, wordMap);
 // Entire sura
 const sura = search('1:', quranData, morphologyMap, wordMap);
 // sura.results => all verses of Al-Fatihah
-// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 7, total: 7 }
+// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, semantic: 0, range: 7, total: 7 }
 ```
+
+#### Semantic Search
+
+`search` supports semantic (concept-based) queries. It uses a pre-built semantic map to link words to their synonyms and related concepts.
+
+- **Arabic Synonyms**: Searching for "إنسان" (human) will also find verses containing "بشر", "ناس", "بني آدم", etc.
+- **English Concepts**: Searching for "Paradise" will find verses containing "جنة", "فردوس", "عدن", etc. (Note: Ensure the query cleaning logic allows English characters if you enable this).
+
+```ts
+const response = search('Paradise', quranData, morphologyMap, wordMap, {
+  semantic: true
+});
+// response.results => verses containing words related to Paradise
+```
+
 
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
@@ -737,7 +762,9 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  semantic?: boolean;
 };
+
 ```
 
 ### `PaginationOptions`
@@ -756,7 +783,8 @@ export type PaginationOptions = {
 Overall “best” match class for a verse:
 
 ```ts
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'semantic' | 'none';
+
 ```
 
 ### `ScoredQuranText`
