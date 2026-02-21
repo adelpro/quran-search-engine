@@ -12,19 +12,6 @@ export class ValidationError extends BaseError {
 }
 
 /**
- * Thrown when input text is not Arabic
- */
-export class NonArabicInputError extends ValidationError {
-  constructor(input: string) {
-    super(
-      ErrorCode.VALIDATION_NON_ARABIC_INPUT,
-      `Input must contain Arabic characters: "${input.substring(0, 50)}${input.length > 50 ? '...' : ''}"`,
-    );
-    Object.setPrototypeOf(this, NonArabicInputError.prototype);
-  }
-}
-
-/**
  * Thrown when pagination parameters are invalid
  */
 export class InvalidPaginationError extends ValidationError {

@@ -532,7 +532,6 @@ try {
 - `SearchOperationFailedError` - Search operation failures
 
 **Validation Errors:**
-- `NonArabicInputError` - Non-Arabic input text
 - `InvalidPaginationError` - Invalid pagination parameters
 - `InvalidOptionsError` - Invalid search options
 - `InvalidVerseStructureError` - Malformed verse structure

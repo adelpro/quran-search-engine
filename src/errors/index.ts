@@ -21,7 +21,6 @@ export {
 // Validation errors
 export {
   ValidationError,
-  NonArabicInputError,
   InvalidPaginationError,
   InvalidOptionsError,
   InvalidVerseStructureError,

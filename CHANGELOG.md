@@ -9,34 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-<<<<<<< HEAD
 - **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline
 - **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries
 - **New type**: `ParsedRange` type for structured range query representation
 - **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
 - **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
-=======
-- **Error Handling System**: Implemented comprehensive hierarchical error handling architecture with 16 domain-specific error classes organized into 4 categories:
-  - **DataLoadError**: File loading and schema validation errors (`DataFileNotFoundError`, `DataParseError`, `DataSchemaInvalidError`)
-  - **SearchError**: Query and search operation errors (`InvalidQueryError`, `MissingDependenciesError`, `SearchOperationFailedError`)
-  - **ValidationError**: Input validation errors (`NonArabicInputError`, `InvalidPaginationError`, `InvalidOptionsError`, `InvalidVerseStructureError`)
-  - **TokenizationError**: Text processing errors (`MissingMorphologyError`, `InvalidModeError`, `MissingWordMapError`)
-- **Error Codes**: Added type-safe error code enums with 13 structured error codes across all categories
+- **Error Handling System**: Implemented comprehensive hierarchical error handling architecture with 15 domain-specific error classes organized into 4 categories:
+  - **DataLoadError**: File loading and schema validation errors (`DataFileNotFoundError`, `DataParseError`, `DataSchemaInvalidError`) - **fully integrated**
+  - **SearchError**: Query and search operation errors (`InvalidQueryError`, `MissingDependenciesError`, `SearchOperationFailedError`) - infrastructure-only
+  - **ValidationError**: Input validation errors (`InvalidPaginationError`, `InvalidOptionsError`, `InvalidVerseStructureError`) - infrastructure-only
+  - **TokenizationError**: Text processing errors (`MissingMorphologyError`, `InvalidModeError`, `MissingWordMapError`) - infrastructure-only
+- **Error Codes**: Added type-safe error code enums with 12 structured error codes across all categories
 - **Error Documentation**: Added comprehensive error handling documentation in `src/errors/README.md` with architecture details, usage examples, and best practices
 - **Schema Validation**: Implemented data schema validation for all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
 - **Loader Tests**: Added comprehensive error handling tests for loader functions covering corrupted JSON files, malformed entries, missing files, and concurrent loading scenarios
-- **Error Tests**: Added 23 error-specific unit tests covering all error classes with full test coverage
+- **Error Tests**: Added 20 error-specific unit tests covering all error classes with full test coverage
 - **Documentation**: Updated main `README.md` with Error Handling section including basic usage examples, error codes, and link to detailed documentation
->>>>>>> 4999c62 (feat: add comprehensive error handling system)
 - **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
 
 ### Fixed
 
-<<<<<<< HEAD
 - **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
-=======
 - **Search Filter Logic**: Fixed `filterVerses` function to return empty arrays when explicit filters (suraId, juzId, suraName) yield no results instead of falling back to all data
->>>>>>> 4999c62 (feat: add comprehensive error handling system)
+
 
 ## [0.1.5]
 

@@ -49,7 +49,6 @@ export class BaseError extends Error implements ErrorShape {
 - `SEARCH_INVALID_QUERY` - Search query is invalid
 - `SEARCH_MISSING_DEPENDENCIES` - Required dependencies missing
 - `SEARCH_OPERATION_FAILED` - Search operation failed
-- `VALIDATION_NON_ARABIC_INPUT` - Input is not Arabic
 - `VALIDATION_INVALID_PAGINATION` - Pagination parameters invalid
 - `VALIDATION_INVALID_OPTIONS` - Options are invalid
 - `VALIDATION_INVALID_VERSE_STRUCTURE` - Verse structure malformed
@@ -143,14 +142,6 @@ throw new SearchOperationFailedError('advancedSearch', cause);
 
 **File**: `src/errors/validation.error.ts`
 
-#### `NonArabicInputError`
-
-Thrown when input text doesn't contain Arabic characters.
-
-```typescript
-throw new NonArabicInputError('hello world');
-// Message: "Input must contain Arabic characters: "hello world""
-```
 
 #### `InvalidPaginationError`
 
@@ -342,12 +333,14 @@ src/errors/
 
 - ✅ `BaseError` class with proper error structure
 - ✅ Error codes and types enums
-- ✅ Data loading errors integrated into `loader.ts`
+- ✅ Data loading errors **fully integrated** into `loader.ts`
 - ✅ Error exports in main `index.ts`
-- ✅ Comprehensive test coverage (28 tests, all passing)
-- ⏳ Search errors integrated into `search.ts` (future)
-- ⏳ Validation errors integrated into search functions (future)
-- ⏳ Tokenization errors integrated into `tokenization.ts` (future)
+- ✅ Comprehensive test coverage (20 tests, all passing)
+- 🚧 Search errors (infrastructure-only, integration planned for separate PR)
+- 🚧 Validation errors (infrastructure-only, integration planned for separate PR)
+- 🚧 Tokenization errors (infrastructure-only, integration planned for separate PR)
+
+**Note**: This PR provides the error handling infrastructure with immediate integration for data loading only. Search, validation, and tokenization errors are included as classes for future use but are not yet thrown in the codebase. Integration of these error types will be handled in follow-up PRs.
 
 ## Future Enhancements
 
