@@ -52,7 +52,9 @@ export const filterVerses = <TVerse extends VerseInput>(
 ): TVerse[] => {
   // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
-    return data.filter((v) => v['sura_id'] === suraId);
+    const results = data.filter((v) => v['sura_id'] === suraId);
+    // Return results even if empty - user explicitly filtered by suraId
+    return results;
   }
 
   // 2. Priority: suraName
@@ -84,10 +86,12 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-    return data.filter((v) => v['juz_id'] === juzId);
+    const results = data.filter((v) => v['juz_id'] === juzId);
+    // Return results even if empty - user explicitly filtered by juzId
+    return results;
   }
 
-  // 4. Fallback: Return original data (no structural filter matched)
+  // 4. Fallback: Return original data (no filter was provided)
   return data;
 };
 // ==================== Simple Search ====================

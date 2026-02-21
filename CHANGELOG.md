@@ -16,11 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
 - **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
+- **Error Handling for Data Loaders**: Implemented structured error handling for data loading operations:
+  - **BaseError**: Foundation error class with type-safe error codes
+  - **DataLoadError**: Base class for data loading errors with 3 specific error types:
+    - `DataFileNotFoundError` - Missing data files
+    - `DataParseError` - JSON parsing failures
+    - `DataSchemaInvalidError` - Invalid data structure
+  - **Error Codes**: Type-safe error code enums (`ErrorCode`, `ErrorType`)
+  - **Schema Validation**: Data structure validation in all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
+  - **Comprehensive Tests**: Full test coverage for error classes and loader error scenarios
+  - **Documentation**: Error handling guide in `src/errors/README.md`
 - **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
 
 ### Fixed
 
 - **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
+- **Search Filter Logic**: Fixed `filterVerses` function to return empty arrays when explicit filters (suraId, juzId, suraName) yield no results instead of falling back to all data
+
 
 ## [0.1.5]
 
