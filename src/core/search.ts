@@ -1,8 +1,9 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { LRUCache } from './lru-cache';
-import { normalizeArabic } from '../utils/normalization';
+import { buildArabicWholeWordRegex, normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
+import { semanticMap } from './semantic';
 import type {
   WordMap,
   MorphologyAya,
@@ -394,6 +395,47 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
 
   return results;
 };
+// ==================== Semantic Search API ====================
+
+/**
+ * Performs a semantic search across the Quran.
+ * Uses the pre-built semantic map to find verses that are semantically related to the query.
+ */
+const performSemanticSearch = <TVerse extends VerseInput>(
+  cleanQuery: string,
+  quranData: TVerse[],
+  options: AdvancedSearchOptions,
+): ScoredVerse<TVerse>[] => {
+  const semanticMatches: ScoredVerse<TVerse>[] = [];
+
+  if (!options.semantic || !cleanQuery) {
+    return semanticMatches;
+  }
+
+  const synonyms = semanticMap.get(cleanQuery);
+
+  if (synonyms && synonyms.length > 0) {
+    for (const synonym of synonyms) {
+      // use regex to match the synonym with its prefix (و، ف، ال...)
+      const regex = buildArabicWholeWordRegex(synonym);
+
+      // filter quranData directly with the regex
+      const matches = quranData
+        .filter((verse) => regex.test(normalizeArabic(verse.standard)))
+        .map((verse) => ({
+          ...verse,
+          matchType: 'semantic' as const,
+          matchScore: 0.8,
+          matchedTokens: [synonym],
+          tokenTypes: { [synonym]: 'semantic' as const },
+        }));
+
+      semanticMatches.push(...matches);
+    }
+  }
+
+  return semanticMatches;
+};
 
 // ==================== Combined Search API ====================
 
@@ -435,7 +477,15 @@ export const search = <TVerse extends VerseInput>(
 
     return {
       results,
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: totalResults, total: totalResults },
+      counts: {
+        simple: 0,
+        lemma: 0,
+        root: 0,
+        fuzzy: 0,
+        semantic: 0,
+        range: totalResults,
+        total: totalResults,
+      },
       pagination: { totalResults, totalPages, currentPage: page, limit },
     };
   }
@@ -453,7 +503,7 @@ export const search = <TVerse extends VerseInput>(
   if (!cleanQuery) {
     return {
       results: [],
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0 },
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0 },
       pagination: {
         totalResults: 0,
         totalPages: 0,
@@ -483,8 +533,10 @@ export const search = <TVerse extends VerseInput>(
     invertedIndex?.rootIndex,
   );
 
+  const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
+
   // 4. Combine and Scored Deduplication
-  const allMatches = [...simpleMatches, ...advancedMatches];
+  const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap[cleanQuery];
@@ -492,6 +544,13 @@ export const search = <TVerse extends VerseInput>(
   for (const verse of allMatches) {
     if (!gidSet.has(verse.gid)) {
       gidSet.add(verse.gid);
+
+      // If it's a semantic match (already scored), preserve it
+      if ('matchType' in verse && verse['matchType'] === 'semantic') {
+        combined.push(verse as ScoredVerse<TVerse>);
+        continue;
+      }
+
       // Pass fuseMatches if available
       const fuseMatches =
         'fuseMatches' in verse ? (verse as VerseWithFuseMatches<TVerse>).fuseMatches : undefined;
@@ -518,6 +577,7 @@ export const search = <TVerse extends VerseInput>(
     lemma: combined.filter((v) => v.matchType === 'lemma').length,
     root: combined.filter((v) => v.matchType === 'root').length,
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
+    semantic: combined.filter((v) => v.matchType === 'semantic').length,
     range: 0,
     total: combined.length,
   };

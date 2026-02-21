@@ -1,6 +1,7 @@
 # React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-featured web app demonstrating the **Quran Search Engine** library with real-time search, highlighting (semantic, lemma, root), and pagination.
+
 
 Currently, two official plugins are available:
 

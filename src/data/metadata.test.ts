@@ -11,6 +11,7 @@ describe('SURAS metadata', () => {
   it('should have correct verse counts', () => {
     const quranAyatArray = Array.isArray(quranData) ? quranData : Object.values(quranData);
     SURAS.forEach((sura) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const versesInQuran = quranAyatArray.filter((aya: any) => aya.sura_id === sura.id).length;
       expect(sura.total_verses).toBe(versesInQuran);
     });

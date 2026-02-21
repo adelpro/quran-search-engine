@@ -38,7 +38,7 @@ export type WordMap = {
   };
 };
 
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none' | 'semantic';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;
@@ -58,6 +58,7 @@ export type AdvancedSearchOptions = {
   suraName?: string;
   sura_name_en?: string;
   sura_name_romanization?: string;
+  semantic?: boolean;
 };
 
 export type SearchOptions = AdvancedSearchOptions;
@@ -68,6 +69,7 @@ export type SearchCounts = {
   root: number;
   fuzzy: number;
   range: number;
+  semantic: number;
   total: number;
 };
 

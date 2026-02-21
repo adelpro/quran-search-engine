@@ -103,6 +103,10 @@
         .highlight-fuzzy {
             background: #f8d7da;
         }
+        
+        .highlight-semantic {
+            background: #e2e3e5;
+        }
 
         .loading {
             text-align: center;
@@ -144,6 +148,10 @@
         .indicator-fuzzy {
             background: #dc3545;
         }
+
+        .indicator-semantic {
+            background: #6c757d;
+        }
     </style>
 </head>
 
@@ -167,6 +175,10 @@
                 <label class="option">
                     <input type="checkbox" id="fuzzy" checked />
                     Fuzzy Search
+                </label>
+                <label class="option">
+                    <input type="checkbox" id="semantic" checked />
+                    Semantic Search
                 </label>
                 <label class="option">
                     Sura ID: <input type="number" id="sura-id" min="1" max="114" style="width: 50px;" />
