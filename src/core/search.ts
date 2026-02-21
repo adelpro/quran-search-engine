@@ -4,6 +4,7 @@ import { buildArabicWholeWordRegex, normalizeArabic } from '../utils/normalizati
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
 import { semanticMap } from './semantic';
+import { InvalidPaginationError, MissingDependenciesError } from '../errors';
 import type {
   WordMap,
   MorphologyAya,
@@ -459,12 +460,31 @@ export const search = <TVerse extends VerseInput>(
   cache?: LRUCache<string, SearchResponse<TVerse>>,
   invertedIndex?: InvertedIndex,
 ): SearchResponse<TVerse> => {
+  // Validate required dependencies
+  if (!quranData || !Array.isArray(quranData) || quranData.length === 0) {
+    throw new MissingDependenciesError(['quranData']);
+  }
+  if (!morphologyMap) {
+    throw new MissingDependenciesError(['morphologyMap']);
+  }
+  if (!wordMap) {
+    throw new MissingDependenciesError(['wordMap']);
+  }
+
+  // Validate pagination parameters
+  const page = pagination.page ?? 1;
+  const limit = pagination.limit ?? 20;
+
+  if (page < 1 || !Number.isInteger(page)) {
+    throw new InvalidPaginationError(page, limit);
+  }
+  if (limit < 1 || !Number.isInteger(limit)) {
+    throw new InvalidPaginationError(page, limit);
+  }
+
   // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
   const parsedRange = parseRangeQuery(query);
   if (parsedRange) {
-    const page = Math.max(1, pagination.page || 1);
-    const limit = Math.max(1, pagination.limit || 20);
-
     const rangeMatches = filterVersesByRange(quranData, parsedRange);
     const totalResults = rangeMatches.length;
     const totalPages = Math.ceil(totalResults / limit);
@@ -511,8 +531,8 @@ export const search = <TVerse extends VerseInput>(
       pagination: {
         totalResults: 0,
         totalPages: 0,
-        currentPage: pagination.page || 1,
-        limit: pagination.limit || 20,
+        currentPage: page,
+        limit,
       },
     };
   }
@@ -568,8 +588,6 @@ export const search = <TVerse extends VerseInput>(
   combined.sort((a, b) => b.matchScore - a.matchScore);
 
   // 6. Pagination & Metadata
-  const page = Math.max(1, pagination.page || 1);
-  const limit = Math.max(1, pagination.limit || 20);
   const offset = (page - 1) * limit;
 
   const results = combined.slice(offset, offset + limit);
