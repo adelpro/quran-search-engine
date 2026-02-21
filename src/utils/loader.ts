@@ -1,6 +1,5 @@
 import type { MorphologyAya, WordMap, QuranText, InvertedIndex } from '../types';
 import { normalizeArabic } from './normalization';
-import type { MorphologyAya, WordMap, QuranText } from '../types';
 import { DataFileNotFoundError, DataParseError, DataSchemaInvalidError } from '../errors';
 
 /**
