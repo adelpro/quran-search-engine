@@ -1,8 +1,9 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { LRUCache } from './lru-cache';
-import { normalizeArabic } from '../utils/normalization';
+import { buildArabicWholeWordRegex, normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
+import { semanticMap } from './semantic';
 import type {
   WordMap,
   MorphologyAya,
@@ -13,6 +14,10 @@ import type {
   PaginationOptions,
   VerseInput,
   ScoredVerse,
+  InvertedIndex,
+  WordIndex,
+  RootIndex,
+  LemmaIndex,
 } from '../types';
 
 type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
@@ -51,7 +56,9 @@ export const filterVerses = <TVerse extends VerseInput>(
 ): TVerse[] => {
   // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
-    return data.filter((v) => v['sura_id'] === suraId);
+    const results = data.filter((v) => v['sura_id'] === suraId);
+    // Return results even if empty - user explicitly filtered by suraId
+    return results;
   }
 
   // 2. Priority: suraName
@@ -77,16 +84,18 @@ export const filterVerses = <TVerse extends VerseInput>(
       // Strict interpretation: Strict filter. But "fuzzy" name search might imply "try to find".
       // Let's keep it strict for now to be safe, or follow the pattern.
       // Actually, for suraName, if I type "Baqara" and it matches nothing, I expect 0 results.
-      return results;
+      // return results;
     }
   }
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-    return data.filter((v) => v['juz_id'] === juzId);
+    const results = data.filter((v) => v['juz_id'] === juzId);
+    // Return results even if empty - user explicitly filtered by juzId
+    return results;
   }
 
-  // 4. Fallback: Return original data (no structural filter matched)
+  // 4. Fallback: Return original data (no filter was provided)
   return data;
 };
 // ==================== Simple Search ====================
@@ -94,12 +103,38 @@ export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
   query: string,
   searchField: keyof T,
+  wordIndex?: WordIndex,
 ): T[] => {
   const cleanQuery = normalizeArabic(query.replace(/[^\u0600-\u06FF\s]+/g, '').trim());
   if (!cleanQuery) return [];
 
   const queryTokens = cleanQuery.split(/\s+/);
 
+  // Fast path: O(1) lookups via wordIndex
+  if (wordIndex) {
+    let matchingGids: Set<number> | null = null;
+
+    for (const token of queryTokens) {
+      const gids = wordIndex.get(token);
+      if (!gids || gids.size === 0) return [];
+
+      if (matchingGids === null) {
+        matchingGids = new Set(gids);
+      } else {
+        // TODO: Replace manual intersection with Set.prototype.intersection();
+        // when target is bumped to ES2025
+        for (const gid of matchingGids) {
+          if (!gids.has(gid)) matchingGids.delete(gid);
+        }
+        if (matchingGids.size === 0) return [];
+      }
+    }
+
+    if (!matchingGids || matchingGids.size === 0) return [];
+    return items.filter((item) => matchingGids!.has(item['gid'] as number));
+  }
+
+  // Fallback: linear scan
   return items.filter((item) => {
     const fieldValue = normalizeArabic(String(item[searchField] || ''));
     // AND logic: All tokens must be present
@@ -233,6 +268,8 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
   fuseInstance: Fuse<TVerse> | null,
   wordMap: WordMap,
   morphologyMap: Map<number, MorphologyAya>,
+  lemmaIndex?: LemmaIndex,
+  rootIndex?: RootIndex,
 ): VerseWithFuseMatches<TVerse>[] => {
   const cleanQuery = normalizeArabic(query.replace(/[^\u0600-\u06FF\s]+/g, '').trim());
   if (!cleanQuery) return [];
@@ -249,25 +286,43 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
       const { lemma: targetLemma, root: targetRoot } = entry;
 
       if (options.lemma && targetLemma) {
-        for (const verse of quranData) {
-          const morph = morphologyMap.get(verse.gid);
-          if (
-            morph?.lemmas.some((lemma) =>
-              normalizeArabic(lemma).includes(normalizeArabic(targetLemma)),
-            )
-          ) {
-            matchingGids.add(verse.gid);
+        if (lemmaIndex) {
+          // O(1) lookup via inverted index
+          const gids = lemmaIndex.get(targetLemma);
+          if (gids) {
+            for (const gid of gids) {
+              matchingGids.add(gid);
+            }
+          }
+        } else {
+          // Fallback: linear scan (legacy path)
+          const normalizedLemma = normalizeArabic(targetLemma);
+          for (const verse of quranData) {
+            const morph = morphologyMap.get(verse.gid);
+            if (morph?.lemmas.some((lemma) => normalizeArabic(lemma).includes(normalizedLemma))) {
+              matchingGids.add(verse.gid);
+            }
           }
         }
       }
 
       if (options.root && targetRoot) {
-        for (const verse of quranData) {
-          const morph = morphologyMap.get(verse.gid);
-          if (
-            morph?.roots.some((root) => normalizeArabic(root).includes(normalizeArabic(targetRoot)))
-          ) {
-            matchingGids.add(verse.gid);
+        if (rootIndex) {
+          // O(1) lookup via inverted index
+          const gids = rootIndex.get(targetRoot);
+          if (gids) {
+            for (const gid of gids) {
+              matchingGids.add(gid);
+            }
+          }
+        } else {
+          // Fallback: linear scan (legacy path)
+          const normalizedRoot = normalizeArabic(targetRoot);
+          for (const verse of quranData) {
+            const morph = morphologyMap.get(verse.gid);
+            if (morph?.roots.some((root) => normalizeArabic(root).includes(normalizedRoot))) {
+              matchingGids.add(verse.gid);
+            }
           }
         }
       }
@@ -344,6 +399,47 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
 
   return results;
 };
+// ==================== Semantic Search API ====================
+
+/**
+ * Performs a semantic search across the Quran.
+ * Uses the pre-built semantic map to find verses that are semantically related to the query.
+ */
+const performSemanticSearch = <TVerse extends VerseInput>(
+  cleanQuery: string,
+  quranData: TVerse[],
+  options: AdvancedSearchOptions,
+): ScoredVerse<TVerse>[] => {
+  const semanticMatches: ScoredVerse<TVerse>[] = [];
+
+  if (!options.semantic || !cleanQuery) {
+    return semanticMatches;
+  }
+
+  const synonyms = semanticMap.get(cleanQuery);
+
+  if (synonyms && synonyms.length > 0) {
+    for (const synonym of synonyms) {
+      // use regex to match the synonym with its prefix (و، ف، ال...)
+      const regex = buildArabicWholeWordRegex(synonym);
+
+      // filter quranData directly with the regex
+      const matches = quranData
+        .filter((verse) => regex.test(normalizeArabic(verse.standard)))
+        .map((verse) => ({
+          ...verse,
+          matchType: 'semantic' as const,
+          matchScore: 0.8,
+          matchedTokens: [synonym],
+          tokenTypes: { [synonym]: 'semantic' as const },
+        }));
+
+      semanticMatches.push(...matches);
+    }
+  }
+
+  return semanticMatches;
+};
 
 // ==================== Combined Search API ====================
 
@@ -361,6 +457,7 @@ export const search = <TVerse extends VerseInput>(
   pagination: PaginationOptions = { page: 1, limit: 20 },
   preComputedFuseIndex?: Fuse<TVerse>,
   cache?: LRUCache<string, SearchResponse<TVerse>>,
+  invertedIndex?: InvertedIndex,
 ): SearchResponse<TVerse> => {
   // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
   const parsedRange = parseRangeQuery(query);
@@ -384,7 +481,15 @@ export const search = <TVerse extends VerseInput>(
 
     return {
       results,
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: totalResults, total: totalResults },
+      counts: {
+        simple: 0,
+        lemma: 0,
+        root: 0,
+        fuzzy: 0,
+        semantic: 0,
+        range: totalResults,
+        total: totalResults,
+      },
       pagination: { totalResults, totalPages, currentPage: page, limit },
     };
   }
@@ -402,7 +507,7 @@ export const search = <TVerse extends VerseInput>(
   if (!cleanQuery) {
     return {
       results: [],
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0 },
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0 },
       pagination: {
         totalResults: 0,
         totalPages: 0,
@@ -419,7 +524,7 @@ export const search = <TVerse extends VerseInput>(
     : null;
 
   // 3. Run search layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
+  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
@@ -428,10 +533,14 @@ export const search = <TVerse extends VerseInput>(
     fuseInstance,
     wordMap,
     morphologyMap,
+    invertedIndex?.lemmaIndex,
+    invertedIndex?.rootIndex,
   );
 
+  const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
+
   // 4. Combine and Scored Deduplication
-  const allMatches = [...simpleMatches, ...advancedMatches];
+  const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap[cleanQuery];
@@ -439,6 +548,13 @@ export const search = <TVerse extends VerseInput>(
   for (const verse of allMatches) {
     if (!gidSet.has(verse.gid)) {
       gidSet.add(verse.gid);
+
+      // If it's a semantic match (already scored), preserve it
+      if ('matchType' in verse && verse['matchType'] === 'semantic') {
+        combined.push(verse as ScoredVerse<TVerse>);
+        continue;
+      }
+
       // Pass fuseMatches if available
       const fuseMatches =
         'fuseMatches' in verse ? (verse as VerseWithFuseMatches<TVerse>).fuseMatches : undefined;
@@ -465,6 +581,7 @@ export const search = <TVerse extends VerseInput>(
     lemma: combined.filter((v) => v.matchType === 'lemma').length,
     root: combined.filter((v) => v.matchType === 'root').length,
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
+    semantic: combined.filter((v) => v.matchType === 'semantic').length,
     range: 0,
     total: combined.length,
   };

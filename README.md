@@ -15,9 +15,11 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
+- Semantic search (concept-based mapping)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
+
 
 ## Table of contents
 
@@ -26,6 +28,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Development Setup](#development-setup)
 - [Quickstart](#quickstart)
 - [Public API](#public-api)
+- [Error Handling](#error-handling)
 - [How scoring works](#how-scoring-works)
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
@@ -131,7 +134,9 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const response: SearchResponse = search('الله الرحمن', quranData, morphologyMap, wordMap, {
   lemma: true,
   root: true,
+  semantic: true,
 });
+
 
 response.results.forEach((v) => {
   console.log(v.sura_id, v.aya_id, v.matchType, v.matchScore);
@@ -179,7 +184,9 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
   lemma: true,
   root: true,
+  semantic: true,
 });
+
 
 console.log(response.results[0]);
 // Example output (shape):
@@ -280,7 +287,8 @@ const response = search(
   quranData,
   morphologyMap,
   wordMap,
-  { lemma: true, root: true }, // options
+  { lemma: true, root: true, semantic: true }, // options
+
   { page: 1, limit: 10 },      // pagination
   undefined                    // preComputedFuseIndex (optional)
 );
@@ -297,9 +305,12 @@ const response = search(
 | ---------- | -------------------- |
 | Exact      | +3                   |
 | Lemma      | +2                   |
+| Semantic   | +0.8                 |
 | Root       | +1                   |
 | Fuzzy      | +0.5 (fallback only) |
 | Range      | 1 (direct lookup)    |
+
+
 
 #### Range search
 
@@ -328,8 +339,23 @@ const range = search('1:1-7', quranData, morphologyMap, wordMap);
 // Entire sura
 const sura = search('1:', quranData, morphologyMap, wordMap);
 // sura.results => all verses of Al-Fatihah
-// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 7, total: 7 }
+// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, semantic: 0, range: 7, total: 7 }
 ```
+
+#### Semantic Search
+
+`search` supports semantic (concept-based) queries. It uses a pre-built semantic map to link words to their synonyms and related concepts.
+
+- **Arabic Synonyms**: Searching for "إنسان" (human) will also find verses containing "بشر", "ناس", "بني آدم", etc.
+- **English Concepts**: Searching for "Paradise" will find verses containing "جنة", "فردوس", "عدن", etc. (Note: Ensure the query cleaning logic allows English characters if you enable this).
+
+```ts
+const response = search('Paradise', quranData, morphologyMap, wordMap, {
+  semantic: true
+});
+// response.results => verses containing words related to Paradise
+```
+
 
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
@@ -465,6 +491,69 @@ export function Verse({ verse }: { verse: ScoredQuranText }) {
   return <span>{parts}</span>;
 }
 ```
+
+## Error Handling
+
+The library provides a comprehensive error handling system with **16 specialized error classes** organized into 4 categories. All errors include structured error codes, types, and actionable messages with context.
+
+### Error Categories
+
+- **DataLoadError** - File loading and schema validation errors
+- **SearchError** - Query and search operation errors
+- **ValidationError** - Input validation errors
+- **TokenizationError** - Text processing errors
+
+### Basic Usage
+
+```ts
+import {
+  loadMorphology,
+  DataFileNotFoundError,
+  DataParseError,
+  ErrorCode,
+} from 'quran-search-engine';
+
+try {
+  const morphology = await loadMorphology();
+} catch (error) {
+  if (error instanceof DataFileNotFoundError) {
+    console.error('Missing file:', error.filePath);
+    // Use fallback data
+  } else if (error instanceof DataParseError) {
+    console.error('Corrupted file:', error.filePath);
+    // Re-download data
+  }
+}
+```
+
+### Error Codes
+
+All data loading errors include type-safe error codes:
+
+```ts
+import { loadMorphology, ErrorCode } from 'quran-search-engine';
+
+try {
+  const morphology = await loadMorphology();
+} catch (error) {
+  if (error.code === ErrorCode.DATA_FILE_NOT_FOUND) {
+    // Handle missing file
+  } else if (error.code === ErrorCode.DATA_PARSE_ERROR) {
+    // Handle corrupted file
+  }
+}
+```
+
+### Available Error Classes
+
+**Data Loading Errors:**
+- `DataFileNotFoundError` - Missing data files (includes `filePath`)
+- `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
+- `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
+
+### Documentation
+
+For complete error handling documentation and usage examples, see [Error Handling Documentation](./src/errors/README.md).
 
 ## How scoring works
 
@@ -658,7 +747,9 @@ export type SearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  semantic?: boolean;
 };
+
 ```
 
 ### `PaginationOptions`
@@ -677,7 +768,8 @@ export type PaginationOptions = {
 Overall “best” match class for a verse:
 
 ```ts
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none';
+export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'semantic' | 'none';
+
 ```
 
 ### `ScoredQuranText`
