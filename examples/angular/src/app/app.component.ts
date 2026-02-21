@@ -66,6 +66,10 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             <input type="checkbox" [(ngModel)]="options.fuzzy" (ngModelChange)="runSearch(true)" />
             Fuzzy
           </label>
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="options.semantic" (ngModelChange)="runSearch(true)" />
+            Semantic
+          </label>
           <label class="label">
             Sura ID:
             <input type="number" class="input" style="width: 80px;" 
@@ -104,7 +108,8 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                 <strong>{{ response.counts.simple }}</strong> • Lemma:
                 <strong>{{ response.counts.lemma }}</strong> • Root:
                 <strong>{{ response.counts.root }}</strong> • Fuzzy:
-                <strong>{{ response.counts.fuzzy }}</strong>
+                <strong>{{ response.counts.fuzzy }}</strong> • Semantic:
+                <strong>{{ response.counts.semantic }}</strong>
               </div>
               <div class="pager" aria-label="Pagination controls">
                 <button
@@ -306,6 +311,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
       .highlight-fuzzy {
         background: rgba(220, 53, 69, 0.35);
       }
+      .highlight-semantic {
+        background: rgba(108, 117, 125, 0.35);
+      }
     `,
   ],
 })
@@ -317,11 +325,11 @@ export class AppComponent implements OnInit, OnDestroy {
   page = 1;
   limit = 20;
 
-  options: { lemma: boolean; root: boolean; fuzzy: boolean; suraId?: number; juzId?: number; suraName?: string; } = {
+  options: { lemma: boolean; root: boolean; fuzzy: boolean; semantic: boolean; suraId?: number; juzId?: number; suraName?: string; } = {
     lemma: true,
     root: true,
     fuzzy: true,
-
+    semantic: true,
   };
 
   response: SearchResponse<QuranText> | null = null;
@@ -392,6 +400,7 @@ export class AppComponent implements OnInit, OnDestroy {
       suraId: this.options.suraId,
       juzId: this.options.juzId,
       suraName: this.options.suraName,
+      semantic: this.options.semantic,
     };
 
     this.response = search(
@@ -401,6 +410,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.wordMap,
       searchOptions,
       { page: this.page, limit: this.limit },
+      undefined, // preComputedFuseIndex
       this.searchCache, // LRU cache — identical queries return cached results
     );
 
