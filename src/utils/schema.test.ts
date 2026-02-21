@@ -4,7 +4,8 @@ import {
   formatSchemaErrors,
   validateMorphologyData,
   validateQuranData,
-  validateWordMap,
+  validateSemanticData,
+  validateWordMapData,
 } from './schema';
 
 // ─── validateQuranData ─────────────────────────────────────────────────────
@@ -58,11 +59,7 @@ describe('validateQuranData', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThanOrEqual(3);
     expect(result.errors.map((e) => e.path)).toEqual(
-      expect.arrayContaining([
-        'verses[0].gid',
-        'verses[0].uthmani',
-        'verses[0].standard',
-      ]),
+      expect.arrayContaining(['verses[0].gid', 'verses[0].uthmani', 'verses[0].standard']),
     );
   });
 
@@ -91,9 +88,7 @@ describe('validateQuranData', () => {
 
 describe('validateMorphologyData', () => {
   it('accepts valid morphology data', () => {
-    const data = [
-      { gid: 1, lemmas: ['اسم', 'الله'], roots: ['س-م-و', 'ا-ل-ه'] },
-    ];
+    const data = [{ gid: 1, lemmas: ['اسم', 'الله'], roots: ['س-م-و', 'ا-ل-ه'] }];
     expect(validateMorphologyData(data).valid).toBe(true);
   });
 
@@ -130,44 +125,113 @@ describe('validateMorphologyData', () => {
   });
 });
 
-// ─── validateWordMap ───────────────────────────────────────────────────────
+// ─── validateWordMapData ───────────────────────────────────────────────────
 
-describe('validateWordMap', () => {
+describe('validateWordMapData', () => {
   it('accepts a valid word map', () => {
     const data = {
       بسم: { lemma: 'اسم', root: 'س-م-و' },
       الله: { lemma: 'الله' },
       فيها: {},
     };
-    expect(validateWordMap(data).valid).toBe(true);
+    expect(validateWordMapData(data).valid).toBe(true);
   });
 
   it('rejects array input', () => {
-    expect(validateWordMap([]).valid).toBe(false);
+    expect(validateWordMapData([]).valid).toBe(false);
   });
 
   it('rejects null', () => {
-    expect(validateWordMap(null).valid).toBe(false);
+    expect(validateWordMapData(null).valid).toBe(false);
   });
 
   it('rejects empty object', () => {
-    const result = validateWordMap({});
+    const result = validateWordMapData({});
     expect(result.valid).toBe(false);
     expect(result.errors[0].message).toContain('empty');
   });
 
   it('reports non-object values', () => {
     const data = { بسم: 'not an object' };
-    const result = validateWordMap(data);
+    const result = validateWordMapData(data);
     expect(result.valid).toBe(false);
     expect(result.errors[0].path).toContain('بسم');
   });
 
   it('reports wrong type for lemma field', () => {
     const data = { بسم: { lemma: 123 } };
-    const result = validateWordMap(data);
+    const result = validateWordMapData(data);
     expect(result.valid).toBe(false);
     expect(result.errors[0].path).toContain('lemma');
+  });
+});
+
+// ─── validateSemanticData ─────────────────────────────────────────────────
+
+describe('validateSemanticData', () => {
+  const validEntry = {
+    english: ['Hereafter', 'Afterlife'],
+    arabic: ['الآخرة', 'دار القرار'],
+    category: 'Eschatology',
+    notes: 'الآخرة refers to the final abode.',
+  };
+
+  it('accepts a valid semantic data array', () => {
+    const result = validateSemanticData([validEntry]);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects non-array input', () => {
+    const result = validateSemanticData('not an array');
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('array');
+  });
+
+  it('rejects an empty array', () => {
+    const result = validateSemanticData([]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('empty');
+  });
+
+  it('reports missing english field', () => {
+    const data = [{ arabic: ['الله'], category: 'Theology', notes: 'note' }];
+    const result = validateSemanticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('semantic[0].english');
+  });
+
+  it('reports missing arabic field', () => {
+    const data = [{ english: ['God'], category: 'Theology', notes: 'note' }];
+    const result = validateSemanticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('semantic[0].arabic');
+  });
+
+  it('reports missing category field', () => {
+    const data = [{ english: ['God'], arabic: ['الله'], notes: 'note' }];
+    const result = validateSemanticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.path === 'semantic[0].category')).toBe(true);
+  });
+
+  it('reports non-string items in english array', () => {
+    const data = [{ english: [42], arabic: ['الله'], category: 'Theology', notes: 'note' }];
+    const result = validateSemanticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('semantic[0].english');
+  });
+
+  it('handles null items in the array', () => {
+    const result = validateSemanticData([null]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('object');
+  });
+
+  it('respects the error limit', () => {
+    const bad = Array.from({ length: 100 }, () => ({}));
+    const result = validateSemanticData(bad, 5);
+    expect(result.errors.length).toBeLessThanOrEqual(5);
   });
 });
 
