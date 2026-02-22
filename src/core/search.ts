@@ -14,6 +14,10 @@ import type {
   PaginationOptions,
   VerseInput,
   ScoredVerse,
+  InvertedIndex,
+  WordIndex,
+  RootIndex,
+  LemmaIndex,
 } from '../types';
 
 type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
@@ -52,7 +56,9 @@ export const filterVerses = <TVerse extends VerseInput>(
 ): TVerse[] => {
   // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
-    return data.filter((v) => v['sura_id'] === suraId);
+    const results = data.filter((v) => v['sura_id'] === suraId);
+    // Return results even if empty - user explicitly filtered by suraId
+    return results;
   }
 
   // 2. Priority: suraName
@@ -84,10 +90,12 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-    return data.filter((v) => v['juz_id'] === juzId);
+    const results = data.filter((v) => v['juz_id'] === juzId);
+    // Return results even if empty - user explicitly filtered by juzId
+    return results;
   }
 
-  // 4. Fallback: Return original data (no structural filter matched)
+  // 4. Fallback: Return original data (no filter was provided)
   return data;
 };
 // ==================== Simple Search ====================
@@ -95,12 +103,38 @@ export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
   query: string,
   searchField: keyof T,
+  wordIndex?: WordIndex,
 ): T[] => {
   const cleanQuery = normalizeArabic(query.replace(/[^\u0600-\u06FF\s]+/g, '').trim());
   if (!cleanQuery) return [];
 
   const queryTokens = cleanQuery.split(/\s+/);
 
+  // Fast path: O(1) lookups via wordIndex
+  if (wordIndex) {
+    let matchingGids: Set<number> | null = null;
+
+    for (const token of queryTokens) {
+      const gids = wordIndex.get(token);
+      if (!gids || gids.size === 0) return [];
+
+      if (matchingGids === null) {
+        matchingGids = new Set(gids);
+      } else {
+        // TODO: Replace manual intersection with Set.prototype.intersection();
+        // when target is bumped to ES2025
+        for (const gid of matchingGids) {
+          if (!gids.has(gid)) matchingGids.delete(gid);
+        }
+        if (matchingGids.size === 0) return [];
+      }
+    }
+
+    if (!matchingGids || matchingGids.size === 0) return [];
+    return items.filter((item) => matchingGids!.has(item['gid'] as number));
+  }
+
+  // Fallback: linear scan
   return items.filter((item) => {
     const fieldValue = normalizeArabic(String(item[searchField] || ''));
     // AND logic: All tokens must be present
@@ -234,6 +268,8 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
   fuseInstance: Fuse<TVerse> | null,
   wordMap: WordMap,
   morphologyMap: Map<number, MorphologyAya>,
+  lemmaIndex?: LemmaIndex,
+  rootIndex?: RootIndex,
 ): VerseWithFuseMatches<TVerse>[] => {
   const cleanQuery = normalizeArabic(query.replace(/[^\u0600-\u06FF\s]+/g, '').trim());
   if (!cleanQuery) return [];
@@ -250,25 +286,43 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
       const { lemma: targetLemma, root: targetRoot } = entry;
 
       if (options.lemma && targetLemma) {
-        for (const verse of quranData) {
-          const morph = morphologyMap.get(verse.gid);
-          if (
-            morph?.lemmas.some((lemma) =>
-              normalizeArabic(lemma).includes(normalizeArabic(targetLemma)),
-            )
-          ) {
-            matchingGids.add(verse.gid);
+        if (lemmaIndex) {
+          // O(1) lookup via inverted index
+          const gids = lemmaIndex.get(targetLemma);
+          if (gids) {
+            for (const gid of gids) {
+              matchingGids.add(gid);
+            }
+          }
+        } else {
+          // Fallback: linear scan (legacy path)
+          const normalizedLemma = normalizeArabic(targetLemma);
+          for (const verse of quranData) {
+            const morph = morphologyMap.get(verse.gid);
+            if (morph?.lemmas.some((lemma) => normalizeArabic(lemma).includes(normalizedLemma))) {
+              matchingGids.add(verse.gid);
+            }
           }
         }
       }
 
       if (options.root && targetRoot) {
-        for (const verse of quranData) {
-          const morph = morphologyMap.get(verse.gid);
-          if (
-            morph?.roots.some((root) => normalizeArabic(root).includes(normalizeArabic(targetRoot)))
-          ) {
-            matchingGids.add(verse.gid);
+        if (rootIndex) {
+          // O(1) lookup via inverted index
+          const gids = rootIndex.get(targetRoot);
+          if (gids) {
+            for (const gid of gids) {
+              matchingGids.add(gid);
+            }
+          }
+        } else {
+          // Fallback: linear scan (legacy path)
+          const normalizedRoot = normalizeArabic(targetRoot);
+          for (const verse of quranData) {
+            const morph = morphologyMap.get(verse.gid);
+            if (morph?.roots.some((root) => normalizeArabic(root).includes(normalizedRoot))) {
+              matchingGids.add(verse.gid);
+            }
           }
         }
       }
@@ -403,6 +457,7 @@ export const search = <TVerse extends VerseInput>(
   pagination: PaginationOptions = { page: 1, limit: 20 },
   preComputedFuseIndex?: Fuse<TVerse>,
   cache?: LRUCache<string, SearchResponse<TVerse>>,
+  invertedIndex?: InvertedIndex,
 ): SearchResponse<TVerse> => {
   // 0. Range query shortcut — intercept before Arabic normalization strips digits/colons
   const parsedRange = parseRangeQuery(query);
@@ -469,7 +524,7 @@ export const search = <TVerse extends VerseInput>(
     : null;
 
   // 3. Run search layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard');
+  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
@@ -478,6 +533,8 @@ export const search = <TVerse extends VerseInput>(
     fuseInstance,
     wordMap,
     morphologyMap,
+    invertedIndex?.lemmaIndex,
+    invertedIndex?.rootIndex,
   );
 
   const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
