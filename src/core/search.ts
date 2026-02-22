@@ -23,8 +23,20 @@ import type {
 type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
   fuseMatches?: readonly FuseResultMatch[];
 };
-
 // ==================== Fuse.js Setup ====================
+/**
+ * Initializes a Fuse.js search instance pre-configured for Arabic text.
+ * Sets default fuzzy matching parameters such as threshold, distance,
+ * and extended search syntax support.
+ * @template T - The type of objects in the collection.
+ * @param collection - The data array (e.g., verses) to search through.
+ * @param keys - The object properties to index for searching (e.g., ['text', 'translation']).
+ * @param [options] - Optional Fuse.js overrides.
+ * @returns A configured Fuse search instance.
+ * @example
+ * const fuse = createArabicFuseSearch(verses, ['standard', 'translation']);
+ * const results = fuse.search('رب');
+ */
 export const createArabicFuseSearch = <T>(
   collection: T[],
   keys: string[],
@@ -47,7 +59,20 @@ export const createArabicFuseSearch = <T>(
 // ==================== Filtering Logic ====================
 
 // Filters a collection of verses by Surah and Juz IDs
-
+/**
+ * Filters a collection of verses based on Surah ID, Surah Name, or Juz ID.
+ * * **Filter Priority:**
+ * 1. `suraId` (Highest priority, strict match)
+ * 2. `suraName` (Matches against Arabic, English, or Romanized names)
+ * 3. `juzId` (Lowest priority, strict match)
+ * * If multiple filters are provided, only the highest priority one is executed.
+ * If no filters are provided, the original data is returned.
+ * @param data - An array of verses to filter
+ * @param suraId - Optional Surah number (1-114)
+ * @param juzId - Optional Juz number (1-30)
+ * @param suraName - Optional string to match against Surah names
+ * @returns An array of filtered verses
+ */
 export const filterVerses = <TVerse extends VerseInput>(
   data: TVerse[],
   suraId?: number,
@@ -99,6 +124,19 @@ export const filterVerses = <TVerse extends VerseInput>(
   return data;
 };
 // ==================== Simple Search ====================
+/**
+ * Performs a high-performance search across a collection of items.
+ * * Uses an inverted index (wordIndex) for O(1) lookups if available,
+ * otherwise falls back to a linear scan of the specified field.
+ * @param items - The collection to search through.
+ * @param query - The search string.
+ * @param searchField - The property name to search within (used in fallback mode).
+ * @param [wordIndex] - An optional pre-computed index mapping words to Global IDs (GIDs).
+ * @returns An array of items where all query tokens were found.
+ * @example
+ * // Fast search using an index
+ * const results = simpleSearch(verses, "الحمد لله", "standard", myWordIndex);
+ */
 export const simpleSearch = <T extends Record<string, unknown>>(
   items: T[],
   query: string,
@@ -147,6 +185,14 @@ export const simpleSearch = <T extends Record<string, unknown>>(
 /**
  * Computes a weighted relevance score for a verse based on match types.
  * Exact Match = 3pts, Lemma Match = 2pts, Root Match = 1pt.
+ * @param verse - The verse object to be scored.
+ * @param cleanQuery - The normalized search query.
+ * @param morphologyMap - Data map for morphological analysis.
+ * @param wordMap - Data map for lemma/root lookups.
+ * @param options - Advanced search settings (enable/disable lemma/root).
+ * @param mapEntry - (Legacy) Deprecated mapping entry.
+ * @param fuseMatches - Optional fuzzy match data from Fuse.js.
+ * @returns The verse object enriched with score and match metadata.
  */
 export const computeScore = <TVerse extends VerseInput>(
   verse: TVerse,
@@ -260,7 +306,22 @@ export const computeScore = <TVerse extends VerseInput>(
 
   return { ...verse, matchScore: score, matchType, matchedTokens, tokenTypes };
 };
-
+/**
+ * Executes a multi-layered linguistic search using roots, lemmas, and fuzzy matching.
+ * * The search follows an "AND" logic (intersection), where all query tokens must
+ * match a verse via one of the following methods (in priority order):
+ * 1. Linguistic Root/Lemma lookup (via inverted index or linear scan).
+ * 2. Fuzzy search (via Fuse.js) with adaptive scoring thresholds.
+ * @param query - The raw search string.
+ * @param quranData - The dataset to search.
+ * @param options - Search configuration (toggle lemma/root/fuzzy).
+ * @param fuseInstance - A pre-configured Fuse.js instance for fuzzy fallback.
+ * @param wordMap - Dictionary for resolving tokens to roots/lemmas.
+ * @param morphologyMap - Detailed linguistic data for every verse.
+ * @param lemmaIndex - (Optional) Inverted index for fast lemma lookups.
+ * @param rootIndex - (Optional) Inverted index for fast root lookups.
+ * @returns Array of verses matching all tokens.
+ */
 export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
   query: string,
   quranData: TVerse[],
@@ -404,6 +465,10 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
 /**
  * Performs a semantic search across the Quran.
  * Uses the pre-built semantic map to find verses that are semantically related to the query.
+ * @param cleanQuery - The normalized search query.
+ * @param quranData - The dataset to search through.
+ * @param options - Search configuration (must have `semantic: true` to run).
+ * @returns An array of verses containing semantically related terms.
  */
 const performSemanticSearch = <TVerse extends VerseInput>(
   cleanQuery: string,
@@ -447,6 +512,16 @@ const performSemanticSearch = <TVerse extends VerseInput>(
  * Performs a comprehensive search across the Quran.
  * Combines simple text search with linguistic (lemma/root) analysis and fuzzy fallback.
  * Results are scored, deduplicated, and sorted by relevance.
+ * @param query - The user's input string.
+ * @param quranData - The verse dataset.
+ * @param morphologyMap - Morphological data for scoring.
+ * @param wordMap - Dictionary for linguistic resolution.
+ * @param options - Toggles for different search modes.
+ * @param pagination - Page number and results per page.
+ * @param preComputedFuseIndex - Optional pre-built fuzzy index.
+ * @param cache - Optional LRU cache for performance.
+ * @param invertedIndex - Pre-built word/lemma/root indexes.
+ * @returns Paginated results with metadata and match counts.
  */
 export const search = <TVerse extends VerseInput>(
   query: string,
