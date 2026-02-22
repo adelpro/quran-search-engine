@@ -520,8 +520,10 @@ const performSemanticSearch = <TVerse extends VerseInput>(
  * @param pagination - Page number and results per page.
  * @param preComputedFuseIndex - Optional pre-built fuzzy index.
  * @param cache - Optional LRU cache for performance.
- * @param invertedIndex - Pre-built word/lemma/root indexes.
+ * @param invertedIndex - Optional Pre-built word/lemma/root indexes.
  * @returns Paginated results with metadata and match counts.
+ * @example
+ * result = search("الحمد لله", quranData, morphologyMap, wordMap, options, { page: 1, limit: 10 }, undefined, searchCache)
  */
 export const search = <TVerse extends VerseInput>(
   query: string,
