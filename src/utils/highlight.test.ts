@@ -86,7 +86,7 @@ describe('Highlight Utils', () => {
 
       it('should use provided tokenTypes', () => {
         const text = 'بسم الله';
-        const tokenTypes: Record<string, MatchType> = { 'الله': 'exact' };
+        const tokenTypes: Record<string, MatchType> = { الله: 'exact' };
         const result = getHighlightRanges(text, ['الله'], tokenTypes);
 
         expect(result[0].matchType).toBe('exact');
@@ -94,7 +94,7 @@ describe('Highlight Utils', () => {
 
       it('should map none matchType to fuzzy', () => {
         const text = 'بسم الله';
-        const tokenTypes: Record<string, MatchType> = { 'الله': 'none' };
+        const tokenTypes: Record<string, MatchType> = { الله: 'none' };
         const result = getHighlightRanges(text, ['الله'], tokenTypes);
 
         expect(result[0].matchType).toBe('fuzzy');
@@ -102,7 +102,7 @@ describe('Highlight Utils', () => {
 
       it('should support lemma match type', () => {
         const text = 'كتب الكاتب الكتاب';
-        const tokenTypes: Record<string, MatchType> = { 'كتب': 'lemma' };
+        const tokenTypes: Record<string, MatchType> = { كتب: 'lemma' };
         const result = getHighlightRanges(text, ['كتب'], tokenTypes);
 
         expect(result.length).toBeGreaterThanOrEqual(1);
@@ -111,7 +111,7 @@ describe('Highlight Utils', () => {
 
       it('should support root match type', () => {
         const text = 'كتب الكاتب';
-        const tokenTypes: Record<string, MatchType> = { 'كتب': 'root' };
+        const tokenTypes: Record<string, MatchType> = { كتب: 'root' };
         const result = getHighlightRanges(text, ['كتب'], tokenTypes);
 
         expect(result[0].matchType).toBe('root');
@@ -139,8 +139,7 @@ describe('Highlight Utils', () => {
           const shorterMatch = result.find((r) => r.token === 'الله');
           if (shorterMatch) {
             expect(
-              shorterMatch.end <= longerMatch.start ||
-                shorterMatch.start >= longerMatch.end,
+              shorterMatch.end <= longerMatch.start || shorterMatch.start >= longerMatch.end,
             ).toBe(true);
           }
         }
