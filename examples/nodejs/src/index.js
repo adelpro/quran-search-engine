@@ -1,4 +1,4 @@
-import { loadQuranData, loadMorphology, loadWordMap, search, LRUCache } from 'quran-search-engine';
+import { loadQuranData, loadMorphology, loadWordMap, loadInvertedIndex, search, LRUCache } from 'quran-search-engine';
 
 async function main() {
     console.log('🚀 Loading Quran Search Engine data...\n');
@@ -102,7 +102,45 @@ async function main() {
         const noRoot = search('الله', quranData, morphologyMap, wordMap, { lemma: true, root: false }, { page: 1, limit: 20 }, cache);
         console.log(`   Cache entries after diff options: ${cache.size}`);
 
-        console.log('\n═'.repeat(50));
+        console.log('\n\u2550'.repeat(50));
+        console.log();
+
+        // ═══════════════════════════════════════════════════
+        // Inverted Index Demo: O(1) lemma/root lookups
+        // ═══════════════════════════════════════════════════
+        console.log('═'.repeat(50));
+        console.log('🗂️  INVERTED INDEX DEMO');
+        console.log('═'.repeat(50));
+
+        // Build the inverted index once from loaded data
+        const tBuild = performance.now();
+        const invertedIndex = await loadInvertedIndex();
+        const dBuild = (performance.now() - tBuild).toFixed(2);
+
+        console.log(`\n   Loaded inverted index in ${dBuild}ms`);
+        console.log(`   Lemma entries: ${invertedIndex.lemmaIndex.size}`);
+        console.log(`   Root entries:  ${invertedIndex.rootIndex.size}`);
+        console.log(`   Word entries:  ${invertedIndex.wordIndex.size}`);
+
+        // Search using the inverted index for O(1) lemma/root lookups
+        const results = search(
+            'الله الرحمن',
+            quranData,
+            morphologyMap,
+            wordMap,
+            { lemma: true, root: true },
+            undefined,      // pagination
+            undefined,      // preComputedFuseIndex
+            undefined,      // cache
+            invertedIndex,  // ← O(1) lemma/root lookups
+        );
+
+        console.log(`\n   Found ${results.counts.total} matches for 'الله الرحمن'`);
+        console.log(`   - Exact: ${results.counts.simple}`);
+        console.log(`   - Lemma: ${results.counts.lemma}`);
+        console.log(`   - Root:  ${results.counts.root}`);
+
+        console.log('═'.repeat(50));
         console.log();
 
         // Interactive search if arguments provided
