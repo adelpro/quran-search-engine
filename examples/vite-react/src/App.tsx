@@ -36,12 +36,10 @@ function App() {
     semantic: true,
     suraId: undefined as number | undefined,
     juzId: undefined as number | undefined,
-    suraName: "" // Advanced filter by Surah name
+    suraName: '', // Advanced filter by Surah name
   });
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
-
-
 
   // 1. Initial Data Loading
   useEffect(() => {
@@ -79,8 +77,6 @@ function App() {
       );
 
       setSearchResponse(response);
-
-
     } else {
       setSearchResponse(null);
     }
@@ -157,8 +153,14 @@ function App() {
           Sura ID:
           <input
             type="number"
-            min="1" max="114"
-            onChange={(e) => setOptions({ ...options, suraId: e.target.value ? parseInt(e.target.value) : undefined })}
+            min="1"
+            max="114"
+            onChange={(e) =>
+              setOptions({
+                ...options,
+                suraId: e.target.value ? parseInt(e.target.value) : undefined,
+              })
+            }
             style={{ width: '60px', marginLeft: '5px' }}
           />
         </label>
@@ -166,8 +168,14 @@ function App() {
           Juz ID:
           <input
             type="number"
-            min="1" max="30"
-            onChange={(e) => setOptions({ ...options, juzId: e.target.value ? parseInt(e.target.value) : undefined })}
+            min="1"
+            max="30"
+            onChange={(e) =>
+              setOptions({
+                ...options,
+                juzId: e.target.value ? parseInt(e.target.value) : undefined,
+              })
+            }
             style={{ width: '60px', marginLeft: '5px' }}
           />
         </label>
@@ -178,14 +186,20 @@ function App() {
             placeholder="Ex: الفاتحة ou Fatiha"
             value={options.suraName}
             onChange={(e) => setOptions({ ...options, suraName: e.target.value })}
-            style={{ marginLeft: '8px', padding: '4px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9rem', width: '140px' }}
+            style={{
+              marginLeft: '8px',
+              padding: '4px 8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+              width: '140px',
+            }}
           />
         </label>
       </div>
 
       {searchResponse && (
         <>
-
           <div className="results-info">
             <div className="results-count">
               Found <strong>{searchResponse.pagination.totalResults}</strong> matches

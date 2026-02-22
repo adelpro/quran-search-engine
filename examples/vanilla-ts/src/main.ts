@@ -18,7 +18,6 @@ class QuranSearchApp {
   private loading = true;
   private cache = new LRUCache<string, SearchResponse>(50);
 
-
   private searchInput: HTMLInputElement;
   private lemmaCheckbox: HTMLInputElement;
   private rootCheckbox: HTMLInputElement;
@@ -95,7 +94,7 @@ class QuranSearchApp {
       //new
       suraId: this.suraIdInput.value ? parseInt(this.suraIdInput.value) : undefined,
       juzId: this.juzIdInput.value ? parseInt(this.juzIdInput.value) : undefined,
-      suraName: this.suraNameInput.value || undefined
+      suraName: this.suraNameInput.value || undefined,
     };
 
     try {
@@ -109,8 +108,6 @@ class QuranSearchApp {
         undefined, // preComputedFuseIndex
         this.cache, // LRU cache
       );
-
-
 
       this.renderResults(response);
     } catch (error) {
@@ -205,8 +202,6 @@ class QuranSearchApp {
   private showError(message: string) {
     this.resultsDiv.innerHTML = `<div style="color: red; padding: 20px;">${message}</div>`;
   }
-
-
 }
 
 // Initialize the app when DOM is loaded
