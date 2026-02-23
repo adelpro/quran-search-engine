@@ -16,6 +16,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
+- Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
@@ -33,6 +34,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [How scoring works](#how-scoring-works)
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
+- [Performance Optimization](#performance-optimization-advanced)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
 - [Example apps](#example-apps)
@@ -238,6 +240,53 @@ const wordMap: WordMap = await loadWordMap();
 // wordMap['الله'] => { lemma: 'الله', root: 'ا ل ه' }
 ```
 
+#### `buildInvertedIndex(morphologyMap, quranData)`
+
+Builds in-memory inverted indices from the morphology map and verse data in a single pass. Produces three indices:
+
+- `lemmaIndex`: lemma → Set of verse GIDs
+- `rootIndex`: root → Set of verse GIDs
+- `wordIndex`: normalized word → Set of verse GIDs
+
+This converts lemma/root lookups during search from **O(n)** linear scans to **O(1)** Map lookups.
+
+Use case: build the index once at startup and pass it to every `search()` call for maximum throughput.
+
+```ts
+import { buildInvertedIndex, loadMorphology, loadQuranData, loadWordMap, search, type InvertedIndex } from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+]);
+
+// Build once — O(n) one-time cost
+const invertedIndex: InvertedIndex = buildInvertedIndex(morphologyMap, quranData);
+
+// Pass to every search call — O(1) lemma/root lookups
+const result = search('الرحمن', quranData, morphologyMap, wordMap,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+  undefined,   // preComputedFuseIndex
+  undefined,   // cache
+  invertedIndex,
+);
+```
+
+#### `loadInvertedIndex()`
+
+Loads the pre-built inverted index from the bundled static JSON files (`lemma-index.json`, `root-index.json`, `word-index.json`) and reconstructs them as `Map<string, Set<number>>` structures.
+
+Use case: avoid the CPU cost of `buildInvertedIndex` by loading the pre-computed index from disk instead.
+
+```ts
+import { loadInvertedIndex } from 'quran-search-engine';
+
+// Load the pre-built index — no CPU build cost
+const invertedIndex = await loadInvertedIndex();
+```
+
 ### Normalization
 
 #### `removeTashkeel(text)`
@@ -264,19 +313,31 @@ const out = normalizeArabic('بِسْمِ ٱللَّهِ');
 
 ### Search
 
-#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, preComputedFuseIndex?, cache?)`
+#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, preComputedFuseIndex?, cache?, invertedIndex?)`
 
 Main entry point. Combines:
 
 - Exact text matching
 - Lemma/root matching (when enabled and available)
 - Fuzzy fallback (Fuse) per token
+- Semantic concept expansion (when `options.semantic = true`)
+- Range lookups (`2:255`, `1:1-7`, `1:`)
 
 Use case: your primary API for Quran search results + scoring + pagination.
-Pass an optional `LRUCache` instance as the last argument to cache results by query+options+pagination key.
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `query` | `string` | Search query (Arabic text or range like `2:255`) |
+| `quranData` | `TVerse[]` | Loaded verse array |
+| `morphologyMap` | `Map<number, MorphologyAya>` | Loaded morphology map |
+| `wordMap` | `WordMap` | Loaded word map |
+| `options` | `AdvancedSearchOptions` | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
+| `pagination` | `PaginationOptions` | Page and limit (default: `{ page: 1, limit: 20 }`) |
+| `preComputedFuseIndex` | `Fuse<TVerse>` \| `undefined` | Pre-built Fuse index — skips rebuild on every call |
+| `cache` | `LRUCache` \| `undefined` | LRU cache — returns cached result for identical calls |
+| `invertedIndex` | `InvertedIndex` \| `undefined` | Pre-built inverted index — O(1) lemma/root lookups |
 
 Set `options.fuzzy = false` to disable fuzzy fallback.
-
 **Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
 
 ```ts
@@ -613,7 +674,7 @@ When the cache reaches capacity, the **least recently used** entry is automatica
 
 ### Using with `search()`
 
-Pass the cache as the **8th argument** to `search()`:
+Pass the cache as the **8th argument** to `search()` (`preComputedFuseIndex` is 7th — pass `undefined` if not using it):
 
 ```ts
 import { search, LRUCache } from 'quran-search-engine';
@@ -631,8 +692,8 @@ function handleSearch(query: string, page: number) {
     wordMap,
     { lemma: true, root: true },
     { page, limit: 20 },
-    undefined, // preComputedFuseIndex
-    searchCache, // ← cache instance
+    undefined,     // 7th — preComputedFuseIndex (optional)
+    searchCache,   // 8th — cache instance
   );
 }
 
@@ -813,6 +874,29 @@ export type HighlightRange = {
 };
 ```
 
+### `InvertedIndex`
+
+Container for the three pre-built lookup maps returned by `buildInvertedIndex()` and `loadInvertedIndex()`:
+
+```ts
+import type { InvertedIndex, LemmaIndex, RootIndex, WordIndex } from 'quran-search-engine';
+
+// LemmaIndex: normalized lemma → Set of verse GIDs
+type LemmaIndex = Map<string, Set<number>>;
+
+// RootIndex: normalized root → Set of verse GIDs
+type RootIndex = Map<string, Set<number>>;
+
+// WordIndex: normalized word → Set of verse GIDs
+type WordIndex = Map<string, Set<number>>;
+
+type InvertedIndex = {
+  lemmaIndex: LemmaIndex;
+  rootIndex: RootIndex;
+  wordIndex: WordIndex;
+};
+```
+
 ## Non-goals
 
 This library does not aim to provide:
@@ -872,6 +956,7 @@ pnpm test --coverage
 The test suite covers:
 
 - **Core Search Logic**: `search()` and `simpleSearch()` functions
+- **Inverted Index**: `buildInvertedIndex()` — lemma/root/word index construction and GID lookups
 - **Tokenization**: Exact, lemma, and root matching algorithms
 - **Arabic Normalization**: Text processing utilities (`removeTashkeel`, `normalizeArabic`)
 - **Data Loading**: Quran data, morphology, and word map loading utilities
@@ -901,6 +986,83 @@ This script performs **integration testing** that validates the complete search 
 
 ## Performance Optimization (Advanced)
 
+### Pre-building the Inverted Index
+
+By default, `search()` performs O(n) linear scans through all morphology entries on every lemma/root lookup. For production apps, pre-build the inverted index once and pass it to every `search()` call for O(1) lookups.
+
+**Option A — Build from loaded data** (no extra I/O, costs one CPU pass at startup):
+
+```ts
+import { buildInvertedIndex, loadMorphology, loadQuranData, loadWordMap, search } from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap] = await Promise.all([
+  loadQuranData(), loadMorphology(), loadWordMap(),
+]);
+
+// Build once — replaces O(n) scans with O(1) lookups
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+
+// Pass as 9th argument on every search
+const result = search(
+  'الرحمن',
+  quranData, morphologyMap, wordMap,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+  undefined,       // preComputedFuseIndex
+  undefined,       // cache
+  invertedIndex,   // <--- 9th parameter
+);
+```
+
+**Option B — Load from bundled static files** (zero CPU build cost):
+
+```ts
+import { loadInvertedIndex, search } from 'quran-search-engine';
+
+const invertedIndex = await loadInvertedIndex();
+
+const result = search('الرحمن', quranData, morphologyMap, wordMap,
+  { lemma: true, root: true }, { page: 1, limit: 20 },
+  undefined, undefined, invertedIndex,
+);
+```
+
+**Combining all optimizations** (recommended for production):
+
+```ts
+import {
+  loadQuranData, loadMorphology, loadWordMap,
+  loadInvertedIndex, createArabicFuseSearch,
+  LRUCache, search,
+} from 'quran-search-engine';
+import type { SearchResponse, QuranText } from 'quran-search-engine';
+
+// Load everything in parallel
+const [quranData, morphologyMap, wordMap, invertedIndex] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadInvertedIndex(),
+]);
+
+// Pre-compute Fuse index (skips ~5-20ms rebuild per keystroke)
+const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+
+// Shared LRU cache (instant repeat queries)
+const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
+
+// All optimizations active
+const result = search(
+  query,
+  quranData, morphologyMap, wordMap,
+  { lemma: true, root: true, fuzzy: true },
+  { page: 1, limit: 20 },
+  fuseIndex,     // 7th — skip Fuse rebuild
+  cache,         // 8th — instant cache hit
+  invertedIndex, // 9th — O(1) lemma/root lookups
+);
+```
+
 ### Pre-computing the Fuse Index
 
 By default, `search()` builds a new Fuse.js index on every call if fuzzy search is enabled. For high-performance applications (e.g., real-time search as you type), you can pre-compute the index and pass it to `search`.
@@ -911,7 +1073,7 @@ import { search, createArabicFuseSearch } from 'quran-search-engine';
 // 1. Create the index once (e.g., in useMemo or at app startup)
 const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
 
-// 2. Pass it to search
+// 2. Pass it to search as the 7th argument
 const results = search(
   query,
   quranData,
@@ -940,7 +1102,7 @@ This avoids rebuilding the index (~5-20ms) on every keystroke.
 src/
 ├── core/
 │   ├── range-parser.test.ts # Range search parsing tests
-│   ├── search.test.ts       # Search algorithm tests
+│   ├── search.test.ts       # Search algorithm, inverted index, LRU cache, and Fuse tests
 │   ├── lru-cache.test.ts    # LRU cache tests
 │   └── tokenization.test.ts # Token matching tests
 └── utils/
