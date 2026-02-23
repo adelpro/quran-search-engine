@@ -6,7 +6,6 @@ import {
   buildInvertedIndex,
   loadInvertedIndex,
 } from './loader';
-import { loadQuranData, loadMorphology, loadWordMap } from './loader';
 import fs from 'fs';
 
 describe('Loader Functions', () => {

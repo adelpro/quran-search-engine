@@ -37,13 +37,13 @@ type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
  * const fuse = createArabicFuseSearch(verses, ['standard', 'translation']);
  * const results = fuse.search('رب');
  */
- /**
-  * 
-  * 
+/**
+ *
+ *
  * threshold:
  * Controls how fuzzy the search matching is.
  * 0.0 requires exact matches, while 1.0 matches almost anything.
- * 
+ *
  * And the value = 0.5 cause:
  * A value of 0.5 allows moderate typo tolerance
  * while keeping search results relevant.
@@ -67,7 +67,7 @@ const FUSE_DISTANCE = 100;
 
 /**
  * minMatchCharLength:
- * The minimum number of characters a search term must have 
+ * The minimum number of characters a search term must have
  * before Fuse considers it for comparison against the text.
  *
  * If the user types a very short word, e.g., one or two letters,
@@ -75,10 +75,10 @@ const FUSE_DISTANCE = 100;
  * This prevents random or meaningless results from being generated.
  *
  * And the value = 3 cause:
- * The value 3 was chosen because words shorter than 3 characters 
- * are often too common or not distinctive (e.g., "من", "ال", "في") 
+ * The value 3 was chosen because words shorter than 3 characters
+ * are often too common or not distinctive (e.g., "من", "ال", "في")
  * and could produce many irrelevant results.
- * Words with 3 or more characters are usually more distinctive and important, 
+ * Words with 3 or more characters are usually more distinctive and important,
  * leading to more accurate and reliable search results.
  *
  */
