@@ -47,7 +47,12 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             (ngModelChange)="onQueryChange()"
             placeholder="مثال: الرحمن"
           />
-          <button class="button" type="button" (click)="runSearch(true)" [disabled]="loadState !== 'ready'">
+          <button
+            class="button"
+            type="button"
+            (click)="runSearch(true)"
+            [disabled]="loadState !== 'ready'"
+          >
             Search
           </button>
         </div>
@@ -67,25 +72,44 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             Fuzzy
           </label>
           <label class="check">
-            <input type="checkbox" [(ngModel)]="options.semantic" (ngModelChange)="runSearch(true)" />
+            <input
+              type="checkbox"
+              [(ngModel)]="options.semantic"
+              (ngModelChange)="runSearch(true)"
+            />
             Semantic
           </label>
           <label class="label">
             Sura ID:
-            <input type="number" class="input" style="width: 80px;" 
-                  [(ngModel)]="options.suraId" (ngModelChange)="runSearch(true)" />
+            <input
+              type="number"
+              class="input"
+              style="width: 80px;"
+              [(ngModel)]="options.suraId"
+              (ngModelChange)="runSearch(true)"
+            />
           </label>
-  
+
           <label class="label">
             Juz ID:
-              <input type="number" class="input" style="width: 80px;" 
-                  [(ngModel)]="options.juzId" (ngModelChange)="runSearch(true)" />
+            <input
+              type="number"
+              class="input"
+              style="width: 80px;"
+              [(ngModel)]="options.juzId"
+              (ngModelChange)="runSearch(true)"
+            />
           </label>
           <label class="label">
             Sura Name:
-            <input type="text" class="input" style="width: 150px;" 
-                  placeholder="Ex: الفاتحة"
-                  [(ngModel)]="options.suraName" (ngModelChange)="runSearch(true)" />
+            <input
+              type="text"
+              class="input"
+              style="width: 150px;"
+              placeholder="Ex: الفاتحة"
+              [(ngModel)]="options.suraName"
+              (ngModelChange)="runSearch(true)"
+            />
           </label>
         </fieldset>
       </section>
@@ -95,8 +119,6 @@ type HighlightPart = { text: string; matchType: MatchType | null };
         <div *ngIf="loadState === 'error'" class="error" role="alert">
           {{ errorMessage }}
         </div>
-
-
 
         <ng-container *ngIf="loadState === 'ready'">
           <div *ngIf="!response" class="muted">Type an Arabic query to see results.</div>
@@ -120,7 +142,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                 >
                   Prev
                 </button>
-                <span class="muted">Page {{ page }} / {{ response.pagination.totalPages || 1 }}</span>
+                <span class="muted"
+                  >Page {{ page }} / {{ response.pagination.totalPages || 1 }}</span
+                >
                 <button
                   class="button secondary"
                   type="button"
@@ -135,7 +159,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             <ol class="list">
               <li *ngFor="let verse of response.results; trackBy: trackByGid" class="item">
                 <div class="itemHead">
-                  <span class="badge" [attr.data-type]="verse.matchType">{{ verse.matchType }}</span>
+                  <span class="badge" [attr.data-type]="verse.matchType">{{
+                    verse.matchType
+                  }}</span>
                   <span class="ref">{{ verse.sura_name_en }} • {{ verse.aya_id_display }}</span>
                   <span class="score">score {{ verse.matchScore }}</span>
                 </div>
@@ -325,7 +351,15 @@ export class AppComponent implements OnInit, OnDestroy {
   page = 1;
   limit = 20;
 
-  options: { lemma: boolean; root: boolean; fuzzy: boolean; semantic: boolean; suraId?: number; juzId?: number; suraName?: string; } = {
+  options: {
+    lemma: boolean;
+    root: boolean;
+    fuzzy: boolean;
+    semantic: boolean;
+    suraId?: number;
+    juzId?: number;
+    suraName?: string;
+  } = {
     lemma: true,
     root: true,
     fuzzy: true,
@@ -333,7 +367,6 @@ export class AppComponent implements OnInit, OnDestroy {
   };
 
   response: SearchResponse<QuranText> | null = null;
-
 
   private quranData: QuranText[] | null = null;
   private morphologyMap: Map<number, MorphologyAya> | null = null;
@@ -413,8 +446,6 @@ export class AppComponent implements OnInit, OnDestroy {
       undefined, // preComputedFuseIndex
       this.searchCache, // LRU cache — identical queries return cached results
     );
-
-
 
     this.rebuildHighlightCache();
   }
