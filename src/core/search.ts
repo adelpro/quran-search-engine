@@ -25,6 +25,53 @@ type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
 };
 
 // ==================== Fuse.js Setup ====================
+ /**
+  * 
+  * 
+ * threshold:
+ * Controls how fuzzy the search matching is.
+ * 0.0 requires exact matches, while 1.0 matches almost anything.
+ * 
+ * And the value = 0.5 cause:
+ * A value of 0.5 allows moderate typo tolerance
+ * while keeping search results relevant.
+ */
+const FUSE_THRESHOLD = 0.5;
+
+/**
+ * distance:
+ * Determines how far a matched term can be from the beginning
+ * of the text and still be considered a strong result.
+ *
+ * A value of 100 allows matches to appear almost anywhere
+ * within a verse without being penalized for their position,
+ * which is suitable for Quranic verses that can vary in length.
+ *
+ * And the value = 100 cause:
+ * It is large enough to provide flexibility,
+ * but not excessively large to make the setting ineffective.
+ */
+const FUSE_DISTANCE = 100;
+
+/**
+ * minMatchCharLength:
+ * The minimum number of characters a search term must have 
+ * before Fuse considers it for comparison against the text.
+ *
+ * If the user types a very short word, e.g., one or two letters,
+ * Fuse will ignore it completely and not attempt to find it in the text.
+ * This prevents random or meaningless results from being generated.
+ *
+ * And the value = 3 cause:
+ * The value 3 was chosen because words shorter than 3 characters 
+ * are often too common or not distinctive (e.g., "من", "ال", "في") 
+ * and could produce many irrelevant results.
+ * Words with 3 or more characters are usually more distinctive and important, 
+ * leading to more accurate and reliable search results.
+ *
+ */
+const FUSE_MIN_MATCH_CHAR_LENGTH = 3;
+
 export const createArabicFuseSearch = <T>(
   collection: T[],
   keys: string[],
@@ -33,10 +80,10 @@ export const createArabicFuseSearch = <T>(
   new Fuse(collection, {
     includeScore: true,
     includeMatches: true,
-    threshold: 0.5,
-    distance: 100,
+    threshold: FUSE_THRESHOLD,
+    distance: FUSE_DISTANCE,
     ignoreLocation: true,
-    minMatchCharLength: 3,
+    minMatchCharLength: FUSE_MIN_MATCH_CHAR_LENGTH,
     useExtendedSearch: true,
     keys,
     ...options,
