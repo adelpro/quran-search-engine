@@ -155,10 +155,11 @@ function App() {
             type="number"
             min="1"
             max="114"
+            value={options.suraId ?? ''}
             onChange={(e) =>
               setOptions({
                 ...options,
-                suraId: e.target.value ? parseInt(e.target.value) : undefined,
+                suraId: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
             style={{ width: '60px', marginLeft: '5px' }}
@@ -170,10 +171,11 @@ function App() {
             type="number"
             min="1"
             max="30"
+            value={options.juzId ?? ''}
             onChange={(e) =>
               setOptions({
                 ...options,
-                juzId: e.target.value ? parseInt(e.target.value) : undefined,
+                juzId: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
             style={{ width: '60px', marginLeft: '5px' }}
@@ -183,7 +185,7 @@ function App() {
           Sura Name:
           <input
             type="text"
-            placeholder="Ex: الفاتحة ou Fatiha"
+            placeholder="Ex: الفاتحة or Fatiha"
             value={options.suraName}
             onChange={(e) => setOptions({ ...options, suraName: e.target.value })}
             style={{

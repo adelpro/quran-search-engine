@@ -294,11 +294,8 @@ const response = search(
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
-// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, range: 0, total: 42 }
+// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, semantic: 0, total: 42 }
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
-// response.pagination => { totalResults: 6, totalPages: 1, currentPage: 1, limit: 10 }
-// response.counts => { simple: 2, lemma: 3, root: 4, fuzzy: 0, total: 6 }
-// response.results[0] => { gid: 1, sura_id: 1, matchType: 'exact', ... }
 ```
 
 | Match type | Score per hit        |
