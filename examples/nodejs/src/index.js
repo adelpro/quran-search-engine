@@ -143,42 +143,113 @@ async function main() {
         console.log('═'.repeat(50));
         console.log();
 
-        // Interactive search if arguments provided
-        const queryArg = process.argv[2];
-        if (queryArg) {
-            console.log(`🔍 Custom search: "${queryArg}"`);
-            console.log('─'.repeat(50));
+    // ═══════════════════════════════════════════════════
+    // LRU Cache Demo: shows cache hits vs fresh searches
+    // ═══════════════════════════════════════════════════
+    console.log('═'.repeat(50));
+    console.log('🗄️  LRU CACHE DEMO');
+    console.log('═'.repeat(50));
 
-            const customResults = search(
-                queryArg,
-                quranData,
-                morphologyMap,
-                wordMap,
-                { lemma: true, root: true, fuzzy: true },
-                { page: 1, limit: 10 },
-                cache,
-            );
+    // First search — cache MISS (computed fresh)
+    const t1 = performance.now();
+    const first = search(
+      'الله',
+      quranData,
+      morphologyMap,
+      wordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 20 },
+      undefined,
+      cache,
+    );
+    const d1 = (performance.now() - t1).toFixed(2);
 
-            console.log(`📊 Found ${customResults.pagination.totalResults} matches\n`);
+    // Same query again — cache HIT (instant)
+    const t2 = performance.now();
+    const second = search(
+      'الله',
+      quranData,
+      morphologyMap,
+      wordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 20 },
+      undefined,
+      cache,
+    );
+    const d2 = (performance.now() - t2).toFixed(2);
 
-            customResults.results.forEach((verse, index) => {
-                console.log(`${index + 1}. ${verse.sura_name} (${verse.sura_id}:${verse.aya_id})`);
-                console.log(`   ${verse.uthmani}`);
-                console.log();
-            });
-        } else {
-            console.log('💡 Tip: Run with a search term as argument:');
-            console.log('   pnpm start "your search term"');
-        }
-    } catch (error) {
-        console.error('❌ Error:', error.message);
-        process.exit(1);
+    console.log(`\n   First  search: ${d1}ms (computed)`);
+    console.log(`   Second search: ${d2}ms (cached)`);
+    console.log(`   Same reference? ${first === second}`); // true = cache hit
+    console.log(`   Cache entries:  ${cache.size}`);
+
+    // Different page — separate cache entry
+    const page2 = search(
+      'الله',
+      quranData,
+      morphologyMap,
+      wordMap,
+      { lemma: true, root: true },
+      { page: 2, limit: 20 },
+      undefined,
+      cache,
+    );
+    console.log(`\n   Page 2 is different object? ${first !== page2}`); // true
+    console.log(`   Cache entries after page 2: ${cache.size}`);
+
+    // Different options — separate cache entry
+    const noRoot = search(
+      'الله',
+      quranData,
+      morphologyMap,
+      wordMap,
+      { lemma: true, root: false },
+      { page: 1, limit: 20 },
+      undefined,
+      cache,
+    );
+    console.log(`   Cache entries after diff options: ${cache.size}`);
+
+    console.log('\n═'.repeat(50));
+    console.log();
+
+    // Interactive search if arguments provided
+    const queryArg = process.argv[2];
+    if (queryArg) {
+      console.log(`🔍 Custom search: "${queryArg}"`);
+      console.log('─'.repeat(50));
+
+      const customResults = search(
+        queryArg,
+        quranData,
+        morphologyMap,
+        wordMap,
+        { lemma: true, root: true, fuzzy: true },
+        { page: 1, limit: 10 },
+        undefined,
+        cache,
+      );
+
+      console.log(`📊 Found ${customResults.pagination.totalResults} matches\n`);
+
+      customResults.results.forEach((verse, index) => {
+        console.log(`${index + 1}. ${verse.sura_name} (${verse.sura_id}:${verse.aya_id})`);
+        console.log(`   ${verse.uthmani}`);
+        console.log();
+      });
+    } else {
+      console.log('💡 Tip: Run with a search term as argument:');
+      console.log('   pnpm start "your search term"');
     }
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    process.exit(1);
+  }
 }
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 main();

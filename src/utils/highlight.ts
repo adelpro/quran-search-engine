@@ -34,7 +34,22 @@ const createDiacriticRegex = (token: string) => {
   const tokenPattern = letters.join(tashkeel);
   return new RegExp(`([^\\s]*${tokenPattern}[^\\s]*)`, 'gu');
 };
-
+/**
+ * Identifies the exact character positions (ranges) in a text that match search tokens.
+ * Used for highlighting search results in the UI.
+ *
+ * Returns empty array if matchedTokens don't exist or has a length of 0
+ *
+ * @param text - The verse string
+ * @param matchedTokens - The tokens identified by the search engine
+ * @param tokenTypes - Mapping of tokens to their match type (exact, lemma, root).
+ * @returns An array of highlight ranges sorted by position.
+ *
+ * @example
+ * getHighlightRanges(verse.uthmani, verse.matchedTokens, verse.tokenTypes)
+ * // returns [{start: 1, end: 6, token:"الحمد", matchType:"lemma"},
+ * //          {start: 10, end: 14, token:"الله", matchType:"exact"},...]
+ */
 export const getHighlightRanges = (
   text: string,
   matchedTokens: readonly string[] | undefined,
@@ -61,7 +76,15 @@ export const getHighlightRanges = (
   }
 
   matches.sort((a, b) => {
+    // 1. Longest matched text wins (e.g., "Abdullah" beats "Abd")
     if (a.priority !== b.priority) return b.priority - a.priority;
+
+    // 2. Tie-breaker: If two different search tokens resulted in the
+    // exact same matched word (due to the greedy regex `[^\\s]*`),
+    // we prioritize the longer, more specific search token.
+    if (a.token.length !== b.token.length) return b.token.length - a.token.length;
+
+    // 3. Earliest starting index wins
     return a.start - b.start;
   });
 

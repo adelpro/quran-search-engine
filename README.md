@@ -9,6 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/ts-yes-blue)
 [![Changelog](https://img.shields.io/badge/changelog-view-brightgreen)](https://github.com/adelpro/quran-search-engine/releases)
 ![license](https://img.shields.io/npm/l/quran-search-engine)
+[![bundle limit](https://img.shields.io/badge/bundle%20limit-2%20MB-blue)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L80)
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
@@ -337,6 +338,7 @@ Use case: your primary API for Quran search results + scoring + pagination.
 | `invertedIndex` | `InvertedIndex` \| `undefined` | Pre-built inverted index — O(1) lemma/root lookups |
 
 Set `options.fuzzy = false` to disable fuzzy fallback.
+**Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -353,11 +355,8 @@ const response = search(
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
-// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, range: 0, total: 42 }
+// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, semantic: 0, total: 42 }
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
-// response.pagination => { totalResults: 6, totalPages: 1, currentPage: 1, limit: 10 }
-// response.counts => { simple: 2, lemma: 3, root: 4, fuzzy: 0, total: 6 }
-// response.results[0] => { gid: 1, sura_id: 1, matchType: 'exact', ... }
 ```
 
 | Match type | Score per hit        |
@@ -902,12 +901,12 @@ type InvertedIndex = {
 
 This library does not aim to provide:
 
-- AI or semantic interpretation
+- Advanced AI or semantic interpretation beyond synonym mapping
 - Tafsir or meaning inference
 - Opinionated UI rendering
 - Server-side indexing infrastructure
 
-It focuses strictly on deterministic Quran text search.
+It focuses strictly on deterministic Quran text search with basic semantic synonym support.
 
 ## Example apps
 
@@ -1082,7 +1081,8 @@ const results = search(
   wordMap,
   options,
   pagination,
-  fuseIndex, // <--- 7th parameter
+  fuseIndex, // ← pre-computed index
+  cache, // ← optional cache
 );
 ```
 

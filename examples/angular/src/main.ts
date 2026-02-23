@@ -4,4 +4,3 @@ import { AppComponent } from './app/app.component';
 bootstrapApplication(AppComponent).catch((err: unknown) => {
   console.error(err);
 });
-
