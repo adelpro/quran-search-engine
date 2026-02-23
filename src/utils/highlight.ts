@@ -76,7 +76,15 @@ export const getHighlightRanges = (
   }
 
   matches.sort((a, b) => {
+    // 1. Longest matched text wins (e.g., "Abdullah" beats "Abd")
     if (a.priority !== b.priority) return b.priority - a.priority;
+
+    // 2. Tie-breaker: If two different search tokens resulted in the
+    // exact same matched word (due to the greedy regex `[^\\s]*`),
+    // we prioritize the longer, more specific search token.
+    if (a.token.length !== b.token.length) return b.token.length - a.token.length;
+
+    // 3. Earliest starting index wins
     return a.start - b.start;
   });
 
