@@ -2,6 +2,28 @@ import { normalizeArabic } from '../utils/normalization';
 import { InvalidModeError } from '../errors';
 import type { VerseInput, MorphologyAya, WordMap } from '../types';
 
+/**
+ * Identifies and returns the specific words from a verse that match the search criteria.
+ *
+ * Returns empty array if `cleanQuery` is null or empty.
+ * * This function supports three matching modes:
+ * - 'text': Matches the literal characters of the word.
+ * - 'lemma': Matches the word's dictionary/base form.
+ * - 'root': Matches the word's Arabic root.
+ *
+ * @param verse - The verse object containing the text to be scanned
+ * @param mode - the search mode
+ * @param targetLemma - The base form to look for (required for lemma mode)
+ * @param targetRoot - The Arabic root to look for (required for root mode).
+ * @param cleanQuery - the normalized query string from the user
+ * @param morphologyMap - A map of verse IDs to their morphological data.
+ * @param wordMap - (Optional) A map for looking up lemmas and roots of specific words.
+ * @returns An array of unique matching words or tokens found in the verse.
+ *
+ * @example
+ * getPositiveTokens(verse, 'text', undefined, undefined, 'الله', MorphMap)
+ * // Returns ["لله", "الله"]
+ */
 export const getPositiveTokens = (
   verse: VerseInput,
   mode: 'text' | 'lemma' | 'root',

@@ -60,8 +60,7 @@
       "عقل",
       "ضمير",
       "نفس",
-      "بال",
-      "فؤاد"
+      "بال"
     ],
     "category": "Anatomy/Spiritual",
     "notes": "القلب is the physical organ and center of thought/emotion. الفؤاد implies emotional intensity and is associated with burning feeling. الصدر is the chest, the seat of emotions and secrets. اللب is the intellect or core. البال is mindfulness and awareness."
@@ -170,8 +169,7 @@
       "سماح",
       "رحمة",
       "لين",
-      "غفر",
-      "عفو"
+      "غفر"
     ],
     "category": "Virtues",
     "notes": "المغفرة is covering the sin. العفو is complete erasure. الصفح is overlooking. التوبة is repentance. الغفران is abundant forgiveness."
@@ -194,7 +192,6 @@
       "غموض",
       "لبس",
       "مرض",
-      "شك",
       "امتراء",
       "ارتياب"
     ],
@@ -652,9 +649,7 @@
       "استكانة",
       "ذلة",
       "مَهَانَة",
-      "خور",
       "هزال",
-      "ضعف",
       "انكسار",
       "انحناء",
       "استخذاء"
@@ -691,7 +686,6 @@
       "زاد",
       "مؤنة",
       "غذاء",
-      "طعام",
       "مأكول",
       "مائدة",
       "نعمة",
@@ -999,22 +993,13 @@
       "صفرة",
       "خضرة",
       "زرقة",
-      "صُفْرة",
-      "سَواد",
-      "بياض",
-      "حُمْرة",
-      "خُضْرة",
-      "زُرْقة",
-      "شهبة",
       "أشهب",
       "أشقر",
       "أدهم",
-      "أبيض",
-      "أسود",
-      "أحمر",
-      "أخضر",
-      "أصفر",
-      "أزرق"
+      "رمادي",
+      "وردي",
+      "بنفسجي",
+      "برتقالي"
     ],
     "category": "Attributes",
     "notes": "اللون is color. الألوان are colors. البياض is whiteness. السواد is blackness. الحمرة is redness. الصفرة is yellowness. الخضرة is greenness. الزرقة is blueness. الأشهب is gray/white mixed. الأشقر is blond/fair. الأدهم is dark/black. Colors in Quran often have symbolic meanings: white for purity, black for darkness/mourning, green for life/paradise."
@@ -1028,7 +1013,6 @@
       "مقدار",
       "قليل",
       "كثير",
-      "عدد",
       "عِدَّة",
       "تعداد",
       "حساب",
@@ -1045,12 +1029,10 @@
       "عشرة",
       "مائة",
       "ألف",
-      "مليون",
-      "أعداد",
-      "أعْداد"
+      "مليون"
     ],
     "category": "Mathematics",
-    "notes": "العدد is number. الرقم is digit/number. الكمية is quantity. المقدار is amount/measure. القليل is few/little. الكثي� is many/much. العدة is count/number. التعداد is enumeration. الحساب is calculation. الإحصاء is census/counting. Numbers in Quran have both literal and symbolic meanings (e.g., 7 for perfection, 40 for completion)."
+    "notes": "العدد is number. الرقم is digit/number. الكمية is quantity. المقدار is amount/measure. القليل is few/little. الكثير is many/much. العدة is count/number. التعداد is enumeration. الحساب is calculation. الإحصاء is census/counting. Numbers in Quran have both literal and symbolic meanings (e.g., 7 for perfection, 40 for completion)."
   },
   {
     "english": ["Medicine", "Healing"],
@@ -1059,12 +1041,9 @@
       "دواء",
       "شفاء",
       "علاج",
-      "عِلاج",
       "رقية",
       "تعويذة",
       "ترياق",
-      "دَواء",
-      "شفاء",
       "برء",
       "عافية",
       "صحة",
@@ -1075,9 +1054,10 @@
       "سقم",
       "وجع",
       "ألم",
-      "حمى",
-      "سعال",
-      "زكام"
+      "أسقام",
+      "داء",
+      "باسق",
+      "عاهة"
     ],
     "category": "Health",
     "notes": "الطب is medicine. الدواء is remedy/medicine. الشفاء is healing/cure. العلاج is treatment. الرقية is incantation for healing. التعويذة is charm/amulet. الترياق is antidote. البرء is recovery. العافية is wellness. الصحة is health. الوقاية is prevention. الحفظ is preservation/protection. العِلَّة is illness/cause. المرض is sickness. السقم is chronic illness. الوجع is pain. الألم is pain/suffering. الحمى is fever. السعال is cough. الزكام is cold."
@@ -1099,12 +1079,13 @@
       "سكرات",
       "نزع",
       "احتضار",
-      "وفاة",
       "مَمات",
       "فَوْت",
       "ذَهاب",
       "زوال",
-      "انقضاء"
+      "انقراض",
+      "نهاية",
+      "خاتمة"
     ],
     "category": "Eschatology",
     "notes": "الموت is death. الوفاة is passing away/death. الهلاك is destruction/death. الفناء is annihilation. الرحيل is departure. الانتقال is transition. القضاء is divine decree/death. الأجل is appointed term. المنية is death/destiny. الحَتْف is violent death. الرَمَق is last breath. السكرات are agonies of death. النزع is soul extraction. الاحتضار is death throes. الممات is death. الفوت is missing/death. الذهاب is going away. الزوال is passing away. الانقضاء is expiration."

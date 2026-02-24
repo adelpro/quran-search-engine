@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Documentation**: Comprehensive JSDoc comments for core search utilities in `search.ts`, `highlight.ts` and `tokenization.ts`.
 - **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline
 - **Semantic Search**: Concept-based mapping that links Arabic synonyms and English concepts to their relevant verses.
 - **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries

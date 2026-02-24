@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildInvertedIndex, loadInvertedIndex } from './loader';
-import { loadQuranData, loadMorphology, loadWordMap } from './loader';
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  buildInvertedIndex,
+  loadInvertedIndex,
+} from './loader';
 import fs from 'fs';
 
 describe('Loader Functions', () => {
