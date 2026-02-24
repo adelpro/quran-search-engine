@@ -1,16 +1,32 @@
 /**
- * Error codes for data loading operations
+ * Error codes for all error types
  */
 export enum ErrorCode {
   // Data Loading Errors
   DATA_FILE_NOT_FOUND = 'DATA_FILE_NOT_FOUND',
   DATA_PARSE_ERROR = 'DATA_PARSE_ERROR',
   DATA_SCHEMA_INVALID = 'DATA_SCHEMA_INVALID',
+
+  // Search Errors
+  SEARCH_INVALID_QUERY = 'SEARCH_INVALID_QUERY',
+  SEARCH_MISSING_DEPENDENCIES = 'SEARCH_MISSING_DEPENDENCIES',
+  SEARCH_OPERATION_FAILED = 'SEARCH_OPERATION_FAILED',
+
+  // Validation Errors
+  VALIDATION_INVALID_PAGINATION = 'VALIDATION_INVALID_PAGINATION',
+  VALIDATION_INVALID_OPTIONS = 'VALIDATION_INVALID_OPTIONS',
+
+  // Tokenization Errors
+  TOKENIZATION_MISSING_MORPHOLOGY = 'TOKENIZATION_MISSING_MORPHOLOGY',
+  TOKENIZATION_INVALID_MODE = 'TOKENIZATION_INVALID_MODE',
 }
 
 /**
- * Error type for data loading errors
+ * Error types for categorizing errors
  */
 export enum ErrorType {
   DATA_ERROR = 'DataError',
+  SEARCH_ERROR = 'SearchError',
+  VALIDATION_ERROR = 'ValidationError',
+  TOKENIZATION_ERROR = 'TokenizationError',
 }

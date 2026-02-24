@@ -27,6 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Schema Validation**: Data structure validation in all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
   - **Comprehensive Tests**: Full test coverage for error classes and loader error scenarios
   - **Documentation**: Error handling guide in `src/errors/README.md`
+- **Error Handling Integration**: Integrated error handling into search, validation, and tokenization operations:
+  - **SearchError**: 3 error classes for search operations:
+    - `InvalidQueryError` - Invalid search queries
+    - `MissingDependenciesError` - Missing required dependencies (quranData, morphologyMap, wordMap)
+    - `SearchOperationFailedError` - Search operation failures
+  - **ValidationError**: 2 error classes for input validation:
+    - `InvalidPaginationError` - Invalid pagination parameters (page/limit must be positive integers)
+    - `InvalidOptionsError` - Invalid search options
+  - **TokenizationError**: 2 error classes for tokenization:
+    - `MissingMorphologyError` - Missing morphology data for a verse
+    - `InvalidModeError` - Invalid tokenization mode (must be text, lemma, or root)
+  - **Validation Integration**: Added pagination and dependency validation to `search()` function
+  - **Mode Validation**: Added mode parameter validation to `getPositiveTokens()` function
+  - **Error Tests**: Added 11 new integration tests to existing module test files (search.test.ts, tokenization.test.ts)
+  - **Error Codes**: Added 9 new error codes bringing total to 12 structured error codes
 - **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
 
 ### Fixed

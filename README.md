@@ -552,7 +552,7 @@ export function Verse({ verse }: { verse: ScoredQuranText }) {
 
 ## Error Handling
 
-The library provides a comprehensive error handling system with **16 specialized error classes** organized into 4 categories. All errors include structured error codes, types, and actionable messages with context.
+The library provides a comprehensive error handling system with **10 specialized error classes** organized into 4 categories. All errors include structured error codes, types, and actionable messages with context.
 
 ### Error Categories
 
@@ -566,11 +566,15 @@ The library provides a comprehensive error handling system with **16 specialized
 ```ts
 import {
   loadMorphology,
+  search,
   DataFileNotFoundError,
   DataParseError,
+  InvalidPaginationError,
+  MissingDependenciesError,
   ErrorCode,
 } from 'quran-search-engine';
 
+// Data loading errors
 try {
   const morphology = await loadMorphology();
 } catch (error) {
@@ -582,22 +586,38 @@ try {
     // Re-download data
   }
 }
+
+// Search validation errors
+try {
+  const results = search(query, quranData, morphologyMap, wordMap, options, {
+    page: 1,
+    limit: 10,
+  });
+} catch (error) {
+  if (error instanceof InvalidPaginationError) {
+    console.error('Invalid pagination:', error.message);
+  } else if (error instanceof MissingDependenciesError) {
+    console.error('Missing data:', error.missingDependencies);
+  }
+}
 ```
 
 ### Error Codes
 
-All data loading errors include type-safe error codes:
+All errors include type-safe error codes:
 
 ```ts
-import { loadMorphology, ErrorCode } from 'quran-search-engine';
+import { search, ErrorCode } from 'quran-search-engine';
 
 try {
-  const morphology = await loadMorphology();
+  const results = search(query, data, morphology, wordMap);
 } catch (error) {
   if (error.code === ErrorCode.DATA_FILE_NOT_FOUND) {
     // Handle missing file
-  } else if (error.code === ErrorCode.DATA_PARSE_ERROR) {
-    // Handle corrupted file
+  } else if (error.code === ErrorCode.VALIDATION_INVALID_PAGINATION) {
+    // Handle invalid pagination
+  } else if (error.code === ErrorCode.TOKENIZATION_INVALID_MODE) {
+    // Handle invalid tokenization mode
   }
 }
 ```
@@ -609,9 +629,22 @@ try {
 - `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
 - `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
 
+**Search Errors:**
+- `InvalidQueryError` - Invalid search queries (includes `query`)
+- `MissingDependenciesError` - Missing required dependencies (includes `missingDependencies` array)
+- `SearchOperationFailedError` - Search operation failures (includes `operation`, `cause`)
+
+**Validation Errors:**
+- `InvalidPaginationError` - Invalid pagination parameters (includes `page`, `limit`)
+- `InvalidOptionsError` - Invalid search options (includes `reason`)
+
+**Tokenization Errors:**
+- `MissingMorphologyError` - Missing morphology data (includes `gid`)
+- `InvalidModeError` - Invalid tokenization mode (includes `mode`)
+
 ### Documentation
 
-For complete error handling documentation and usage examples, see [Error Handling Documentation](./src/errors/README.md).
+For complete error handling documentation, architecture details, and best practices, see [Error Handling Documentation](./src/errors/README.md).
 
 ## How scoring works
 
