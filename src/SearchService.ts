@@ -39,7 +39,6 @@ export class SearchService {
       
       const [q, m, w] = await Promise.all([loadQuranData(), loadMorphology(), loadWordMap()]);
       
-      // هنا لن يظهر خطأ لأننا حددنا نوع options في بارامترات الدالة أعلاه
       return search(query, q, m, w, options, pagination);
     }
   }
