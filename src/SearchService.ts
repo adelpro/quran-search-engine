@@ -17,7 +17,6 @@ export class SearchService {
     pagination: PaginationOptions = { page: 1, limit: 10 }
   ): Promise<any> {
     
-    // حل مشكلة "Object is possibly null" باستخدام التحقق الشرطي
     if (this.worker) {
       const currentWorker = this.worker; // تثبيت المتغير محلياً للـ TypeScript
       
