@@ -16,7 +16,6 @@ self.onmessage = async (e: MessageEvent<SearchMessage>) => {
 
   try {
     if (!cache) {
-      // تحميل البيانات في المسار الخلفي
       const [quran, morphology, wordMap] = await Promise.all([
         loadQuranData(),
         loadMorphology(),
