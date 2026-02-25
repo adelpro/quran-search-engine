@@ -67,6 +67,7 @@
     "vitest": "^1.0.0"
   },
   "dependencies": {
+    "csv-parse": "^6.1.0",
     "fuse.js": "^7.0.0"
   },
   "size-limit": [
