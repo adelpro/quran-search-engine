@@ -18,6 +18,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Lemma + root matching (via morphology + word map)
 - Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
+- Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
@@ -412,6 +413,18 @@ const response = search('Paradise', quranData, morphologyMap, wordMap, {
   semantic: true
 });
 // response.results => verses containing words related to Paradise
+```
+
+#### Phonetic Search
+
+`search` supports phonetic (Latin) queries. Using a pre-built phonetic map, the engine detects non-Arabic input and translates it to the corresponding Arabic representation.
+
+- **Exact Phonetic Match**: Searching for "Bismillah" will correctly find verses containing "بسم الله".
+- **Fuzzy Phonetic Fallback**: The engine handles common transliteration typos (e.g., "bismii" instead of "bismi") using a strict fuzzy matching fallback (Fuse.js).
+
+```ts
+const response = search('Bismillah', quranData, morphologyMap, wordMap);
+// response.results[0] => gid: 1 (Basmalah)
 ```
 
 
