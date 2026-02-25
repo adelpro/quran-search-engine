@@ -34,7 +34,6 @@ export class SearchService {
         currentWorker.postMessage({ query, options, pagination });
       });
     } else {
-      // Fallback: استيراد الدوال ديناميكياً
       const { search } = await import('./core/search');
       const { loadQuranData, loadMorphology, loadWordMap } = await import('./utils/loader');
       
