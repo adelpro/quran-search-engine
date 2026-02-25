@@ -13,7 +13,6 @@ export class SearchService {
   
   async runSearch(
     query: string, 
-    // تحديد القيم الافتراضية بدقة لمنع خطأ الـ {}
     options: AdvancedSearchOptions = { lemma: false, root: false }, 
     pagination: PaginationOptions = { page: 1, limit: 10 }
   ): Promise<any> {
