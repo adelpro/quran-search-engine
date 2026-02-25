@@ -18,7 +18,7 @@ export class SearchService {
   ): Promise<any> {
     
     if (this.worker) {
-      const currentWorker = this.worker; // تثبيت المتغير محلياً للـ TypeScript
+      const currentWorker = this.worker; 
       
       return new Promise((resolve, reject) => {
         const handler = (e: MessageEvent) => {
