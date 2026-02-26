@@ -1,5 +1,5 @@
 export type * from './types';
-
+export { SearchService } from './SearchService';
 export {
   loadMorphology,
   loadQuranData,
