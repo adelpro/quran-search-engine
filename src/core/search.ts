@@ -1,9 +1,10 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { LRUCache } from './lru-cache';
-import { buildArabicWholeWordRegex, normalizeArabic } from '../utils/normalization';
+import { buildArabicWholeWordRegex, normalizeArabic, isArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
 import { parseRangeQuery, filterVersesByRange } from './range-parser';
 import { semanticMap } from './semantic';
+import { phoneticMap, getPhoneticFuse } from './phonetic';
 import { InvalidPaginationError, MissingDependenciesError } from '../errors';
 import type {
   WordMap,
@@ -640,8 +641,35 @@ export const search = <TVerse extends VerseInput>(
     const cached = cache.get(cacheKey);
     if (cached) return cached;
   }
+
+  const fuzzyEnabled = options.fuzzy !== false;
+
   // 1. Prepare query
-  const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
+  // Tokenize and handle phonetic translation
+  const tokens = query.split(/\s+/);
+  const processedTokens = tokens.map((token) => {
+    // If it's a phonetic (non-Arabic) word, look it up in the phonetic map
+    if (token && !isArabic(token)) {
+      const cleanToken = token.toLowerCase().trim();
+      let arabicPossibilities = phoneticMap.get(cleanToken);
+
+      // Fallback: Fuzzy phonetic match if exact match fails
+      if (!arabicPossibilities && fuzzyEnabled) {
+        const phoneticFuse = getPhoneticFuse();
+        const fuzzyPhoneticMatches = phoneticFuse.search(cleanToken);
+        if (fuzzyPhoneticMatches.length > 0 && (fuzzyPhoneticMatches[0].score ?? 1) < 0.3) {
+          arabicPossibilities = phoneticMap.get(fuzzyPhoneticMatches[0].item);
+        }
+      }
+
+      // For now, we take the first match.
+      return arabicPossibilities ? arabicPossibilities[0] : '';
+    }
+    return token;
+  });
+
+  const translatedQuery = processedTokens.filter(Boolean).join(' ');
+  const arabicOnly = translatedQuery.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
 
   if (!cleanQuery) {
@@ -656,8 +684,6 @@ export const search = <TVerse extends VerseInput>(
       },
     };
   }
-
-  const fuzzyEnabled = options.fuzzy !== false;
 
   const fuseInstance = fuzzyEnabled
     ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])

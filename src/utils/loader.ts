@@ -16,7 +16,11 @@ export const loadMorphology = async (path?: string): Promise<Map<number, Morphol
 
   try {
     // Dynamic import for code splitting
-    const morphologyModule = await import(filePath);
+    // We use a static string for the default path so Vite can analyze it.
+    // If a custom path is provided, we use it directly but Vite might warn.
+    const morphologyModule = path
+      ? await import(/* @vite-ignore */ path)
+      : await import('../data/morphology.json');
 
     // The JSON is likely an array (or has a 'default' property if it's a module).
     // We handle both cases to be safe with different bundlers.
@@ -91,7 +95,9 @@ export const loadWordMap = async (path?: string): Promise<WordMap> => {
   const filePath = path || '../data/word-map.json';
 
   try {
-    const wordMapModule = await import(filePath);
+    const wordMapModule = path
+      ? await import(/* @vite-ignore */ path)
+      : await import('../data/word-map.json');
     const wordMap = (wordMapModule.default || wordMapModule) as WordMap;
 
     // Validate schema
@@ -144,7 +150,9 @@ export const loadQuranData = async (path?: string): Promise<QuranText[]> => {
   const filePath = path || '../data/quran.json';
 
   try {
-    const quranModule = await import(filePath);
+    const quranModule = path
+      ? await import(/* @vite-ignore */ path)
+      : await import('../data/quran.json');
     const quranData = (quranModule.default || quranModule) as QuranText[];
 
     // Validate schema

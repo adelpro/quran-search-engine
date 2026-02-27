@@ -269,6 +269,29 @@ describe('search', () => {
     expect(result.counts.total).toBe(0);
     expect(result.counts.fuzzy).toBe(0);
   });
+
+  it('should support phonetic search for English words', () => {
+    // Use words from phonetic_inverted_index.json
+    // "bismi" -> "بسم", "allahi" -> "الله"
+    const result = search('bismi allahi', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].gid).toBe(1);
+    expect(result.results[0].matchType).toBe('exact');
+  });
+
+  it('should support fuzzy phonetic search for English words with typos', () => {
+    // "bismii" (extra 'i') should match "bismi"
+    const result = search('bismii', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].gid).toBe(1);
+  });
+
+  it('should support mixed phonetic and Arabic queries', () => {
+    // "bismi الرحمن"
+    const result = search('bismi الرحمن', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].gid).toBe(1);
+  });
 });
 
 describe('createArabicFuseSearch', () => {
