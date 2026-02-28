@@ -109,6 +109,12 @@ Example formatting:
 
 ### Fixed
 - Description
+
+### Changed
+- Description
+
+### Refactored
+- Description
 ```
 
 ## Code Quality & Pre-PR Checklist
