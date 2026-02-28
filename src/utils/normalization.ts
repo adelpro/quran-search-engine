@@ -47,7 +47,7 @@ export const normalizeArabic = (text: string): string => {
   // \u0621: ء (standalone hamza)
   normalizedText = normalizedText.replace(/[ؤئء]/g, 'ء');
 
-  // Normalize alif maqsura (\u0649) to ya (\u064A)
+  // Normalize alif maqsura (\u0649) to yaa (\u064A)
   normalizedText = normalizedText.replace(/ى/g, 'ي');
 
   // Clean up whitespace and non-Arabic characters
