@@ -50,6 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
 - **Search Filter Logic**: Fixed `filterVerses` function to return empty arrays when explicit filters (suraId, juzId, suraName) yield no results instead of falling back to all data
 
+### Added
+
+#### Worker, Worker Pool as discussed, to support long running tasks, or heavy tasks to happen in parallel, also added an example of the worker pool on sum of two numbers as a naive example.
+
+#### go to worker/example in core, run pnpm, pnpm build, pnpm start
+
+#### navigate to http://localhost:3000/demo
 
 ## [0.1.5]
 
