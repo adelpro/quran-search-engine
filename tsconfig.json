@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src", "core/WorkerPool.ts", "core/Worker.ts", "core/interfaces.ts"]
 }

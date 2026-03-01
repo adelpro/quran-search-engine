@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Worker, Worker Pool as discussed, to support long running tasks, or heavy tasks to happen in parallel, also added an example of the worker pool on sum of two numbers as a naive example.
+
+#### go to worker/example in core, run pnpm, pnpm build, pnpm start
+#### navigate to http://localhost:3000/demo
+
 ## [0.1.5]
 
 ### Added
