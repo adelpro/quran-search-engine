@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>WorkerPool Demo</title>
+
+    <style>
+      body {
+        font-family:
+          Segoe UI,
+          Arial;
+        background: #0f172a;
+        color: #e5e7eb;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 30px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 25px;
+        font-weight: 600;
+      }
+
+      .card {
+        background: #1e293b;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #334155;
+        color: white;
+        font-size: 16px;
+      }
+
+      button {
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        background: #3b82f6;
+        color: white;
+        font-size: 15px;
+      }
+
+      button:hover {
+        background: #2563eb;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        font-size: 18px;
+      }
+
+      .log {
+        max-height: 350px;
+        overflow: auto;
+      }
+
+      .entry {
+        background: #334155;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+
+      .tag {
+        color: #93c5fd;
+        font-weight: 600;
+      }
+
+      .result {
+        color: #86efac;
+      }
+
+      .duration {
+        color: #fbbf24;
+        font-size: 12px;
+        margin-left: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>⚡ WorkerPool Demo</h1>
+
+      <div class="card">
+        <h3>Submit Task</h3>
+
+        <div class="row">
+          <input id="num1" value="5" placeholder="Number 1" />
+          <input id="num2" value="10" placeholder="Number 2" />
+        </div>
+
+        <div class="row">
+          <button onclick="submitTask()">Submit</button>
+          <button onclick="submitBurst()">Burst x20</button>
+          <button onclick="clearLog()">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Worker Stats</h3>
+
+        <div class="stats">
+          <div>Pool: <span id="s-pool">-</span></div>
+          <div>Idle: <span id="s-idle">-</span></div>
+          <div>Queue: <span id="s-queued">-</span></div>
+          <div>Done: <span id="s-done">0</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Results</h3>
+
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { WorkerPool } from './dist/WorkerPool.js';
+
+      let pool;
+      let completed = 0;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        pool = new WorkerPool('./dist/Worker.js', 4, onResult);
+
+        updateStats();
+
+        setInterval(updateStats, 200);
+      });
+
+      function onResult(res) {
+        completed++;
+
+        const log = document.getElementById('log');
+
+        const div = document.createElement('div');
+
+        div.className = 'entry';
+
+        if (res.error) {
+          div.innerHTML =
+            "<span class='tag'>" +
+            res.name +
+            '</span> ' +
+            "<span style='color:#f87171'>Error: " +
+            res.error +
+            '</span>' +
+            "<span class='duration'>" +
+            res.durationMs.toFixed(2) +
+            ' ms</span>';
+        } else {
+          div.innerHTML =
+            "<span class='tag'>" +
+            res.name +
+            '</span> = ' +
+            "<span class='result'>" +
+            res.result +
+            '</span>' +
+            "<span class='duration'>" +
+            res.durationMs.toFixed(2) +
+            ' ms</span>';
+        }
+
+        log.prepend(div);
+
+        updateStats();
+      }
+
+      window.submitTask = function () {
+        const n1 = Number(document.getElementById('num1').value);
+        const n2 = Number(document.getElementById('num2').value);
+
+        pool.submitTask({
+          name: 'Sum',
+
+          params: {
+            num1: n1,
+            num2: n2,
+          },
+        });
+      };
+
+      window.submitBurst = function () {
+        const n1 = Number(document.getElementById('num1').value);
+        const n2 = Number(document.getElementById('num2').value);
+        for (let i = 0; i < 20; i++) {
+          pool.submitTask({
+            name: 'Sum',
+            params: { num1: n1, num2: n2 },
+          });
+        }
+      };
+
+      window.clearLog = function () {
+        document.getElementById('log').innerHTML = '';
+      };
+
+      function updateStats() {
+        if (!pool) return;
+
+        document.getElementById('s-pool').textContent = 4;
+
+        document.getElementById('s-idle').textContent = pool.idleCount;
+
+        document.getElementById('s-queued').textContent = pool.queuedCount;
+
+        document.getElementById('s-done').textContent = completed;
+      }
+    </script>
+  </body>
+</html>
