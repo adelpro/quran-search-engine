@@ -28,6 +28,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Multi-word search](#multi-word-search)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
+- [Performance](#performance)
 - [Example apps](#example-apps)
 - [Testing](#testing)
 - [Development](#development)
@@ -565,6 +566,10 @@ This library does not aim to provide:
 - Server-side indexing infrastructure
 
 It focuses strictly on deterministic Quran text search.
+
+## Performance
+
+For detailed benchmarking instructions, caching strategies, and optimization techniques, see the [Performance Guide](./docs/performance.md).
 
 ## Example apps
 

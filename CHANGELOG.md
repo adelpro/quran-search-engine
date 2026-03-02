@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Documentation**: Performance benchmarking guide (`docs/performance.md`) covering search latency measurement, LRU caching patterns, inverted index optimization, and Web Worker offloading
+
 ## [0.1.5]
 
 ### Added
