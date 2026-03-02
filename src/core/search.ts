@@ -1,6 +1,7 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
+import { searchRegex } from './regex-search';
 import type {
   WordMap,
   MorphologyAya,
@@ -299,6 +300,9 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
  * Performs a comprehensive search across the Quran.
  * Combines simple text search with linguistic (lemma/root) analysis and fuzzy fallback.
  * Results are scored, deduplicated, and sorted by relevance.
+ *
+ * When `options.isRegex` is true, treats the query as a regex pattern and matches
+ * against the normalized `standard` text. Validates the pattern for safety before execution.
  */
 export const search = <TVerse extends VerseInput>(
   query: string,
@@ -308,6 +312,11 @@ export const search = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): SearchResponse<TVerse> => {
+  // 0. Regex mode: delegate to regex search
+  if (options.isRegex) {
+    return searchRegex(query, quranData, pagination);
+  }
+
   // 1. Prepare query
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);

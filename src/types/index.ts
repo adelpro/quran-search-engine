@@ -47,6 +47,7 @@ export type AdvancedSearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  isRegex?: boolean;
 };
 
 export type SearchOptions = AdvancedSearchOptions;
