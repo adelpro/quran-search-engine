@@ -1,4 +1,4 @@
-import { Task, TaskResult } from "./interfaces";
+import { Task, TaskResult } from './interfaces';
 
 export class WorkerPool {
   private workers: Worker[] = [];
@@ -6,14 +6,10 @@ export class WorkerPool {
   private idleWorkers: Worker[] = [];
   private callbackfn?: (result: TaskResult) => void;
 
-  constructor(
-    workerScript: string,
-    poolSize: number,
-    callbackfn?: (result: TaskResult) => void,
-  ) {
+  constructor(workerScript: string, poolSize: number, callbackfn?: (result: TaskResult) => void) {
     if (callbackfn) this.callbackfn = callbackfn;
     for (let i = 0; i < poolSize; i++) {
-      const worker = new Worker(workerScript, { type: "module" });
+      const worker = new Worker(workerScript, { type: 'module' });
       worker.onmessage = (e: MessageEvent<TaskResult>) => {
         this.handleResult(worker, e.data);
       };

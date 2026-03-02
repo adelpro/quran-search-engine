@@ -22,3 +22,4 @@ export {
   type SchemaError,
   type ValidationResult,
 } from './utils/schema';
+export { WorkerPool } from './core/worker/WorkerPool';

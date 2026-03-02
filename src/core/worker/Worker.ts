@@ -1,9 +1,6 @@
-import { Task, TaskResult } from "./interfaces";
+import { Task, TaskResult } from './interfaces';
 
-const registry: Record<
-  string,
-  (params: unknown) => unknown | Promise<unknown>
-> = {
+const registry: Record<string, (params: unknown) => unknown | Promise<unknown>> = {
   // Example task implementation, These shall be replaced by actual search strategies in SearchWorker, for now it is a test f or the worker
   Sum: (params: unknown) => {
     const { num1, num2 } = params as { num1: number; num2: number };
@@ -22,7 +19,7 @@ self.onmessage = async (e: MessageEvent<Task>) => {
       name,
       error:
         `No function registered for task "${name}". ` +
-        `Available: ${Object.keys(registry).join(", ")}`,
+        `Available: ${Object.keys(registry).join(', ')}`,
       durationMs: 0,
     };
     self.postMessage(result);
