@@ -191,6 +191,91 @@ describe('search', () => {
   });
 });
 
+describe('boolean search', () => {
+  it('OR query returns union of both terms', () => {
+    // الرحمن: gid 1, 3 | الحمد: gid 2
+    const result = search('الرحمن | الحمد', mockQuranData, mockMorphologyMap, mockWordMap);
+    const gids = result.results.map((r) => r.gid);
+    expect(gids).toContain(1);
+    expect(gids).toContain(2);
+    expect(gids).toContain(3);
+    expect(result.counts.total).toBe(3);
+  });
+
+  it('NOT query excludes the negated term', () => {
+    // الرحمن is in gid 1 and 3; -الرحيم should exclude gid 1 and 3 (both have الرحيم)
+    const result = search('الرحمن -الرحيم', mockQuranData, mockMorphologyMap, mockWordMap);
+    // Both gid 1 and 3 have both الرحمن and الرحيم, so both excluded
+    expect(result.results).toHaveLength(0);
+  });
+
+  it('plain query (no operators) behaves identically to before', () => {
+    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results).toHaveLength(2);
+    expect(result.counts.total).toBe(2);
+  });
+
+  it('empty OR group is ignored gracefully', () => {
+    const result = search('الله | ', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+
+  it('NOT-only query returns verses not matching the term', () => {
+    // -الرحمن: exclude gid 1 and 3, leaving gid 2
+    const result = search('-الرحمن', mockQuranData, mockMorphologyMap, mockWordMap);
+    const gids = result.results.map((r) => r.gid);
+    expect(gids).not.toContain(1);
+    expect(gids).not.toContain(3);
+    expect(gids).toContain(2);
+  });
+
+  it('pagination works on boolean results', () => {
+    const result = search(
+      'الرحمن | الحمد',
+      mockQuranData,
+      mockMorphologyMap,
+      mockWordMap,
+      { lemma: true, root: true },
+      { page: 1, limit: 1 },
+    );
+    expect(result.results).toHaveLength(1);
+    expect(result.pagination.limit).toBe(1);
+    expect(result.pagination.totalResults).toBe(3);
+  });
+
+  it('counts reflect boolean result set', () => {
+    const result = search('الرحمن | الحمد', mockQuranData, mockMorphologyMap, mockWordMap);
+    expect(result.counts.total).toBeGreaterThan(0);
+    expect(result.counts.total).toBe(
+      result.counts.simple + result.counts.lemma + result.counts.root + result.counts.fuzzy,
+    );
+  });
+
+  it('+ prefix behaves same as plain AND', () => {
+    const withPlus = search('+الرحمن', mockQuranData, mockMorphologyMap, mockWordMap);
+    const withoutPlus = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap);
+    const plusGids = withPlus.results.map((r) => r.gid).sort();
+    const plainGids = withoutPlus.results.map((r) => r.gid).sort();
+    expect(plusGids).toEqual(plainGids);
+  });
+
+  it('double pipe || works as OR', () => {
+    const result = search('الرحمن || الحمد', mockQuranData, mockMorphologyMap, mockWordMap);
+    const gids = result.results.map((r) => r.gid);
+    expect(gids).toContain(1);
+    expect(gids).toContain(2);
+    expect(gids).toContain(3);
+  });
+
+  it('pipe without spaces works as OR', () => {
+    const result = search('الرحمن|الحمد', mockQuranData, mockMorphologyMap, mockWordMap);
+    const gids = result.results.map((r) => r.gid);
+    expect(gids).toContain(1);
+    expect(gids).toContain(2);
+    expect(gids).toContain(3);
+  });
+});
+
 describe('createArabicFuseSearch', () => {
   it('should create a Fuse instance', () => {
     const fuse = createArabicFuseSearch(mockQuranData, ['standard']);

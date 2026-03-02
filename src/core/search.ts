@@ -1,6 +1,7 @@
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
+import { hasBooleanOperators, parseBooleanQuery } from './boolean-parser';
 import type {
   WordMap,
   MorphologyAya,
@@ -11,6 +12,7 @@ import type {
   PaginationOptions,
   VerseInput,
   ScoredVerse,
+  BooleanGroup,
 } from '../types';
 
 type VerseWithFuseMatches<TVerse extends VerseInput> = TVerse & {
@@ -293,12 +295,168 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
   return results;
 };
 
+// ==================== Boolean Search Evaluation ====================
+
+const evaluateBooleanGroup = <TVerse extends VerseInput>(
+  group: BooleanGroup,
+  quranData: TVerse[],
+  options: AdvancedSearchOptions,
+  fuseInstance: Fuse<TVerse> | null,
+  wordMap: WordMap,
+  morphologyMap: Map<number, MorphologyAya>,
+): Set<number> => {
+  const andNodes = group.nodes.filter((n) => n.operator === 'and');
+  const notNodes = group.nodes.filter((n) => n.operator === 'not');
+
+  let candidateGids: Set<number>;
+
+  if (andNodes.length === 0 && notNodes.length > 0) {
+    // NOT-only group: start from all GIDs, then exclude
+    candidateGids = new Set(quranData.map((v) => v.gid));
+  } else if (andNodes.length === 0) {
+    return new Set();
+  } else {
+    // Run each AND/MUST term through both search paths, then intersect
+    const termGidSets = andNodes.map((node) => {
+      const advMatches = performAdvancedLinguisticSearch(
+        node.term,
+        quranData,
+        options,
+        fuseInstance,
+        wordMap,
+        morphologyMap,
+      );
+      const simpleMatches = simpleSearch(quranData, node.term, 'standard');
+      return new Set<number>([...advMatches.map((v) => v.gid), ...simpleMatches.map((v) => v.gid)]);
+    });
+
+    candidateGids = termGidSets[0];
+    for (let i = 1; i < termGidSets.length; i++) {
+      candidateGids = new Set([...candidateGids].filter((gid) => termGidSets[i].has(gid)));
+    }
+  }
+
+  // Subtract NOT terms
+  for (const notNode of notNodes) {
+    const notAdv = performAdvancedLinguisticSearch(
+      notNode.term,
+      quranData,
+      options,
+      fuseInstance,
+      wordMap,
+      morphologyMap,
+    );
+    const notSimple = simpleSearch(quranData, notNode.term, 'standard');
+    const excludeGids = new Set<number>([
+      ...notAdv.map((v) => v.gid),
+      ...notSimple.map((v) => v.gid),
+    ]);
+    excludeGids.forEach((gid) => candidateGids.delete(gid));
+  }
+
+  return candidateGids;
+};
+
+const searchBoolean = <TVerse extends VerseInput>(
+  rawQuery: string,
+  quranData: TVerse[],
+  morphologyMap: Map<number, MorphologyAya>,
+  wordMap: WordMap,
+  options: AdvancedSearchOptions,
+  pagination: PaginationOptions,
+): SearchResponse<TVerse> => {
+  const booleanQuery = parseBooleanQuery(rawQuery);
+
+  const hasTerms = booleanQuery.groups.some((g) => g.nodes.length > 0);
+  if (!hasTerms) {
+    return {
+      results: [],
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, total: 0 },
+      pagination: {
+        totalResults: 0,
+        totalPages: 0,
+        currentPage: pagination.page ?? 1,
+        limit: pagination.limit ?? 20,
+      },
+    };
+  }
+
+  const fuzzyEnabled = options.fuzzy !== false;
+  const fuseInstance = fuzzyEnabled
+    ? createArabicFuseSearch(quranData, ['standard', 'uthmani'])
+    : null;
+
+  // Evaluate each non-empty OR group and union results
+  const nonEmptyGroups = booleanQuery.groups.filter((g) => g.nodes.length > 0);
+  const matchingGids = new Set<number>();
+  for (const group of nonEmptyGroups) {
+    const groupGids = evaluateBooleanGroup(
+      group,
+      quranData,
+      options,
+      fuseInstance,
+      wordMap,
+      morphologyMap,
+    );
+    groupGids.forEach((gid) => matchingGids.add(gid));
+  }
+
+  const gidToVerse = new Map(quranData.map((v) => [v.gid, v]));
+
+  // Build a representative query for scoring from all non-NOT terms
+  const allTerms = booleanQuery.groups
+    .flatMap((g) => g.nodes.filter((n) => n.operator !== 'not').map((n) => n.term))
+    .join(' ');
+
+  const combined: ScoredVerse<TVerse>[] = Array.from(matchingGids)
+    .map((gid) => {
+      const verse = gidToVerse.get(gid);
+      if (!verse) return null;
+      // For NOT-only queries (no positive terms), assign a neutral score
+      if (!allTerms) {
+        return { ...verse, matchScore: 0, matchType: 'exact' as MatchType, matchedTokens: [] };
+      }
+      return computeScore(verse, allTerms, morphologyMap, wordMap, options);
+    })
+    .filter((v): v is ScoredVerse<TVerse> => v !== null);
+
+  combined.sort((a, b) => b.matchScore - a.matchScore);
+
+  const page = Math.max(1, pagination.page ?? 1);
+  const limit = Math.max(1, pagination.limit ?? 20);
+  const offset = (page - 1) * limit;
+  const results = combined.slice(offset, offset + limit);
+  const totalResults = combined.length;
+  const totalPages = Math.ceil(totalResults / limit);
+
+  const counts: SearchCounts = {
+    simple: combined.filter((v) => v.matchType === 'exact').length,
+    lemma: combined.filter((v) => v.matchType === 'lemma').length,
+    root: combined.filter((v) => v.matchType === 'root').length,
+    fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
+    total: combined.length,
+  };
+
+  return {
+    results,
+    counts,
+    pagination: {
+      totalResults,
+      totalPages,
+      currentPage: page,
+      limit,
+    },
+  };
+};
+
 // ==================== Combined Search API ====================
 
 /**
  * Performs a comprehensive search across the Quran.
  * Combines simple text search with linguistic (lemma/root) analysis and fuzzy fallback.
  * Results are scored, deduplicated, and sorted by relevance.
+ *
+ * Supports boolean operators: `+term` (must include), `-term` (exclude), `|` (OR).
  */
 export const search = <TVerse extends VerseInput>(
   query: string,
@@ -308,7 +466,12 @@ export const search = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): SearchResponse<TVerse> => {
-  // 1. Prepare query
+  // 1. Detect boolean operators before normalization strips them
+  if (hasBooleanOperators(query)) {
+    return searchBoolean(query, quranData, morphologyMap, wordMap, options, pagination);
+  }
+
+  // 2. Prepare query (plain path)
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
 
@@ -319,8 +482,8 @@ export const search = <TVerse extends VerseInput>(
       pagination: {
         totalResults: 0,
         totalPages: 0,
-        currentPage: pagination.page || 1,
-        limit: pagination.limit || 20,
+        currentPage: pagination.page ?? 1,
+        limit: pagination.limit ?? 20,
       },
     };
   }
@@ -364,8 +527,8 @@ export const search = <TVerse extends VerseInput>(
   combined.sort((a, b) => b.matchScore - a.matchScore);
 
   // 6. Pagination & Metadata
-  const page = Math.max(1, pagination.page || 1);
-  const limit = Math.max(1, pagination.limit || 20);
+  const page = Math.max(1, pagination.page ?? 1);
+  const limit = Math.max(1, pagination.limit ?? 20);
   const offset = (page - 1) * limit;
 
   const results = combined.slice(offset, offset + limit);

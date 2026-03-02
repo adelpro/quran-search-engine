@@ -74,3 +74,19 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
     limit: number;
   };
 };
+
+export type BooleanOperator = 'and' | 'not';
+
+export type BooleanNode = {
+  operator: BooleanOperator;
+  term: string;
+};
+
+export type BooleanGroup = {
+  nodes: BooleanNode[];
+};
+
+export type BooleanQuery = {
+  type: 'boolean';
+  groups: BooleanGroup[];
+};
