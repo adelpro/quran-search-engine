@@ -23,12 +23,20 @@ When matched, a query token uses `wordMap` to retrieve the possible `{ lemma, ro
 
 #### `WordMap`
 
-The inverted dictionary. Maps a `normalizedToken` to:
+The standard dictionary. Maps a `normalizedToken` to:
 
 - `lemma`
 - `root`
 
-This `WordMap` enables immediate O(1) checks during the Lemma & Root scoring phases. Preloading this structure allows the `search` engine to function in completely detached client-side or server-side instances out of the box.
+### Advanced `InvertedIndex` Structures
+
+To prevent scanning multiple arrays across 6,000+ entries, compiling and passing an `InvertedIndex` significantly optimizes lookup speeds over `O(1)` Set checks bypassing String RegEx matchings.
+
+- **`WordIndex`**: (`Map<string, Set<number>>`) Maps normalized exact text tokens directly to a Set of matching Verse `gid`s.
+- **`LemmaIndex`**: (`Map<string, Set<number>>`) Maps morphological lemma strings directly to matching Verse `gid`s.
+- **`RootIndex`**: (`Map<string, Set<number>>`) Maps Canonical roots directly to matching Verse `gid`s.
+
+By preloading these structures via `loadInvertedIndex()`, the `search` engine eliminates iteration layers for simple keyword validation logic and behaves remarkably fast in completely detached client-side or server-side boundaries.
 
 ---
 

@@ -22,7 +22,10 @@ Depending on the `SearchOptions` provided to the `search` function, individual q
 | Exact      | Base exact string match     | `+3`          |
 | Lemma      | Morphological Lemma match   | `+2`          |
 | Root       | Canonical Root match        | `+1`          |
+| Semantic   | Matching via LLM Embeddings | `+0.8`        |
 | Fuzzy      | Fallback index string match | `+0.5`        |
+| Range      | Direct Chapter:Verse lookup | `+1.0`        |
+| Regex      | Native RegExp matches       | N/A           |
 
 ### Exact Match (+3 points)
 

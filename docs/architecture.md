@@ -21,3 +21,12 @@ Instead of spinning up instances (`new SearchEngine()`), providing data, waiting
 ### 3. Modular Scale
 
 The engine gracefully degrades matching tiers. If you don't load the Morphological `MorphologyAya` Maps into memory to save space in a restrictive browser view, the engine simply skips root/lemma checking natively and falls back to string token and fuzzy matching alone.
+
+### 4. Custom Data Integration
+
+The library natively supports substituting the core Arabic Quran files with any custom matching JSON array you provide. By adhering to the `VerseInput` interface, it is possible to load custom datasets entirely:
+
+- Alternate Quran narrations and texts.
+- Custom terminology or word lists for specific search domains.
+- Private morphological maps (`MorphologyAya`) tailored to different dictionaries.
+  The exported `validateQuranData`, `validateMorphologyData`, and `validateWordMapData` functions ensure your custom datasets validate cleanly against the schema before attempting to perform operations.

@@ -42,6 +42,31 @@ import { loadWordMap, type WordMap } from 'quran-search-engine';
 const wordMap: WordMap = await loadWordMap();
 ```
 
+### `loadInvertedIndex()`
+
+**Description:** Loads the pre-compiled `InvertedIndex` containing Lemma, Root, and Word inverted Indices for drastically faster operations bypassing Map building.
+
+**Returns:** `Promise<InvertedIndex>`
+
+```typescript
+import { loadInvertedIndex, type InvertedIndex } from 'quran-search-engine';
+
+const indices: InvertedIndex = await loadInvertedIndex();
+```
+
+### Data Validation
+
+**Description:** To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native Zod validators are exposed for internal schemas. Operations include `validateQuranData`, `validateMorphologyData`, `validateWordMapData` and `validateSemanticData`.
+
+```typescript
+import { validateQuranData } from 'quran-search-engine';
+
+const validationResult = validateQuranData(customQuranArray);
+if (!validationResult.success) {
+  console.error(validationResult.errors);
+}
+```
+
 ---
 
 ## Normalization Functions

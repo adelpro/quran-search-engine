@@ -43,7 +43,7 @@ This library provides a deterministic and highly customizable search experience 
 
 ### Contributing
 
-- [Contribution Guide](./contributing.md)
+- [Contribution Guide](../CONTRIBUTING.md)
 
 ---
 

@@ -23,6 +23,14 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
 // Result => Sura 1:1, 1:3, etc.
 ```
 
+## Advanced Search Types
+
+Beyond multi-word string queries, the engine supports multiple alternative syntaxes enabled via the `SearchOptions`:
+
+- **Regex Queries:** When `{ isRegex: true }` is supplied, the engine bypasses standard string tokenization and matches verses via native RegExp operations directly on the Uthmani string.
+- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse targets efficiently without iterating.
+- **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return `matchType: semantic` metadata gracefully.
+
 ## String Checking For Arbitrary Filters
 
 For developers requiring strict Boolean checks independent of scoring across any internal dataset.
