@@ -56,3 +56,16 @@ export class SearchOperationFailedError extends SearchError {
     Object.setPrototypeOf(this, SearchOperationFailedError.prototype);
   }
 }
+
+/**
+ * Thrown when a regex pattern is syntactically invalid or unsafe (ReDoS risk)
+ */
+export class InvalidRegexError extends SearchError {
+  constructor(
+    public pattern: string,
+    public reason: string,
+  ) {
+    super(ErrorCode.SEARCH_INVALID_REGEX, `Invalid regex pattern "${pattern}": ${reason}`);
+    Object.setPrototypeOf(this, InvalidRegexError.prototype);
+  }
+}
