@@ -133,7 +133,7 @@ const response = search(
 
 #### `validateRegex(pattern)`
 
-**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to cause catastrophic backtracking (ReDoS).
+**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to cause catastrophic backtracking (ReDoS). Useful for UI-side validation before calling `search()` with `{ isRegex: true }`, similar to how `isArabic()` and `removeTashkeel()` are used for input validation.
 
 **Parameters:**
 
@@ -146,31 +146,21 @@ const response = search(
 ```typescript
 import { validateRegex } from 'quran-search-engine';
 
-const regex = validateRegex('^.*ون$'); // Returns compiled RegExp
-validateRegex('(a+)+');                // Throws InvalidRegexError (nested quantifiers)
-```
+// UI validation before submitting the search
+try {
+  validateRegex(userInput);  // valid pattern
+  // Safe to call search() with { isRegex: true }
+} catch (e) {
+  // Show validation error to the user
+}
 
-#### `performRegexSearch(regex, quranData)`
-
-**Description:** Runs a compiled regex against every verse in the provided dataset, matching against the normalized `standard` field.
-
-**Parameters:**
-
-- `regex` (`RegExp`): Pre-validated RegExp (from `validateRegex`).
-- `quranData` (`VerseInput[]`): Verse dataset to scan.
-
-**Returns:** `ScoredVerse[]` — matched verses with `matchType: 'regex'` and `matchScore: 1`.
-
-```typescript
-import { validateRegex, performRegexSearch } from 'quran-search-engine';
-
-const regex = validateRegex('الله.*الرحمن');
-const hits = performRegexSearch(regex, quranData);
+validateRegex('^.*ون$'); // Returns compiled RegExp
+validateRegex('(a+)+');   // Throws InvalidRegexError (nested quantifiers)
 ```
 
 #### Using regex via `search()`
 
-The simplest way to use regex search is through the main `search()` function with `{ isRegex: true }`. This handles validation, filtering, and pagination automatically:
+The main way to run regex search is through the `search()` function with `{ isRegex: true }`. This handles validation, filtering, and pagination automatically:
 
 ```typescript
 import { search } from 'quran-search-engine';
