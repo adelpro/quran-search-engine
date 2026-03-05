@@ -12,7 +12,7 @@ export { normalizeArabic, removeTashkeel, isArabic } from './utils/normalization
 export * from './errors';
 export { getHighlightRanges, type HighlightRange } from './utils/highlight';
 export { search, createArabicFuseSearch } from './core/search';
-export { validateRegex } from './core/regex-search';
+export { validateRegex } from './utils/regex-validation';
 export { LRUCache } from './core/lru-cache';
 export {
   validateQuranData,
