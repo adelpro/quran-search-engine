@@ -11,6 +11,7 @@ This library provides a deterministic and highly customizable search experience 
 - Arabic Normalization (cleaning text, removing tashkeel)
 - Exact text matching
 - Lemma & Root matching (via morphology and word maps)
+- Regular Expression search with ReDoS safety validation
 - Advanced Fuzzy fallback
 - Computed highlight ranges (UI-agnostic)
 

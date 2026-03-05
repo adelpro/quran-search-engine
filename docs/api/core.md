@@ -129,6 +129,62 @@ const response = search(
 );
 ```
 
+### Regex Search
+
+#### `validateRegex(pattern)`
+
+**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to cause catastrophic backtracking (ReDoS).
+
+**Parameters:**
+
+- `pattern` (string): The raw regex string from the user.
+
+**Returns:** A compiled `RegExp` (with Unicode flag) ready for use against normalized Arabic text.
+
+**Throws:** `InvalidRegexError` if the pattern is syntactically invalid or contains dangerous constructs.
+
+```typescript
+import { validateRegex } from 'quran-search-engine';
+
+const regex = validateRegex('^.*ون$'); // Returns compiled RegExp
+validateRegex('(a+)+');                // Throws InvalidRegexError (nested quantifiers)
+```
+
+#### `performRegexSearch(regex, quranData)`
+
+**Description:** Runs a compiled regex against every verse in the provided dataset, matching against the normalized `standard` field.
+
+**Parameters:**
+
+- `regex` (`RegExp`): Pre-validated RegExp (from `validateRegex`).
+- `quranData` (`VerseInput[]`): Verse dataset to scan.
+
+**Returns:** `ScoredVerse[]` — matched verses with `matchType: 'regex'` and `matchScore: 1`.
+
+```typescript
+import { validateRegex, performRegexSearch } from 'quran-search-engine';
+
+const regex = validateRegex('الله.*الرحمن');
+const hits = performRegexSearch(regex, quranData);
+```
+
+#### Using regex via `search()`
+
+The simplest way to use regex search is through the main `search()` function with `{ isRegex: true }`. This handles validation, filtering, and pagination automatically:
+
+```typescript
+import { search } from 'quran-search-engine';
+
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+  suraId: 2, // optional: limit to Al-Baqarah
+});
+```
+
+---
+
 ### Highlighting
 
 #### `getHighlightRanges(text, matchedTokens, tokenTypes?)`
