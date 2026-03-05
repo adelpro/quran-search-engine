@@ -38,7 +38,15 @@ export type WordMap = {
   };
 };
 
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none' | 'semantic';
+export type MatchType =
+  | 'exact'
+  | 'lemma'
+  | 'root'
+  | 'fuzzy'
+  | 'range'
+  | 'none'
+  | 'semantic'
+  | 'regex';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;
@@ -53,6 +61,7 @@ export type AdvancedSearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  isRegex?: boolean;
   suraId?: number;
   juzId?: number;
   suraName?: string;
@@ -70,6 +79,7 @@ export type SearchCounts = {
   fuzzy: number;
   range: number;
   semantic: number;
+  regex: number;
   total: number;
 };
 

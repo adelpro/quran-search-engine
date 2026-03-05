@@ -6,6 +6,7 @@ import { parseRangeQuery, filterVersesByRange } from './range-parser';
 import { semanticMap } from './semantic';
 import { phoneticMap, getPhoneticFuse } from './phonetic';
 import { InvalidPaginationError, MissingDependenciesError } from '../errors';
+import { validateRegex, performRegexSearch } from './regex-search';
 import type {
   WordMap,
   MorphologyAya,
@@ -628,7 +629,33 @@ export const search = <TVerse extends VerseInput>(
         root: 0,
         fuzzy: 0,
         semantic: 0,
+        regex: 0,
         range: totalResults,
+        total: totalResults,
+      },
+      pagination: { totalResults, totalPages, currentPage: page, limit },
+    };
+  }
+
+  // 0b. Regex query shortcut — isRegex:true bypasses all linguistic pipelines
+  if (options.isRegex) {
+    const compiledRegex = validateRegex(query); // throws InvalidRegexError on bad input
+    const filtered = filterVerses(quranData, options.suraId, options.juzId, options.suraName);
+    const regexMatches = performRegexSearch(compiledRegex, filtered);
+    const totalResults = regexMatches.length;
+    const totalPages = Math.ceil(totalResults / limit);
+    const offset = (page - 1) * limit;
+
+    return {
+      results: regexMatches.slice(offset, offset + limit),
+      counts: {
+        simple: 0,
+        lemma: 0,
+        root: 0,
+        fuzzy: 0,
+        semantic: 0,
+        regex: totalResults,
+        range: 0,
         total: totalResults,
       },
       pagination: { totalResults, totalPages, currentPage: page, limit },
@@ -675,7 +702,7 @@ export const search = <TVerse extends VerseInput>(
   if (!cleanQuery) {
     return {
       results: [],
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0 },
+      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0, regex: 0 },
       pagination: {
         totalResults: 0,
         totalPages: 0,
@@ -746,6 +773,7 @@ export const search = <TVerse extends VerseInput>(
     root: combined.filter((v) => v.matchType === 'root').length,
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
     semantic: combined.filter((v) => v.matchType === 'semantic').length,
+    regex: 0,
     range: 0,
     total: combined.length,
   };

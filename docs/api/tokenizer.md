@@ -25,7 +25,7 @@ Depending on the `SearchOptions` provided to the `search` function, individual q
 | Semantic   | Matching via LLM Embeddings | `+0.8`        |
 | Fuzzy      | Fallback index string match | `+0.5`        |
 | Range      | Direct Chapter:Verse lookup | `+1.0`        |
-| Regex      | Native RegExp matches       | N/A           |
+| Regex      | Native RegExp matches (via `isRegex: true`) | `1`           |
 
 ### Exact Match (+3 points)
 
