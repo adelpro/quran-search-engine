@@ -19,6 +19,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
 - Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
+- Regex search with ReDoS safety validation (`validateRegex` for UI-side input checking)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
@@ -323,6 +324,7 @@ Main entry point. Combines:
 - Fuzzy fallback (Fuse) per token
 - Semantic concept expansion (when `options.semantic = true`)
 - Range lookups (`2:255`, `1:1-7`, `1:`)
+- Regex pattern matching (when `options.isRegex = true`)
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
@@ -368,8 +370,35 @@ const response = search(
 | Root       | +1                   |
 | Fuzzy      | +0.5 (fallback only) |
 | Range      | 1 (direct lookup)    |
+| Regex      | 1                    |
 
 
+
+#### Regex Search
+
+`search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
+
+Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
+
+```ts
+import { search } from 'quran-search-engine';
+
+// Find verses ending with "ون"
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+});
+// response.results[0].matchType => 'regex'
+
+// Combine with sura filtering
+const filtered = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+  suraId: 1, // only search in Al-Fatihah
+});
+```
 
 #### Range search
 

@@ -678,19 +678,7 @@
   },
   {
     "english": ["Food", "Nourishment"],
-    "arabic": [
-      "طعام",
-      "أكل",
-      "رزق",
-      "قوت",
-      "زاد",
-      "مؤنة",
-      "غذاء",
-      "مأكول",
-      "مائدة",
-      "نعمة",
-      "عيش"
-    ],
+    "arabic": ["طعام", "أكل", "رزق", "قوت", "زاد", "مؤنة", "غذاء", "مأكول", "مائدة", "نعمة", "عيش"],
     "category": "Sustenance",
     "notes": "الطعام is general food. الأكل is the act of eating. الرزق is provision/sustenance. القوت is necessary sustenance. الزاد is provisions for a journey. المؤنة is supplies. الغذاء is nourishment. الطعام in Quran can refer to both physical and spiritual nourishment."
   },

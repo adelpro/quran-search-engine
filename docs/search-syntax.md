@@ -27,7 +27,24 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
 
 Beyond multi-word string queries, the engine supports multiple alternative syntaxes enabled via the `SearchOptions`:
 
-- **Regex Queries:** When `{ isRegex: true }` is supplied, the engine bypasses standard string tokenization and matches verses via native RegExp operations directly on the Uthmani string.
+- **Regex Queries:** When `{ isRegex: true }` is supplied, the engine bypasses standard string tokenization and matches verses via native RegExp operations directly on the normalized `standard` text field. The query string is compiled as a Unicode-aware `RegExp` and tested against each verse. Pattern validation includes syntactic correctness checks and heuristic ReDoS detection (nested quantifiers, overlapping alternation) to reject patterns that could cause catastrophic backtracking. Matched verses receive `matchType: 'regex'` with a score of `1`. Regex search also respects `suraId`, `juzId`, and `suraName` filtering — the verse set is narrowed first, then the regex runs only on the filtered subset.
+
+```typescript
+// Find all verses ending with "ون"
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+});
+
+// Find verses containing "الله" followed by "الرحمن" with any text between them
+const response2 = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+});
+```
+
 - **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse targets efficiently without iterating.
 - **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return `matchType: semantic` metadata gracefully.
 
