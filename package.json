@@ -30,6 +30,7 @@
     "test": "vitest",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "docs:start": "cd docs && pnpx fumapress",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "prepare": "husky",
     "prepublishOnly": "pnpm run build",
