@@ -309,7 +309,7 @@ export const search = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): SearchResponse<TVerse> => {
-  // 0. Validate inputs
+  // 0. Validate inputs — early return on critical failures
   const quranDataValidation = validateQuranData(quranData);
   if (!quranDataValidation.valid) {
     console.warn(`[quran-search-engine] Invalid quranData:`, quranDataValidation.errors);

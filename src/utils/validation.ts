@@ -11,9 +11,6 @@ export type ValidationResult = {
   errors: ValidationError[];
 };
 
-/**
- * Validates a single VerseInput record.
- */
 export const validateVerseInput = (verse: unknown, index?: number): ValidationError[] => {
   const errors: ValidationError[] = [];
 
@@ -23,17 +20,14 @@ export const validateVerseInput = (verse: unknown, index?: number): ValidationEr
 
   const v = verse as Record<string, unknown>;
 
-  // gid: required, positive integer
   if (typeof v['gid'] !== 'number' || !Number.isInteger(v['gid']) || v['gid'] < 0) {
     errors.push({ field: 'gid', message: 'Must be a non-negative integer', index });
   }
 
-  // uthmani: required, non-empty string
   if (typeof v['uthmani'] !== 'string' || v['uthmani'].trim() === '') {
     errors.push({ field: 'uthmani', message: 'Must be a non-empty string', index });
   }
 
-  // standard: required, non-empty string
   if (typeof v['standard'] !== 'string' || v['standard'].trim() === '') {
     errors.push({ field: 'standard', message: 'Must be a non-empty string', index });
   }
@@ -41,9 +35,6 @@ export const validateVerseInput = (verse: unknown, index?: number): ValidationEr
   return errors;
 };
 
-/**
- * Validates an array of VerseInput records.
- */
 export const validateQuranData = <TVerse extends VerseInput>(
   data: TVerse[],
 ): ValidationResult => {
@@ -59,12 +50,17 @@ export const validateQuranData = <TVerse extends VerseInput>(
   const seenGids = new Set<number>();
 
   data.forEach((verse, index) => {
+    // Fix #2: guard against null/non-object before indexing
+    if (typeof verse !== 'object' || verse === null) {
+      errors.push({ field: 'verse', message: 'Must be a non-null object', index });
+      return;
+    }
+
     const verseErrors = validateVerseInput(verse, index);
     errors.push(...verseErrors);
 
-    // Check duplicate gids
-    if (typeof (verse as Record<string, unknown>)['gid'] === 'number') {
-      const gid = (verse as Record<string, unknown>)['gid'] as number;
+    const gid = (verse as Record<string, unknown>)['gid'];
+    if (typeof gid === 'number') {
       if (seenGids.has(gid)) {
         errors.push({ field: 'gid', message: `Duplicate gid: ${gid}`, index });
       }
@@ -75,9 +71,6 @@ export const validateQuranData = <TVerse extends VerseInput>(
   return { valid: errors.length === 0, errors };
 };
 
-/**
- * Validates the morphologyMap structure.
- */
 export const validateMorphologyMap = (
   map: Map<number, MorphologyAya>,
 ): ValidationResult => {
@@ -91,22 +84,41 @@ export const validateMorphologyMap = (
     if (typeof key !== 'number') {
       errors.push({ field: 'morphologyMap', message: `Key must be a number, got: ${typeof key}` });
     }
+
     if (!Array.isArray(entry?.lemmas)) {
       errors.push({ field: 'morphologyMap.lemmas', message: `Entry ${key}: lemmas must be an array` });
+    } else {
+      // Fix #3: validate that each lemma is a string
+      entry.lemmas.forEach((lemma, i) => {
+        if (typeof lemma !== 'string') {
+          errors.push({ field: 'morphologyMap.lemmas', message: `Entry ${key}: lemmas[${i}] must be a string` });
+        }
+      });
     }
+
     if (!Array.isArray(entry?.roots)) {
       errors.push({ field: 'morphologyMap.roots', message: `Entry ${key}: roots must be an array` });
+    } else {
+      // Fix #3: validate that each root is a string
+      entry.roots.forEach((root, i) => {
+        if (typeof root !== 'string') {
+          errors.push({ field: 'morphologyMap.roots', message: `Entry ${key}: roots[${i}] must be a string` });
+        }
+      });
     }
   });
 
   return { valid: errors.length === 0, errors };
 };
 
-/**
- * Validates the WordMap structure.
- */
 export const validateWordMap = (wordMap: WordMap): ValidationResult => {
-  if (typeof wordMap !== 'object' || wordMap === null || Array.isArray(wordMap)) {
+  // Fix #4: reject Map instances, arrays, Date, class instances — only plain objects
+  if (
+    typeof wordMap !== 'object' ||
+    wordMap === null ||
+    Array.isArray(wordMap) ||
+    Object.getPrototypeOf(wordMap) !== Object.prototype
+  ) {
     return { valid: false, errors: [{ field: 'wordMap', message: 'Must be a plain object' }] };
   }
 

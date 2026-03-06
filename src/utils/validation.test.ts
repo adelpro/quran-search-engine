@@ -89,3 +89,38 @@ describe('validateWordMap', () => {
     expect(result.valid).toBe(false);
   });
 });
+
+describe('validateQuranData - edge cases', () => {
+  it('fails gracefully for null entries without throwing', () => {
+    const result = validateQuranData([null as never]);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe('validateMorphologyMap - string content', () => {
+  it('fails if lemmas contains non-strings', () => {
+    const map = new Map([[1, { gid: 1, lemmas: [123 as never], roots: ['اله'] }]]);
+    const result = validateMorphologyMap(map);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.field === 'morphologyMap.lemmas')).toBe(true);
+  });
+
+  it('fails if roots contains non-strings', () => {
+    const map = new Map([[1, { gid: 1, lemmas: ['الله'], roots: [null as never] }]]);
+    const result = validateMorphologyMap(map);
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe('validateWordMap - plain object check', () => {
+  it('fails for Map instance', () => {
+    const result = validateWordMap(new Map() as never);
+    expect(result.valid).toBe(false);
+  });
+
+  it('fails for Date instance', () => {
+    const result = validateWordMap(new Date() as never);
+    expect(result.valid).toBe(false);
+  });
+});
