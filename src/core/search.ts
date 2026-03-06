@@ -1,3 +1,4 @@
+import { validateQuranData, validateMorphologyMap, validateWordMap } from '../utils/validation';
 import Fuse, { type IFuseOptions, type FuseResultMatch } from 'fuse.js';
 import { normalizeArabic } from '../utils/normalization';
 import { getPositiveTokens } from './tokenization';
@@ -308,6 +309,20 @@ export const search = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
 ): SearchResponse<TVerse> => {
+  // 0. Validate inputs
+  const quranDataValidation = validateQuranData(quranData);
+  if (!quranDataValidation.valid) {
+    console.warn(`[quran-search-engine] Invalid quranData:`, quranDataValidation.errors);
+  }
+  const morphologyValidation = validateMorphologyMap(morphologyMap);
+  if (!morphologyValidation.valid) {
+    console.warn(`[quran-search-engine] Invalid morphologyMap:`, morphologyValidation.errors);
+  }
+  const wordMapValidation = validateWordMap(wordMap);
+  if (!wordMapValidation.valid) {
+    console.warn(`[quran-search-engine] Invalid wordMap:`, wordMapValidation.errors);
+  }
+
   // 1. Prepare query
   const arabicOnly = query.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
