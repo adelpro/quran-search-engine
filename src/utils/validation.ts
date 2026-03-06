@@ -11,24 +11,31 @@ export type ValidationResult = {
   errors: ValidationError[];
 };
 
+const isPlainObject = (val: unknown): val is Record<string, unknown> =>
+  typeof val === 'object' &&
+  val !== null &&
+  !Array.isArray(val) &&
+  Object.getPrototypeOf(val) === Object.prototype;
+
+const isValidInteger = (val: unknown): val is number =>
+  typeof val === 'number' && Number.isInteger(val) && isFinite(val);
+
 export const validateVerseInput = (verse: unknown, index?: number): ValidationError[] => {
   const errors: ValidationError[] = [];
 
-  if (typeof verse !== 'object' || verse === null) {
-    return [{ field: 'verse', message: 'Must be a non-null object', index }];
+  if (!isPlainObject(verse)) {
+    return [{ field: 'verse', message: 'Must be a non-null plain object', index }];
   }
 
-  const v = verse as Record<string, unknown>;
-
-  if (typeof v['gid'] !== 'number' || !Number.isInteger(v['gid']) || v['gid'] < 0) {
+  if (!isValidInteger(verse['gid']) || (verse['gid'] as number) < 0) {
     errors.push({ field: 'gid', message: 'Must be a non-negative integer', index });
   }
 
-  if (typeof v['uthmani'] !== 'string' || v['uthmani'].trim() === '') {
+  if (typeof verse['uthmani'] !== 'string' || verse['uthmani'].trim() === '') {
     errors.push({ field: 'uthmani', message: 'Must be a non-empty string', index });
   }
 
-  if (typeof v['standard'] !== 'string' || v['standard'].trim() === '') {
+  if (typeof verse['standard'] !== 'string' || verse['standard'].trim() === '') {
     errors.push({ field: 'standard', message: 'Must be a non-empty string', index });
   }
 
@@ -50,16 +57,15 @@ export const validateQuranData = <TVerse extends VerseInput>(
   const seenGids = new Set<number>();
 
   data.forEach((verse, index) => {
-    // Fix #2: guard against null/non-object before indexing
-    if (typeof verse !== 'object' || verse === null) {
-      errors.push({ field: 'verse', message: 'Must be a non-null object', index });
+    if (!isPlainObject(verse)) {
+      errors.push({ field: 'verse', message: 'Must be a non-null plain object', index });
       return;
     }
 
     const verseErrors = validateVerseInput(verse, index);
     errors.push(...verseErrors);
 
-    const gid = (verse as Record<string, unknown>)['gid'];
+    const gid = verse['gid'];
     if (typeof gid === 'number') {
       if (seenGids.has(gid)) {
         errors.push({ field: 'gid', message: `Duplicate gid: ${gid}`, index });
@@ -81,26 +87,35 @@ export const validateMorphologyMap = (
   const errors: ValidationError[] = [];
 
   map.forEach((entry, key) => {
-    if (typeof key !== 'number') {
-      errors.push({ field: 'morphologyMap', message: `Key must be a number, got: ${typeof key}` });
+    // Fix #1a: reject NaN, Infinity, fractions
+    if (!isValidInteger(key) || key < 0) {
+      errors.push({ field: 'morphologyMap', message: `Key must be a non-negative integer, got: ${key}` });
     }
 
-    if (!Array.isArray(entry?.lemmas)) {
+    // Fix #1b: validate entry.gid
+    if (!isPlainObject(entry)) {
+      errors.push({ field: 'morphologyMap', message: `Entry ${key}: must be a plain object` });
+      return;
+    }
+
+    if (!isValidInteger(entry['gid']) || (entry['gid'] as number) < 0) {
+      errors.push({ field: 'morphologyMap.gid', message: `Entry ${key}: gid must be a non-negative integer` });
+    }
+
+    if (!Array.isArray(entry['lemmas'])) {
       errors.push({ field: 'morphologyMap.lemmas', message: `Entry ${key}: lemmas must be an array` });
     } else {
-      // Fix #3: validate that each lemma is a string
-      entry.lemmas.forEach((lemma, i) => {
+      (entry['lemmas'] as unknown[]).forEach((lemma, i) => {
         if (typeof lemma !== 'string') {
           errors.push({ field: 'morphologyMap.lemmas', message: `Entry ${key}: lemmas[${i}] must be a string` });
         }
       });
     }
 
-    if (!Array.isArray(entry?.roots)) {
+    if (!Array.isArray(entry['roots'])) {
       errors.push({ field: 'morphologyMap.roots', message: `Entry ${key}: roots must be an array` });
     } else {
-      // Fix #3: validate that each root is a string
-      entry.roots.forEach((root, i) => {
+      (entry['roots'] as unknown[]).forEach((root, i) => {
         if (typeof root !== 'string') {
           errors.push({ field: 'morphologyMap.roots', message: `Entry ${key}: roots[${i}] must be a string` });
         }
@@ -112,27 +127,22 @@ export const validateMorphologyMap = (
 };
 
 export const validateWordMap = (wordMap: WordMap): ValidationResult => {
-  // Fix #4: reject Map instances, arrays, Date, class instances — only plain objects
-  if (
-    typeof wordMap !== 'object' ||
-    wordMap === null ||
-    Array.isArray(wordMap) ||
-    Object.getPrototypeOf(wordMap) !== Object.prototype
-  ) {
+  if (!isPlainObject(wordMap)) {
     return { valid: false, errors: [{ field: 'wordMap', message: 'Must be a plain object' }] };
   }
 
   const errors: ValidationError[] = [];
 
   for (const [key, value] of Object.entries(wordMap)) {
-    if (typeof value !== 'object' || value === null) {
-      errors.push({ field: `wordMap[${key}]`, message: 'Value must be an object' });
+    // Fix #2: each entry value must also be a plain object
+    if (!isPlainObject(value)) {
+      errors.push({ field: `wordMap[${key}]`, message: 'Value must be a plain object' });
       continue;
     }
-    if (value.lemma !== undefined && typeof value.lemma !== 'string') {
+    if (value['lemma'] !== undefined && typeof value['lemma'] !== 'string') {
       errors.push({ field: `wordMap[${key}].lemma`, message: 'Must be a string if present' });
     }
-    if (value.root !== undefined && typeof value.root !== 'string') {
+    if (value['root'] !== undefined && typeof value['root'] !== 'string') {
       errors.push({ field: `wordMap[${key}].root`, message: 'Must be a string if present' });
     }
   }
