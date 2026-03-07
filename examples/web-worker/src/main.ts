@@ -9,6 +9,7 @@ import {
 class QuranSearchWorkerApp {
   private worker: SearchWorkerClient;
   private loading = true;
+  private pendingQuery = false;
 
   private searchInput: HTMLInputElement;
   private lemmaCheckbox: HTMLInputElement;
@@ -38,6 +39,10 @@ class QuranSearchWorkerApp {
     } finally {
       this.loading = false;
       this.hideLoading();
+      if (this.pendingQuery) {
+        this.pendingQuery = false;
+        this.handleSearch();
+      }
     }
   }
 
@@ -58,7 +63,11 @@ class QuranSearchWorkerApp {
 
   private async handleSearch() {
     const query = this.searchInput.value.trim();
-    if (!query || this.loading) {
+    if (this.loading) {
+      if (query) this.pendingQuery = true;
+      return;
+    }
+    if (!query) {
       this.resultsDiv.innerHTML = '';
       return;
     }
@@ -86,7 +95,7 @@ class QuranSearchWorkerApp {
 
     const html = `
       <div class="results-info">
-        <div>Found <strong>${response.pagination.totalResults}</strong> matches (via Web Worker)</div>
+        <div>Found <strong>${response.pagination.totalResults}</strong> matches</div>
         <div class="stats">
           <span class="stat-item">
             <span class="indicator indicator-exact"></span>
@@ -148,7 +157,8 @@ class QuranSearchWorkerApp {
   }
 
   private showLoading() {
-    this.resultsDiv.innerHTML = '<div class="loading">Loading Quranic datasets in Web Worker...</div>';
+    this.resultsDiv.innerHTML =
+      '<div class="loading">Loading Quranic datasets in Web Worker...</div>';
   }
 
   private hideLoading() {
