@@ -26,3 +26,5 @@ export {
   type SchemaError,
   type ValidationResult,
 } from './utils/schema';
+export { createSearchWorker, type SearchWorkerClient } from './worker';
+export type { WorkerRequest, WorkerResponse } from './worker';
