@@ -1,6 +1,6 @@
-import { validateRegex } from '../utils/regex-validation';
-import { normalizeArabic } from '../utils/normalization';
-import type { VerseInput, ScoredVerse } from '../types';
+import { validateRegex } from '../../utils/regex-validation';
+import { normalizeArabic } from '../../utils/normalization';
+import type { VerseInput, ScoredVerse } from '../../types';
 
 // Re-export validateRegex so existing internal imports from './regex-search' still work
 export { validateRegex };
