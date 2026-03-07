@@ -2,6 +2,7 @@ import {
   createSearchWorker,
   type SearchWorkerClient,
   type SearchResponse,
+  type ScoredQuranText,
   getHighlightRanges,
 } from 'quran-search-engine';
 
@@ -111,7 +112,7 @@ class QuranSearchWorkerApp {
     this.resultsDiv.innerHTML = html;
   }
 
-  private renderVerse(verse: any) {
+  private renderVerse(verse: ScoredQuranText) {
     const ranges = getHighlightRanges(verse.uthmani, verse.matchedTokens, verse.tokenTypes);
     let highlightedText = verse.uthmani;
 

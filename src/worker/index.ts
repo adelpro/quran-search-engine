@@ -43,10 +43,10 @@ const createWorkerClient = (worker: Worker): SearchWorkerClient => {
   };
 
   worker.onerror = (event: ErrorEvent) => {
-    for (const [id, handler] of pending) {
+    for (const [, handler] of pending) {
       handler.reject(new Error(event.message || 'Worker error'));
-      pending.delete(id);
     }
+    pending.clear();
   };
 
   const sendMessage = <T>(message: Omit<WorkerRequest, 'id'>): Promise<T> => {

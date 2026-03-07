@@ -69,6 +69,12 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       }
       const result = handleSearch(payload.query, payload.options, payload.pagination);
       self.postMessage({ id, type: 'search-result', payload: result } satisfies WorkerResponse);
+    } else {
+      self.postMessage({
+        id,
+        type: 'error',
+        error: `Unknown message type: ${type}`,
+      } satisfies WorkerResponse);
     }
   } catch (err) {
     self.postMessage({
