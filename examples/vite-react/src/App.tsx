@@ -4,6 +4,7 @@ import {
   loadMorphology,
   loadWordMap,
   search,
+  LRUCache,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -13,6 +14,9 @@ import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from './useDebounce';
 import { VerseItem } from './components/VerseItem';
 import './App.css';
+
+// Module-level cache — persists across React re-renders
+const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
 function App() {
   const [quranData, setQuranData] = useState<QuranText[]>([]);
@@ -24,7 +28,16 @@ function App() {
   const debouncedQuery = useDebounce(query, 300);
 
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
-  const [options, setOptions] = useState({ lemma: true, root: true, fuzzy: true });
+
+  const [options, setOptions] = useState({
+    lemma: true,
+    root: true,
+    fuzzy: true,
+    semantic: true,
+    suraId: undefined as number | undefined,
+    juzId: undefined as number | undefined,
+    suraName: '', // Advanced filter by Surah name
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -52,10 +65,16 @@ function App() {
   // 2. Search Logic
   useEffect(() => {
     if (!loading && quranData.length > 0 && morphologyMap && wordMap && debouncedQuery.trim()) {
-      const response = search(debouncedQuery, quranData, morphologyMap, wordMap, options, {
-        page: currentPage,
-        limit: PAGE_SIZE,
-      });
+      const response = search(
+        debouncedQuery,
+        quranData,
+        morphologyMap,
+        wordMap,
+        options,
+        { page: currentPage, limit: PAGE_SIZE },
+        undefined, // preComputedFuseIndex
+        searchCache, // LRU cache — identical queries return cached results instantly
+      );
 
       setSearchResponse(response);
     } else {
@@ -122,6 +141,63 @@ function App() {
           />
           Fuzzy Search
         </label>
+        <label className="option-item">
+          <input
+            type="checkbox"
+            checked={options.semantic}
+            onChange={(e) => setOptions({ ...options, semantic: e.target.checked })}
+          />
+          Semantic Search
+        </label>
+        <label className="option-item">
+          Sura ID:
+          <input
+            type="number"
+            min="1"
+            max="114"
+            value={options.suraId ?? ''}
+            onChange={(e) =>
+              setOptions({
+                ...options,
+                suraId: e.target.value ? parseInt(e.target.value, 10) : undefined,
+              })
+            }
+            style={{ width: '60px', marginLeft: '5px' }}
+          />
+        </label>
+        <label className="option-item">
+          Juz ID:
+          <input
+            type="number"
+            min="1"
+            max="30"
+            value={options.juzId ?? ''}
+            onChange={(e) =>
+              setOptions({
+                ...options,
+                juzId: e.target.value ? parseInt(e.target.value, 10) : undefined,
+              })
+            }
+            style={{ width: '60px', marginLeft: '5px' }}
+          />
+        </label>
+        <label className="option-item">
+          Sura Name:
+          <input
+            type="text"
+            placeholder="Ex: الفاتحة or Fatiha"
+            value={options.suraName}
+            onChange={(e) => setOptions({ ...options, suraName: e.target.value })}
+            style={{
+              marginLeft: '8px',
+              padding: '4px 8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem',
+              width: '140px',
+            }}
+          />
+        </label>
       </div>
 
       {searchResponse && (
@@ -152,6 +228,11 @@ function App() {
                 <span className="indicator indicator-fuzzy"></span>
                 <span className="stat-label">Fuzzy:</span>
                 <span className="stat-value">{searchResponse.counts.fuzzy}</span>
+              </span>
+              <span className="stat-item">
+                <span className="indicator indicator-semantic"></span>
+                <span className="stat-label">Semantic:</span>
+                <span className="stat-value">{searchResponse.counts.semantic}</span>
               </span>
             </div>
           </div>

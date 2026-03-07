@@ -5,7 +5,9 @@ A Node.js example demonstrating the Quran Search Engine library for server-side 
 ## Features
 
 - Load and search Quran data programmatically
+- Multiple search modes: exact, lemma, root, and semantic matching
 - Display search statistics and results
+
 - Command-line interface for custom searches
 - Example searches for common Arabic words
 

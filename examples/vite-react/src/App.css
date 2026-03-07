@@ -2,7 +2,11 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .search-header {
@@ -149,6 +153,10 @@
   background-color: #64748b;
 }
 
+.indicator-semantic {
+  background-color: #334155;
+}
+
 .results-list {
   display: flex;
   flex-direction: column;
@@ -160,7 +168,9 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 1.5rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .verse-card:hover {
@@ -213,6 +223,11 @@
   background-color: #64748b;
   color: #ffffff;
   border: 1px solid #cbd5e1;
+}
+
+.highlight-semantic {
+  background-color: #334155;
+  color: #ffffff;
 }
 
 .match-tag {
@@ -343,6 +358,11 @@
     border-color: #475569;
   }
 
+  .highlight-semantic {
+    background-color: #cbd5e1;
+    color: #0f172a;
+  }
+
   .indicator-exact {
     background-color: #4ade80;
   }
@@ -357,6 +377,10 @@
 
   .indicator-fuzzy {
     background-color: #94a3b8;
+  }
+
+  .indicator-semantic {
+    background-color: #cbd5e1;
   }
 
   .page-btn {
