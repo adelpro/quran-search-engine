@@ -13,21 +13,21 @@ A Node.js example demonstrating the Quran Search Engine library for server-side 
 
 ## Getting Started
 
-1. Install dependencies:
+1. Install dependencies and build the library:
 
    ```bash
-   pnpm install
+   yarn playground:setup
    ```
 
 2. Run the example:
 
    ```bash
-   pnpm start
+   yarn playground:node
    ```
 
 3. For custom searches, provide a search term as an argument:
    ```bash
-   pnpm start "الله"
+   yarn workspace nodejs-example start "الله"
    ```
 
 ## Usage
