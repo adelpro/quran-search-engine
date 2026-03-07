@@ -1,3 +1,5 @@
+import type { FuseResultMatch } from 'fuse.js';
+
 export type QuranText = {
   sura_id: number;
   aya_id_display: string;
@@ -23,6 +25,10 @@ export type VerseInput = {
   sura_name?: string;
   sura_name_en?: string;
   sura_name_romanization?: string;
+};
+
+export type VerseWithFuseMatches<TVerse extends VerseInput = QuranText> = TVerse & {
+  fuseMatches?: readonly FuseResultMatch[];
 };
 
 export type MorphologyAya = {
