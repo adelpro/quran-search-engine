@@ -24,7 +24,6 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
 
-
 ## Table of contents
 
 - [Why this library](#why-this-library)
@@ -65,52 +64,47 @@ You control the data, rendering, and persistence.
 
 ## Installation
 
-This project uses **pnpm** as the default package manager for optimal performance, caching, and workspace management. pnpm provides:
-
-- **Faster installs** through global content-addressable storage
-- **Efficient disk usage** by hard-linking packages from a global store
-- **Better workspace support** for monorepo management
-- **Strict dependency resolution** preventing phantom dependencies
+This project uses **yarn** as the default package manager.
 
 ```bash
-pnpm install quran-search-engine
+yarn add quran-search-engine
 ```
 
 <details> <summary>Other package managers</summary>
 <br>
 npm install quran-search-engine <br>
-yarn add quran-search-engine <br>
+pnpm add quran-search-engine <br>
 
 </details>
 
 ## Development Setup
 
-This is a **pnpm workspace** monorepo containing the main library and example applications. The workspace is configured in `pnpm-workspace.yaml` to include:
+This is a **yarn workspace** monorepo containing the main library and example applications. The workspace is configured in `package.json` to include:
 
 - The main library (root package)
 - All examples in the `examples/` directory
 
 ### Prerequisites
 
-Install pnpm if you haven't already:
+Install yarn if you haven't already:
 
 ```bash
-npm install -g pnpm
+npm install -g yarn
 # or
-corepack enable pnpm
+corepack enable yarn
 ```
 
 ### Setup Commands
 
 ```bash
 # Install all dependencies for the workspace and examples
-pnpm install
+yarn install
 
 # Build the main library
-pnpm build
+yarn build
 
 # Run tests across the workspace
-pnpm test
+yarn test
 ```
 
 ## Quickstart
@@ -197,6 +191,9 @@ console.log(response.results[0]);
 // Example output (shape):
 // { gid: 1, matchType: 'exact', matchScore: 6, matchedTokens: ['...'], ... }
 ```
+
+> [!IMPORTANT]
+> **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with `yarn build --watch`) for those changes to be reflected in the example applications.
 
 ## Public API
 
@@ -372,8 +369,6 @@ const response = search(
 | Range      | 1 (direct lookup)    |
 | Regex      | 1                    |
 
-
-
 #### Regex Search
 
 `search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
@@ -455,7 +450,6 @@ const response = search('Paradise', quranData, morphologyMap, wordMap, {
 const response = search('Bismillah', quranData, morphologyMap, wordMap);
 // response.results[0] => gid: 1 (Basmalah)
 ```
-
 
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
@@ -667,20 +661,24 @@ try {
 ### Available Error Classes
 
 **Data Loading Errors:**
+
 - `DataFileNotFoundError` - Missing data files (includes `filePath`)
 - `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
 - `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
 
 **Search Errors:**
+
 - `InvalidQueryError` - Invalid search queries (includes `query`)
 - `MissingDependenciesError` - Missing required dependencies (includes `missingDependencies` array)
 - `SearchOperationFailedError` - Search operation failures (includes `operation`, `cause`)
 
 **Validation Errors:**
+
 - `InvalidPaginationError` - Invalid pagination parameters (includes `page`, `limit`)
 - `InvalidOptionsError` - Invalid search options (includes `reason`)
 
 **Tokenization Errors:**
+
 - `MissingMorphologyError` - Missing morphology data (includes `gid`)
 - `InvalidModeError` - Invalid tokenization mode (includes `mode`)
 
@@ -985,9 +983,6 @@ It focuses strictly on deterministic Quran text search with basic semantic synon
 
 ## Example apps
 
-> [!IMPORTANT]
-> **Note for Developers**: This project uses a pnpm workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `pnpm build` (or run it in watch mode with `pnpm build --watch`) for those changes to be reflected in the example applications.
-
 Several example applications are available in the `examples/` directory:
 
 - **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
@@ -998,16 +993,15 @@ Several example applications are available in the `examples/` directory:
 To run an example:
 
 ```bash
-pnpm install
-pnpm -C examples/<example-name> dev
+# Setup: install dependencies and build the library
+yarn playground:setup
+
+# Run individual examples
+yarn playground:react     # React + Vite
+yarn playground:vanilla   # Vanilla TypeScript
+yarn playground:angular  # Angular
+yarn playground:node     # Node.js CLI
 ```
-
-Scripts by example:
-
-- `examples/vite-react`: `pnpm -C examples/vite-react dev`
-- `examples/vanilla-ts`: `pnpm -C examples/vanilla-ts dev`
-- `examples/angular`: `pnpm -C examples/angular start`
-- `examples/nodejs`: `pnpm -C examples/nodejs start`
 
 ## Testing
 
@@ -1017,13 +1011,13 @@ This project includes comprehensive test coverage and verification tools.
 
 ```bash
 # Run all tests
-pnpm test
+yarn test
 
 # Run tests in watch mode
-pnpm test --watch
+yarn test --watch
 
 # Run tests with coverage
-pnpm test --coverage
+yarn test --coverage
 ```
 
 ### Test Coverage
@@ -1045,10 +1039,10 @@ For comprehensive end-to-end verification, run the included verification script:
 
 ```bash
 # Build the library first
-pnpm build
+yarn build
 
 # Then run verification (requires tsx or similar TypeScript runner)
-pnpm tsx scripts/verify-loader.ts
+yarn tsx scripts/verify-loader.ts
 ```
 
 This script performs **integration testing** that validates the complete search pipeline:
@@ -1189,16 +1183,16 @@ src/
 ## Development
 
 ```bash
-pnpm run lint
-pnpm run test
-pnpm run build
+yarn run lint
+yarn run test
+yarn run build
 ```
 
 ## Contributing
 
 - Open an issue to discuss larger changes before starting implementation.
 - Keep changes focused and include tests when applicable.
-- Ensure checks pass locally: `pnpm run lint && pnpm run test && pnpm run build`.
+- Ensure checks pass locally: `yarn run lint && yarn run test && yarn run build`.
 
 ## Contact
 

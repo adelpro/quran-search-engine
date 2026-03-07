@@ -12,16 +12,16 @@ A simple vanilla TypeScript example demonstrating the Quran Search Engine librar
 
 ## Getting Started
 
-1. Install dependencies:
+1. Install dependencies and build the library:
 
    ```bash
-   pnpm install
+   yarn playground:setup
    ```
 
 2. Start the development server:
 
    ```bash
-   pnpm run dev
+   yarn playground:vanilla
    ```
 
 3. Open your browser and navigate to `http://localhost:5173`

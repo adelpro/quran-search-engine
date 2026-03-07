@@ -1,6 +1,7 @@
 {
   "name": "quran-search-engine",
   "version": "0.2.0",
+  "private": true,
   "description": "A powerful, stateless, and pure TypeScript search engine for the Quran.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -25,16 +26,25 @@
     "url": "https://github.com/adelpro/quran-search-engine/issues"
   },
   "sideEffects": false,
+  "workspaces": [
+    "examples/*",
+    "."
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "docs:start": "cd docs && pnpx fumapress",
+    "docs:start": "cd docs && npx fumapress",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "prepare": "husky",
-    "prepublishOnly": "pnpm run build",
-    "size-limit": "size-limit"
+    "prepublishOnly": "yarn build",
+    "size-limit": "size-limit",
+    "playground:setup": "yarn install && yarn build",
+    "playground:react": "yarn workspace react-example dev",
+    "playground:vanilla": "yarn workspace vanilla-ts-example dev",
+    "playground:angular": "yarn workspace example-angular start",
+    "playground:node": "yarn workspace nodejs-example start"
   },
   "keywords": [
     "quran",
