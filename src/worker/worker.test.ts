@@ -1,9 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { createSearchWorker } from './index';
 
 describe('createSearchWorker', () => {
+  const originalWorker = globalThis.Worker;
+
+  afterEach(() => {
+    globalThis.Worker = originalWorker;
+  });
+
   it('should create a fallback client when Worker is not available', () => {
-    const originalWorker = globalThis.Worker;
     // @ts-expect-error - removing Worker for testing
     delete globalThis.Worker;
 
@@ -12,8 +17,6 @@ describe('createSearchWorker', () => {
     expect(typeof client.init).toBe('function');
     expect(typeof client.search).toBe('function');
     expect(typeof client.terminate).toBe('function');
-
-    globalThis.Worker = originalWorker;
   });
 
   it('should create a fallback client when workerFactory throws', () => {
