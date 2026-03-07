@@ -9,6 +9,7 @@ import {
 class QuranSearchWorkerApp {
   private worker: SearchWorkerClient;
   private loading = true;
+  private initialized = false;
   private pendingQuery = false;
 
   private searchInput: HTMLInputElement;
@@ -30,18 +31,21 @@ class QuranSearchWorkerApp {
   }
 
   private async init() {
+    let initSucceeded = false;
     try {
       this.showLoading();
       await this.worker.init();
+      initSucceeded = true;
+      this.initialized = true;
     } catch (error) {
       console.error('Failed to initialize search worker:', error);
       this.showError('Failed to load Quran data');
     } finally {
       this.loading = false;
       this.hideLoading();
-      if (this.pendingQuery) {
+      if (initSucceeded && this.pendingQuery) {
         this.pendingQuery = false;
-        this.handleSearch();
+        void this.handleSearch();
       }
     }
   }
@@ -67,6 +71,7 @@ class QuranSearchWorkerApp {
       if (query) this.pendingQuery = true;
       return;
     }
+    if (!this.initialized) return;
     if (!query) {
       this.resultsDiv.innerHTML = '';
       return;
@@ -121,9 +126,18 @@ class QuranSearchWorkerApp {
     this.resultsDiv.innerHTML = html;
   }
 
+  private escapeHtml(value: string) {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   private renderVerse(verse: ScoredQuranText) {
     const ranges = getHighlightRanges(verse.uthmani, verse.matchedTokens, verse.tokenTypes);
-    let highlightedText = verse.uthmani;
+    let highlightedText = this.escapeHtml(verse.uthmani);
 
     if (ranges.length > 0) {
       const parts: string[] = [];
@@ -131,15 +145,15 @@ class QuranSearchWorkerApp {
 
       for (const range of ranges) {
         if (cursor < range.start) {
-          parts.push(verse.uthmani.slice(cursor, range.start));
+          parts.push(this.escapeHtml(verse.uthmani.slice(cursor, range.start)));
         }
-        const segment = verse.uthmani.slice(range.start, range.end);
+        const segment = this.escapeHtml(verse.uthmani.slice(range.start, range.end));
         parts.push(`<span class="highlight-${range.matchType}">${segment}</span>`);
         cursor = range.end;
       }
 
       if (cursor < verse.uthmani.length) {
-        parts.push(verse.uthmani.slice(cursor));
+        parts.push(this.escapeHtml(verse.uthmani.slice(cursor)));
       }
 
       highlightedText = parts.join('');
@@ -148,7 +162,7 @@ class QuranSearchWorkerApp {
     return `
       <div class="verse-card">
         <div class="verse-header">
-          <span>${verse.sura_name} (${verse.sura_id}:${verse.aya_id})</span>
+          <span>${this.escapeHtml(verse.sura_name)} (${verse.sura_id}:${verse.aya_id})</span>
           <span class="match-tag">${verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: ${verse.matchScore})</span>
         </div>
         <div class="verse-arabic">${highlightedText}</div>
@@ -168,7 +182,7 @@ class QuranSearchWorkerApp {
   }
 
   private showError(message: string) {
-    this.resultsDiv.innerHTML = `<div style="color: red; padding: 20px;">${message}</div>`;
+    this.resultsDiv.innerHTML = `<div style="color: red; padding: 20px;">${this.escapeHtml(message)}</div>`;
   }
 }
 
