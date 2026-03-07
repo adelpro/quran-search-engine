@@ -11,6 +11,8 @@
 ![license](https://img.shields.io/npm/l/quran-search-engine)
 [![bundle limit](https://img.shields.io/badge/bundle%20limit-2%20MB-blue)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L80)
 
+![Athar](./assets/moon.svg)
+
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
 - Arabic normalization
@@ -42,6 +44,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Testing](#testing)
 - [Development](#development)
 - [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
 - [License](#license)
 
 ## Why this library
@@ -1197,6 +1200,16 @@ yarn run build
 ## Contact
 
 - Adel Benyahia — <contact@adelpro.us.kg>
+
+## Acknowledgments
+
+Special thanks to the [ITQAN Community](https://community.itqan.dev) for their support and contribution to the Quran technology ecosystem.
+
+<p align="center">
+  <a href="https://itqan.dev">
+    <img src="./assets/itqan-logo.svg" alt="ITQAN Community Logo" width="150" />
+  </a>
+</p>
 
 ## License
 
