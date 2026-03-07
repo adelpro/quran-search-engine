@@ -19,11 +19,21 @@ class QuranSearchWorkerApp {
   private resultsDiv: HTMLDivElement;
 
   constructor() {
-    this.searchInput = document.getElementById('search-input') as HTMLInputElement;
-    this.lemmaCheckbox = document.getElementById('lemma') as HTMLInputElement;
-    this.rootCheckbox = document.getElementById('root') as HTMLInputElement;
-    this.fuzzyCheckbox = document.getElementById('fuzzy') as HTMLInputElement;
-    this.resultsDiv = document.getElementById('results') as HTMLDivElement;
+    const searchInput = document.getElementById('search-input');
+    const lemmaCheckbox = document.getElementById('lemma');
+    const rootCheckbox = document.getElementById('root');
+    const fuzzyCheckbox = document.getElementById('fuzzy');
+    const resultsDiv = document.getElementById('results');
+
+    if (!searchInput || !lemmaCheckbox || !rootCheckbox || !fuzzyCheckbox || !resultsDiv) {
+      throw new Error('Required DOM elements not found');
+    }
+
+    this.searchInput = searchInput as HTMLInputElement;
+    this.lemmaCheckbox = lemmaCheckbox as HTMLInputElement;
+    this.rootCheckbox = rootCheckbox as HTMLInputElement;
+    this.fuzzyCheckbox = fuzzyCheckbox as HTMLInputElement;
+    this.resultsDiv = resultsDiv as HTMLDivElement;
 
     this.worker = createSearchWorker();
     this.init();
@@ -126,6 +136,8 @@ class QuranSearchWorkerApp {
     this.resultsDiv.innerHTML = html;
   }
 
+  private static readonly VALID_MATCH_TYPES = new Set(['simple', 'lemma', 'root', 'fuzzy', 'none']);
+
   private escapeHtml(value: string) {
     return value
       .replaceAll('&', '&amp;')
@@ -133,6 +145,10 @@ class QuranSearchWorkerApp {
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;');
+  }
+
+  private safeMatchType(matchType: string): string {
+    return QuranSearchWorkerApp.VALID_MATCH_TYPES.has(matchType) ? matchType : 'unknown';
   }
 
   private renderVerse(verse: ScoredQuranText) {
@@ -148,7 +164,7 @@ class QuranSearchWorkerApp {
           parts.push(this.escapeHtml(verse.uthmani.slice(cursor, range.start)));
         }
         const segment = this.escapeHtml(verse.uthmani.slice(range.start, range.end));
-        parts.push(`<span class="highlight-${range.matchType}">${segment}</span>`);
+        parts.push(`<span class="highlight-${this.safeMatchType(range.matchType)}">${segment}</span>`);
         cursor = range.end;
       }
 
