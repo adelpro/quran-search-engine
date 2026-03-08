@@ -110,23 +110,23 @@ class QuranSearchWorkerApp {
 
     const html = `
       <div class="results-info">
-        <div>Found <strong>${response.pagination.totalResults}</strong> matches</div>
+        <div>Found <strong>${Number(response.pagination.totalResults)}</strong> matches</div>
         <div class="stats">
           <span class="stat-item">
             <span class="indicator indicator-exact"></span>
-            <span>Exact: ${response.counts.simple}</span>
+            <span>Exact: ${Number(response.counts.simple)}</span>
           </span>
           <span class="stat-item">
             <span class="indicator indicator-lemma"></span>
-            <span>Lemma: ${response.counts.lemma}</span>
+            <span>Lemma: ${Number(response.counts.lemma)}</span>
           </span>
           <span class="stat-item">
             <span class="indicator indicator-root"></span>
-            <span>Root: ${response.counts.root}</span>
+            <span>Root: ${Number(response.counts.root)}</span>
           </span>
           <span class="stat-item">
             <span class="indicator indicator-fuzzy"></span>
-            <span>Fuzzy: ${response.counts.fuzzy}</span>
+            <span>Fuzzy: ${Number(response.counts.fuzzy)}</span>
           </span>
         </div>
       </div>
@@ -181,7 +181,7 @@ class QuranSearchWorkerApp {
       <div class="verse-card">
         <div class="verse-header">
           <span>${this.escapeHtml(verse.sura_name)} (${verse.sura_id}:${verse.aya_id})</span>
-          <span class="match-tag">${verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: ${verse.matchScore})</span>
+          <span class="match-tag">${this.escapeHtml(verse.matchType === 'none' ? 'fuzzy' : verse.matchType)} (Score: ${Number(verse.matchScore)})</span>
         </div>
         <div class="verse-arabic">${highlightedText}</div>
       </div>
