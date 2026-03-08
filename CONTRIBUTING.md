@@ -18,6 +18,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 Contributors MUST create branches from `develop`.
 
 Example:
+
 ```bash
 git checkout develop
 git pull origin develop
@@ -25,12 +26,14 @@ git checkout -b docs/improve-contributing-guidelines
 ```
 
 Naming conventions:
+
 - `feat/`
 - `fix/`
 - `docs/`
 - `refactor/`
 
 Examples:
+
 - `feat/add-diacritics-toggle`
 - `fix/normalization-edge-case`
 - `docs/update-readme`
@@ -40,13 +43,14 @@ Examples:
 Conventional Commits style is recommended.
 
 Examples:
+
 - `feat(search): add diacritics toggle`
 - `fix(normalization): handle hamza edge case`
 - `docs: update contributing guidelines`
 
 ## Development Setup
 
-This project uses **pnpm** for package management.
+This project uses **yarn** for package management.
 
 1. **Clone the repository:**
 
@@ -55,38 +59,39 @@ This project uses **pnpm** for package management.
    cd quran-search-engine
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies and build:**
 
    ```bash
-   pnpm install
+   yarn playground:setup
    ```
 
-3. **Build the library:**
+   Or step by step:
 
    ```bash
-   pnpm build
+   yarn install
+   yarn build
    ```
 
-4. **Run tests:**
+3. **Run tests:**
+
    ```bash
-   pnpm test
+   yarn test
    ```
 
 ## Running Examples Locally
 
-To install dependencies:
-```bash
-pnpm install
-```
+Use the playground scripts:
 
-To run example apps from the `examples/` folder:
 ```bash
-pnpm --filter <package-name> dev
+yarn playground:react     # React + Vite
+yarn playground:vanilla   # Vanilla TypeScript
+yarn playground:angular  # Angular
+yarn playground:node     # Node.js CLI
 ```
 
 ## Testing Guidelines
 
-- Run all tests: `pnpm test`
+- Run all tests: `yarn test`
 - During development, you can run tests to verify your code behaves correctly.
 - Tests are typically located alongside the source code or in a dedicated tests directory.
 - We encourage adding tests for new features or bug fixes.
@@ -103,6 +108,7 @@ pnpm --filter <package-name> dev
 Contributors must update `CHANGELOG.md` under `[Unreleased]`.
 
 Example formatting:
+
 ```markdown
 ### Added
 - Description
@@ -120,14 +126,17 @@ Example formatting:
 ## Code Quality & Pre-PR Checklist
 
 Before submitting a PR, contributors must:
+
 - Branch from develop
 - Run:
+
   ```bash
-  pnpm lint
-  pnpm build
-  pnpm format
-  pnpm test
+  yarn lint
+  yarn build
+  yarn format
+  yarn test
   ```
+
 - Ensure all tests pass
 - Review code manually
 - Submit your PR with a clear description of the problem solved (linting will run automatically via husky).

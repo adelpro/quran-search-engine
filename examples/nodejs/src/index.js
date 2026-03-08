@@ -239,7 +239,7 @@ async function main() {
       });
     } else {
       console.log('💡 Tip: Run with a search term as argument:');
-      console.log('   pnpm start "your search term"');
+      console.log('   yarn playground:node "your search term"');
     }
   } catch (error) {
     console.error('❌ Error:', error.message);

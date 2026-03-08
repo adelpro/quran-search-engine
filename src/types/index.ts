@@ -1,3 +1,5 @@
+import type { FuseResultMatch } from 'fuse.js';
+
 export type QuranText = {
   sura_id: number;
   aya_id_display: string;
@@ -25,6 +27,10 @@ export type VerseInput = {
   sura_name_romanization?: string;
 };
 
+export type VerseWithFuseMatches<TVerse extends VerseInput = QuranText> = TVerse & {
+  fuseMatches?: readonly FuseResultMatch[];
+};
+
 export type MorphologyAya = {
   gid: number;
   lemmas: string[];
@@ -38,7 +44,15 @@ export type WordMap = {
   };
 };
 
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none' | 'semantic';
+export type MatchType =
+  | 'exact'
+  | 'lemma'
+  | 'root'
+  | 'fuzzy'
+  | 'range'
+  | 'none'
+  | 'semantic'
+  | 'regex';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;
@@ -53,6 +67,7 @@ export type AdvancedSearchOptions = {
   lemma: boolean;
   root: boolean;
   fuzzy?: boolean;
+  isRegex?: boolean;
   suraId?: number;
   juzId?: number;
   suraName?: string;
@@ -70,6 +85,7 @@ export type SearchCounts = {
   fuzzy: number;
   range: number;
   semantic: number;
+  regex: number;
   total: number;
 };
 
