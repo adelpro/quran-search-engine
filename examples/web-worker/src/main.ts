@@ -164,7 +164,9 @@ class QuranSearchWorkerApp {
           parts.push(this.escapeHtml(verse.uthmani.slice(cursor, range.start)));
         }
         const segment = this.escapeHtml(verse.uthmani.slice(range.start, range.end));
-        parts.push(`<span class="highlight-${this.safeMatchType(range.matchType)}">${segment}</span>`);
+        parts.push(
+          `<span class="highlight-${this.safeMatchType(range.matchType)}">${segment}</span>`,
+        );
         cursor = range.end;
       }
 
