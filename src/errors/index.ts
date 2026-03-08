@@ -15,6 +15,7 @@ export {
   InvalidQueryError,
   MissingDependenciesError,
   SearchOperationFailedError,
+  InvalidRegexError,
 } from './search.error';
 
 // Validation errors
