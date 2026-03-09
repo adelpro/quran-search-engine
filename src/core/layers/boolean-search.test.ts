@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { booleanSearch } from './boolean-search';
-import { LRUCache } from './lru-cache';
-import { buildInvertedIndex } from '../utils/loader';
-import type { QuranText, WordMap, MorphologyAya, SearchResponse } from '../types';
+import { LRUCache } from '../../utils/lru-cache';
+import { buildInvertedIndex } from '../../utils/loader';
+import type { QuranText, WordMap, MorphologyAya, SearchResponse } from '../../types';
 
 // Mock data for testing (same as search.test.ts)
 const mockQuranData: QuranText[] = [
