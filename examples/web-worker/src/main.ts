@@ -136,7 +136,7 @@ class QuranSearchWorkerApp {
     this.resultsDiv.innerHTML = html;
   }
 
-  private static readonly VALID_MATCH_TYPES = new Set(['simple', 'lemma', 'root', 'fuzzy', 'none']);
+  private static readonly VALID_MATCH_TYPES = new Set(['exact', 'lemma', 'root', 'fuzzy', 'none']);
 
   private escapeHtml(value: string) {
     return value

@@ -53,7 +53,12 @@ const createWorkerClient = (worker: Worker): SearchWorkerClient => {
     return new Promise((resolve, reject) => {
       const id = ++messageId;
       pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
-      worker.postMessage({ ...message, id });
+      try {
+        worker.postMessage({ ...message, id });
+      } catch (error) {
+        pending.delete(id);
+        reject(error);
+      }
     });
   };
 
@@ -96,6 +101,9 @@ const createFallbackClient = (): SearchWorkerClient => {
     ) => {
       if (!initialized) {
         throw new Error('Client not initialized. Call init first.');
+      }
+      if (!query) {
+        throw new Error('Missing query in search request');
       }
       return search(query, quranData, morphologyMap, wordMap, options, pagination);
     },
