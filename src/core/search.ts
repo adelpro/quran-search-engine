@@ -149,15 +149,19 @@ export const search = <TVerse extends VerseInput>(
 
   const fuzzyEnabled = options.fuzzy !== false;
 
-  // Parse boolean operators if present
+  // 3. Boolean operator detection and parsing
+  // If the query contains boolean operators (+, -, |), parse them into structured form
+  // and clean the query for normal search processing
   const booleanQuery: BooleanQuery | null = hasBooleanOperators(query)
     ? parseBooleanQuery(query)
     : null;
 
-  // TODO: Change Variable Name
-  const cleanedQuery = clearBooleanOperators(query);
-  // 3. Setup phase: Tokenize and handle phonetic translation
-  const tokens = cleanedQuery.split(/\s+/);
+  // Remove boolean operators from query to extract clean search terms
+  // Example: "+الله | الرحمن -الجحيم" → "الله الرحمن الجحيم"
+  const operatorFreeQuery = clearBooleanOperators(query);
+
+  // 4. Setup phase: Tokenize and handle phonetic translation
+  const tokens = operatorFreeQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
     if (token && !isArabic(token)) {
@@ -207,7 +211,7 @@ export const search = <TVerse extends VerseInput>(
     ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])
     : null;
 
-  // 4. Executing Search Layers
+  // 5. Executing Search Layers
   const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
 
   const advancedMatches = performAdvancedLinguisticSearch(
@@ -223,10 +227,17 @@ export const search = <TVerse extends VerseInput>(
 
   const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
 
-  // 5. Combine and Scored Deduplication
+  // 6. Boolean filtering (if boolean operators were present in query)
+  // First, combine all search results from different layers
   const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
 
+  // Then, if boolean query exists, filter combined results based on boolean logic
+  // This allows queries like "+الله -الرحمن الرحيم | العليم" to:
+  // 1. Search for all terms (الله, الرحمن, الرحيم, العليم) using all search layers
+  // 2. Filter results to keep only verses matching the boolean conditions
   const booleanMatches = booleanQuery ? performBooleanSearch(booleanQuery, allMatches) : allMatches;
+
+  // 7. Scored deduplication and ranking
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap[cleanQuery];
@@ -253,7 +264,7 @@ export const search = <TVerse extends VerseInput>(
   // Sort by relevance
   combined.sort((a, b) => b.matchScore - a.matchScore);
 
-  // 6. Pagination & Metadata
+  // 8. Pagination & Metadata
   const offset = (page - 1) * limit;
 
   const results = combined.slice(offset, offset + limit);
