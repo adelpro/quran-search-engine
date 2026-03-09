@@ -112,6 +112,17 @@ export const simpleSearch = <T extends Record<string, unknown>>(
   });
 };
 
+/**
+ * A duplicate function of simpleSearch, but with OR logic
+ * @param items - The collection to search through.
+ * @param query - The search string.
+ * @param searchField - The property name to search within (used in fallback mode).
+ * @param [wordIndex] - An optional pre-computed index mapping words to Global IDs (GIDs).
+ * @returns An array of items where at least on of tokens was found.
+ * @example
+ * // Search and get all results containing any of the query tokens
+ * const results = simpleSearchOr(verses, "الحمد لله", "standard", myWordIndex);
+ */
 export const simpleSearchOr = <T extends Record<string, unknown>>(
   items: T[],
   query: string,
@@ -144,7 +155,7 @@ export const simpleSearchOr = <T extends Record<string, unknown>>(
   // Fallback: linear scan with OR logic
   return items.filter((item) => {
     const fieldValue = normalizeArabic(String(item[searchField] || ''));
-    // AND logic: All tokens must be present
+    // Or logic: At least one tokens must be present
     return queryTokens.some((token) => fieldValue.includes(token));
   });
 };
