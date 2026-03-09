@@ -1,4 +1,5 @@
 import { VerseInput, BooleanQuery } from '../../types';
+import { normalizeArabic } from '../../utils/normalization';
 
 /**
  * Checks if a query string contains boolean operators (+, -, |).
@@ -130,27 +131,32 @@ export function performBooleanSearch<TVerse extends VerseInput>(
   parsedBooleanQuery: BooleanQuery,
   matches: TVerse[],
 ): TVerse[] {
-  // 0. Destructure the parsed boolean query
+  // 0. Destructure and normalize the parsed boolean query terms
+  // Normalization removes diacritics so '+ٱللَّهِ' becomes 'الله' and matches verse text
   const { must, exclude, either } = parsedBooleanQuery;
+  const normalizedMust = must.map((term) => normalizeArabic(term));
+  const normalizedExclude = exclude.map((term) => normalizeArabic(term));
+  const normalizedEither = either.map((term) => normalizeArabic(term));
 
   // 1. Initialize an empty array to store the boolean matches
   const booleanMatches: TVerse[] = [];
 
   // 2. Loop through each verse and check if it matches the boolean query
   matches.forEach((verse) => {
-    const verseText = verse.standard.toLowerCase();
+    // Normalize verse text for comparison (removes diacritics, etc.)
+    const verseText = normalizeArabic(verse.standard);
 
     // MUST: ALL must terms must appear in verse
-    const hasMust = must.every((term) => verseText.includes(term));
+    const hasMust = normalizedMust.every((term) => verseText.includes(term));
     if (!hasMust) return;
 
     // EXCLUDE: NO exclude terms should appear
-    const hasExclude = exclude.some((term) => verseText.includes(term));
+    const hasExclude = normalizedExclude.some((term) => verseText.includes(term));
     if (hasExclude) return;
 
     // Either: At least one term should appear
-    const hasEither = either.some((term) => verseText.includes(term));
-    if (!hasEither && either.length > 0) return;
+    const hasEither = normalizedEither.some((term) => verseText.includes(term));
+    if (!hasEither && normalizedEither.length > 0) return;
 
     // 3.If all conditions are met, add the verse to the boolean matches
     booleanMatches.push(verse);
