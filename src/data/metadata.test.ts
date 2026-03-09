@@ -10,7 +10,9 @@ describe('SURAS metadata', () => {
   });
 
   it('should have correct verse counts', () => {
-    const quranAyatArray = Array.isArray(quranData) ? quranData : Object.values(quranData);
+    const quranAyatArray = (
+      Array.isArray(quranData) ? quranData : Object.values(quranData)
+    ) as VerseInput[];
     SURAS.forEach((sura) => {
       const versesInQuran = quranAyatArray.filter(
         (aya: VerseInput) => aya.sura_id === sura.id,
