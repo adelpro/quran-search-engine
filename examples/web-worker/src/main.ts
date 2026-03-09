@@ -189,8 +189,7 @@ class QuranSearchWorkerApp {
   }
 
   private showLoading() {
-    this.resultsDiv.innerHTML =
-      '<div class="loading">Loading Quranic datasets in Web Worker...</div>';
+    this.resultsDiv.innerHTML = '<div class="loading">Loading Quranic datasets...</div>';
   }
 
   private hideLoading() {
