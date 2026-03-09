@@ -6,7 +6,7 @@ import { phoneticMap, getPhoneticFuse } from '../utils/phonetic';
 import { InvalidPaginationError, MissingDependenciesError } from '../errors';
 
 import { validateRegex, performRegexSearch } from './layers/regex-search';
-import { filterVerses, simpleSearch } from './layers/simple-search';
+import { filterVerses, simpleSearch, simpleSearchOr } from './layers/simple-search';
 import { createArabicFuseSearch } from './layers/fuse-search';
 import { performAdvancedLinguisticSearch } from './layers/linguistic-search';
 import { performSemanticSearch } from './layers/semantic-search';
@@ -212,7 +212,11 @@ export const search = <TVerse extends VerseInput>(
     : null;
 
   // 5. Executing Search Layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
+  // Use OR logic for boolean queries to get union of all terms, then filter with boolean logic
+  // Use AND logic for normal queries to get intersection (phrase matching)
+  const simpleMatches = booleanQuery
+    ? simpleSearchOr(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex)
+    : simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
