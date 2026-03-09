@@ -1,17 +1,32 @@
-import {
-  AdvancedSearchOptions,
-  InvertedIndex,
-  MorphologyAya,
-  PaginationOptions,
-  SearchCounts,
-  SearchResponse,
-  VerseInput,
-  WordMap,
-  BooleanQuery,
-} from '../../types';
+import { VerseInput, BooleanQuery } from '../../types';
 
+/**
+ * Checks if a query string contains boolean operators (+, -, |).
+ * @param query - The search query to check.
+ * @returns True if the query contains any boolean operators, false otherwise.
+ * @example
+ * hasBooleanOperators("+الله -الرحمن") // Returns: true
+ * @example
+ * hasBooleanOperators("الله الرحمن") // Returns: false
+ */
 export function hasBooleanOperators(query: string): boolean {
   return ['+', '-', '|'].some((op) => query.includes(op));
+}
+
+/**
+ * Removes all boolean operators from a query string and normalizes whitespace.
+ * This creates a clean query for normal search processing.
+ * @param query - The search query containing boolean operators.
+ * @returns The query with operators removed and whitespace normalized.
+ * @example
+ * clearBooleanOperators("+الله | الرحمن -الجحيم")
+ * // Returns: "الله الرحمن الجحيم"
+ * @example
+ * clearBooleanOperators("محمد | رسول")
+ * // Returns: "محمد رسول"
+ */
+export function clearBooleanOperators(query: string): string {
+  return query.replace(/[+-|]/g, '').trim().replace(/\s+/g, ' ');
 }
 
 // ==================== Boolean Query Parser ====================
@@ -82,63 +97,46 @@ export function parseBooleanQuery(rawQuery: string): BooleanQuery {
 // ==================== Boolean Search API ====================
 
 /**
- * Performs a boolean search across the Quran using logical operators.
+ * Filters search results using boolean logic operators.
+ * * This is a **filter function**, not a search function. It takes existing search results
+ *   and filters them based on boolean operators. The actual searching (simple/lemma/root/fuzzy/semantic)
+ *   is done before this filter is applied.
  * * Supports three boolean operators for precise query control:
- * - **MUST (+)**: Term must appear in results (AND logic)
- * - **EXCLUDE (-)**: Term must NOT appear in results (NOT logic)
- * - **EITHER (|)**: At least one term must appear (OR logic)
- * * The search delegates to the main `search()` function for each term,
- * leveraging all existing features (lemma/root matching, fuzzy search, etc.),
- * then combines results using Set operations on verse GIDs.
- * * Results are scored, deduplicated, sorted by relevance, and paginated.
+ * - **MUST (+)**: Term must appear in the verse text (AND logic)
+ * - **EXCLUDE (-)**: Term must NOT appear in the verse text (NOT logic)
+ * - **EITHER (|)**: At least one term must appear in the verse text (OR logic)
+ * * All matching is case-insensitive and uses substring matching on the verse's standard text.
  * @template TVerse - The type of verse objects in the collection.
- * @param query - The boolean search query string (e.g., "+grace -hell fire | water").
- * @param quranData - The verse dataset to search through.
- * @param morphologyMap - Morphological data for linguistic analysis.
- * @param wordMap - Dictionary for lemma/root resolution.
- * @param options - Search configuration (toggle lemma/root/fuzzy/semantic matching).
- * @param pagination - Page number and results per page.
- * @param preComputedFuseIndex - Optional pre-built Fuse.js index for fuzzy matching.
- * @param cache - Optional LRU cache for performance optimization.
- * @param invertedIndex - Optional pre-built word/lemma/root indexes for O(1) lookups.
- * @returns Paginated search results with metadata and match counts.
+ * @param parsedBooleanQuery - The parsed boolean query object with must/exclude/either arrays.
+ * @param matches - Array of verses to filter (from previous search layers).
+ * @returns Filtered array of verses that satisfy all boolean conditions.
  * @example
- * // Find verses with "الله" but not "الرحمن", and must have either "الرحيم" or "العليم"
- * const result = booleanSearch(
- *   "+الله -الرحمن الرحيم | العليم",
- *   quranData,
- *   morphologyMap,
- *   wordMap,
- *   { lemma: true, root: true },
- *   { page: 1, limit: 10 }
- * );
+ * // Filter verses to find ones with "الله" but not "الرحمن", and either "الرحيم" or "العليم"
+ * const parsed = parseBooleanQuery("+الله -الرحمن الرحيم | العليم");
+ * const filtered = performBooleanSearch(parsed, searchResults);
+ * // Returns only verses containing الله, not containing الرحمن, and containing الرحيم OR العليم
  * @example
- * // Find verses with both "النار" and "الجنة" (MUST have both)
- * const result = booleanSearch(
- *   "+النار +الجنة",
- *   quranData,
- *   morphologyMap,
- *   wordMap
- * );
+ * // Filter for verses with both "النار" and "الجنة"
+ * const parsed = parseBooleanQuery("+النار +الجنة");
+ * const filtered = performBooleanSearch(parsed, searchResults);
+ * // Returns only verses containing both terms
  * @example
- * // Find verses with "محمد" or "رسول" but exclude "كافر"
- * const result = booleanSearch(
- *   "محمد | رسول -كافر",
- *   quranData,
- *   morphologyMap,
- *   wordMap
- * );
+ * // Filter for verses with "محمد" or "رسول" but not "كافر"
+ * const parsed = parseBooleanQuery("محمد | رسول -كافر");
+ * const filtered = performBooleanSearch(parsed, searchResults);
+ * // Returns verses with either محمد or رسول, excluding any with كافر
  */
-export function booleanSearch<TVerse extends VerseInput>(
+export function performBooleanSearch<TVerse extends VerseInput>(
   parsedBooleanQuery: BooleanQuery,
   matches: TVerse[],
 ): TVerse[] {
-  // const parsed = parseBooleanQuery(query);
-
+  // 0. Destructure the parsed boolean query
   const { must, exclude, either } = parsedBooleanQuery;
 
+  // 1. Initialize an empty array to store the boolean matches
   const booleanMatches: TVerse[] = [];
 
+  // 2. Loop through each verse and check if it matches the boolean query
   matches.forEach((verse) => {
     const verseText = verse.standard.toLowerCase();
 
@@ -154,8 +152,9 @@ export function booleanSearch<TVerse extends VerseInput>(
     const hasEither = either.some((term) => verseText.includes(term));
     if (!hasEither && either.length > 0) return;
 
+    // 3.If all conditions are met, add the verse to the boolean matches
     booleanMatches.push(verse);
   });
-
+  // 4. Return the array of boolean matches
   return booleanMatches;
 }

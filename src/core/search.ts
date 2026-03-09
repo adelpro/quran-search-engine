@@ -23,7 +23,14 @@ import type {
   ScoredVerse,
   InvertedIndex,
   VerseWithFuseMatches,
+  BooleanQuery,
 } from '../types';
+import {
+  clearBooleanOperators,
+  hasBooleanOperators,
+  parseBooleanQuery,
+  performBooleanSearch,
+} from './layers/boolean-search';
 
 /**
  * Performs a comprehensive search across the Quran.
@@ -142,8 +149,15 @@ export const search = <TVerse extends VerseInput>(
 
   const fuzzyEnabled = options.fuzzy !== false;
 
+  // Parse boolean operators if present
+  const booleanQuery: BooleanQuery | null = hasBooleanOperators(query)
+    ? parseBooleanQuery(query)
+    : null;
+
+  // TODO: Change Variable Name
+  const cleanedQuery = clearBooleanOperators(query);
   // 3. Setup phase: Tokenize and handle phonetic translation
-  const tokens = query.split(/\s+/);
+  const tokens = cleanedQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
     if (token && !isArabic(token)) {
@@ -211,11 +225,13 @@ export const search = <TVerse extends VerseInput>(
 
   // 5. Combine and Scored Deduplication
   const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
+
+  const booleanMatches = booleanQuery ? performBooleanSearch(booleanQuery, allMatches) : allMatches;
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap[cleanQuery];
 
-  for (const verse of allMatches) {
+  for (const verse of booleanMatches) {
     if (!gidSet.has(verse.gid)) {
       gidSet.add(verse.gid);
 
