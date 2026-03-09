@@ -62,3 +62,21 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
 
 console.log(response.results[0]);
 ```
+
+## Regex Search
+
+Search using regular expressions by passing `{ isRegex: true }`:
+
+```typescript
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+});
+
+response.results.forEach((verse) => {
+  console.log(`${verse.sura_id}:${verse.aya_id} — ${verse.matchType}`);
+});
+```
+
+The engine validates regex patterns for correctness and rejects unsafe patterns (e.g. nested quantifiers) to prevent catastrophic backtracking.

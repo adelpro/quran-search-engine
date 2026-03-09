@@ -10,6 +10,7 @@
 [![Changelog](https://img.shields.io/badge/changelog-view-brightgreen)](https://github.com/adelpro/quran-search-engine/releases)
 ![license](https://img.shields.io/npm/l/quran-search-engine)
 [![bundle limit](https://img.shields.io/badge/bundle%20limit-2%20MB-blue)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L80)
+[![Athar](https://img.shields.io/static/v1?label=Athar&message=%F0%9F%8C%99&color=blue)](https://community.itqan.dev/d/254/15)
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
@@ -19,10 +20,10 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
 - Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
+- Regex search with ReDoS safety validation (`validateRegex` for UI-side input checking)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
 - Highlight ranges (UI-agnostic)
 - Built-in LRU cache for repeated queries
-
 
 ## Table of contents
 
@@ -42,6 +43,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Testing](#testing)
 - [Development](#development)
 - [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
 - [License](#license)
 
 ## Why this library
@@ -64,52 +66,47 @@ You control the data, rendering, and persistence.
 
 ## Installation
 
-This project uses **pnpm** as the default package manager for optimal performance, caching, and workspace management. pnpm provides:
-
-- **Faster installs** through global content-addressable storage
-- **Efficient disk usage** by hard-linking packages from a global store
-- **Better workspace support** for monorepo management
-- **Strict dependency resolution** preventing phantom dependencies
+This project uses **yarn** as the default package manager.
 
 ```bash
-pnpm install quran-search-engine
+yarn add quran-search-engine
 ```
 
 <details> <summary>Other package managers</summary>
 <br>
 npm install quran-search-engine <br>
-yarn add quran-search-engine <br>
+pnpm add quran-search-engine <br>
 
 </details>
 
 ## Development Setup
 
-This is a **pnpm workspace** monorepo containing the main library and example applications. The workspace is configured in `pnpm-workspace.yaml` to include:
+This is a **yarn workspace** monorepo containing the main library and example applications. The workspace is configured in `package.json` to include:
 
 - The main library (root package)
 - All examples in the `examples/` directory
 
 ### Prerequisites
 
-Install pnpm if you haven't already:
+Install yarn if you haven't already:
 
 ```bash
-npm install -g pnpm
+npm install -g yarn
 # or
-corepack enable pnpm
+corepack enable yarn
 ```
 
 ### Setup Commands
 
 ```bash
 # Install all dependencies for the workspace and examples
-pnpm install
+yarn install
 
 # Build the main library
-pnpm build
+yarn build
 
 # Run tests across the workspace
-pnpm test
+yarn test
 ```
 
 ## Quickstart
@@ -196,6 +193,9 @@ console.log(response.results[0]);
 // Example output (shape):
 // { gid: 1, matchType: 'exact', matchScore: 6, matchedTokens: ['...'], ... }
 ```
+
+> [!IMPORTANT]
+> **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with `yarn build --watch`) for those changes to be reflected in the example applications.
 
 ## Public API
 
@@ -323,6 +323,7 @@ Main entry point. Combines:
 - Fuzzy fallback (Fuse) per token
 - Semantic concept expansion (when `options.semantic = true`)
 - Range lookups (`2:255`, `1:1-7`, `1:`)
+- Regex pattern matching (when `options.isRegex = true`)
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
@@ -368,8 +369,33 @@ const response = search(
 | Root       | +1                   |
 | Fuzzy      | +0.5 (fallback only) |
 | Range      | 1 (direct lookup)    |
+| Regex      | 1                    |
 
+#### Regex Search
 
+`search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
+
+Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
+
+```ts
+import { search } from 'quran-search-engine';
+
+// Find verses ending with "ون"
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+});
+// response.results[0].matchType => 'regex'
+
+// Combine with sura filtering
+const filtered = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+  suraId: 1, // only search in Al-Fatihah
+});
+```
 
 #### Range search
 
@@ -426,7 +452,6 @@ const response = search('Paradise', quranData, morphologyMap, wordMap, {
 const response = search('Bismillah', quranData, morphologyMap, wordMap);
 // response.results[0] => gid: 1 (Basmalah)
 ```
-
 
 If you need a simple “contains all tokens in a field” filter for your own data, you can do:
 
@@ -638,20 +663,24 @@ try {
 ### Available Error Classes
 
 **Data Loading Errors:**
+
 - `DataFileNotFoundError` - Missing data files (includes `filePath`)
 - `DataParseError` - JSON parsing failures (includes `filePath`, `cause`)
 - `DataSchemaInvalidError` - Invalid data structure (includes `filePath`, `details`)
 
 **Search Errors:**
+
 - `InvalidQueryError` - Invalid search queries (includes `query`)
 - `MissingDependenciesError` - Missing required dependencies (includes `missingDependencies` array)
 - `SearchOperationFailedError` - Search operation failures (includes `operation`, `cause`)
 
 **Validation Errors:**
+
 - `InvalidPaginationError` - Invalid pagination parameters (includes `page`, `limit`)
 - `InvalidOptionsError` - Invalid search options (includes `reason`)
 
 **Tokenization Errors:**
+
 - `MissingMorphologyError` - Missing morphology data (includes `gid`)
 - `InvalidModeError` - Invalid tokenization mode (includes `mode`)
 
@@ -956,9 +985,6 @@ It focuses strictly on deterministic Quran text search with basic semantic synon
 
 ## Example apps
 
-> [!IMPORTANT]
-> **Note for Developers**: This project uses a pnpm workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `pnpm build` (or run it in watch mode with `pnpm build --watch`) for those changes to be reflected in the example applications.
-
 Several example applications are available in the `examples/` directory:
 
 - **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
@@ -969,16 +995,15 @@ Several example applications are available in the `examples/` directory:
 To run an example:
 
 ```bash
-pnpm install
-pnpm -C examples/<example-name> dev
+# Setup: install dependencies and build the library
+yarn playground:setup
+
+# Run individual examples
+yarn playground:react     # React + Vite
+yarn playground:vanilla   # Vanilla TypeScript
+yarn playground:angular  # Angular
+yarn playground:node     # Node.js CLI
 ```
-
-Scripts by example:
-
-- `examples/vite-react`: `pnpm -C examples/vite-react dev`
-- `examples/vanilla-ts`: `pnpm -C examples/vanilla-ts dev`
-- `examples/angular`: `pnpm -C examples/angular start`
-- `examples/nodejs`: `pnpm -C examples/nodejs start`
 
 ## Testing
 
@@ -988,13 +1013,13 @@ This project includes comprehensive test coverage and verification tools.
 
 ```bash
 # Run all tests
-pnpm test
+yarn test
 
 # Run tests in watch mode
-pnpm test --watch
+yarn test --watch
 
 # Run tests with coverage
-pnpm test --coverage
+yarn test --coverage
 ```
 
 ### Test Coverage
@@ -1016,10 +1041,10 @@ For comprehensive end-to-end verification, run the included verification script:
 
 ```bash
 # Build the library first
-pnpm build
+yarn build
 
 # Then run verification (requires tsx or similar TypeScript runner)
-pnpm tsx scripts/verify-loader.ts
+yarn tsx scripts/verify-loader.ts
 ```
 
 This script performs **integration testing** that validates the complete search pipeline:
@@ -1160,20 +1185,30 @@ src/
 ## Development
 
 ```bash
-pnpm run lint
-pnpm run test
-pnpm run build
+yarn run lint
+yarn run test
+yarn run build
 ```
 
 ## Contributing
 
 - Open an issue to discuss larger changes before starting implementation.
 - Keep changes focused and include tests when applicable.
-- Ensure checks pass locally: `pnpm run lint && pnpm run test && pnpm run build`.
+- Ensure checks pass locally: `yarn run lint && yarn run test && yarn run build`.
 
 ## Contact
 
 - Adel Benyahia — <contact@adelpro.us.kg>
+
+## Acknowledgments
+
+Special thanks to the [ITQAN Community](https://community.itqan.dev) for their support and contribution to the Quran technology ecosystem.
+
+<p align="center">
+  <a href="https://itqan.dev">
+    <img src="./assets/itqan-logo.svg" alt="ITQAN Community Logo" width="150" />
+  </a>
+</p>
 
 ## License
 

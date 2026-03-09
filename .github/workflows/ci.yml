@@ -17,55 +17,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.2
-
-      - name: Detect package manager
-        id: detect
-        run: |
-          if [ -f "yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-          elif [ -f "pnpm-lock.yaml" ]; then
-            echo "manager=pnpm" >> $GITHUB_OUTPUT
-          elif [ -f "package-lock.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-          else
-            echo "manager=none" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@v4
 
       - name: Validate package manager
         run: |
-          if [ "${{ steps.detect.outputs.manager }}" != "pnpm" ]; then
-            echo "Expected pnpm but found: ${{ steps.detect.outputs.manager }}"
-            echo "Please use pnpm for this project (pnpm-lock.yaml not found)"
+          if [ ! -f "yarn.lock" ]; then
+            echo "Expected yarn.lock but it was not found."
+            echo "Please use Yarn v2 (Berry) for this project."
             exit 1
           fi
+          echo "yarn.lock found — package manager check passed."
 
   test-and-build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4.2.0
-        with:
-          version: 9
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6.2.0
+        uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'pnpm'
+
+      - name: Enable Corepack (Yarn Berry)
+        run: corepack enable
+
+      - name: Install Yarn Berry
+        run: corepack prepare yarn@stable --activate
+
+      - name: Get Yarn cache directory
+        id: yarn-cache-dir
+        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Lint
-        run: pnpm lint
+        run: yarn lint
 
       - name: Build
-        run: pnpm build
+        run: yarn build
 
       - name: Test
-        run: pnpm test
+        run: yarn test

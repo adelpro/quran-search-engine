@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { search } from './search';
-import type { QuranText, WordMap, MorphologyAya } from '../types';
+import { search } from '../search';
+import type { QuranText, WordMap, MorphologyAya, ScoredVerse } from '../../types';
 
 // Mock data for testing semantic search
 const mockQuranData: QuranText[] = [
@@ -48,7 +48,7 @@ describe('Semantic Search Verification', () => {
 
     // Should find gid 1 (exact/simple matches might find it too)
     // AND gid 2 (via semantic synonym "بشر")
-    const gids = result.results.map((r) => r.gid);
+    const gids = result.results.map((r: ScoredVerse<QuranText>) => r.gid);
     expect(gids).toContain(1);
     expect(gids).toContain(2);
     expect(result.counts.semantic).toBeGreaterThan(0);
