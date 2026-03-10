@@ -8,7 +8,7 @@ function extractLastAssistantText(html: string): string {
 
   // Select all elements with the target class
   const elements = document.querySelectorAll('.markdown');
-
+  console.log(elements);
   if (!elements.length) {
     console.log("No element found with class 'markdown'");
     return '';
@@ -24,7 +24,7 @@ function extractLastAssistantText(html: string): string {
 /**
  * Sends a message to ChatGPT and returns the full HTML of the last assistant message container
  */
-async function getChatGPTResponseFullHTML(message: string): Promise<string> {
+async function queryChatGpt(message: string): Promise<string> {
   const browser = await puppeteer.connect({
     browserURL: 'http://localhost:9222',
   });
@@ -60,6 +60,7 @@ async function getChatGPTResponseFullHTML(message: string): Promise<string> {
   let lastHTML = '';
   let stableCounter = 0;
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const html = await page.evaluate(() => {
       const last = document.documentElement.outerHTML;
@@ -82,6 +83,12 @@ async function getChatGPTResponseFullHTML(message: string): Promise<string> {
   }
 
   return extractLastAssistantText(lastHTML);
+}
+
+async function normalizeEnglish(englishText: string): Promise<string> {
+  const prompt: string = `Normalize this Holy Quran English sentence to a single canonical word representing its main meaning. Ignore articles like "the","a","an". Map similar meanings to the same word. Replace "God" with "Allah" but leave "Allah" unchanged. Examples:"The Most Merciful"→merciful,"The Most Gracious"→merciful,"Full of kindness and mercy"→merciful,"Strong and powerful"→powerful,"God is Most Merciful"→merciful,"Allah is Most Merciful"→merciful. Sentence:\`${englishText}\`. Return only the normalized word.`;
+  const res = await queryChatGpt(prompt);
+  console.log(`normalized word: ${res}`);
 }
 
 interface DictionaryEntry {
@@ -180,6 +187,32 @@ function attemptAutoMergeFixes(quran: AyaMap, key: string) {
   }
 }
 
+async function normlizeDatasetWithLLM(quran: Record<string, DictionaryEntry>) {
+  const updated_quran: Record<string, DictionaryEntry> = {};
+
+  for (const key of Object.keys(quran)) {
+    const normlizedKey = await normalizeEnglish(key);
+
+    if (!(normlizedKey in updated_quran)) {
+      updated_quran[normlizedKey] = {
+        english: normlizedKey,
+        arabic: new Set<string>(),
+        synonyms: new Set<string>(),
+        debug: [],
+      };
+    }
+
+    for (const arabicWord of quran[key].arabic) {
+      updated_quran[normlizedKey].arabic.add(arabicWord);
+    }
+
+    updated_quran[normlizedKey].synonyms.add(quran[key].english);
+
+    updated_quran[normlizedKey].debug.push({ key, wordText: normlizedKey });
+  }
+
+  return updated_quran;
+}
 function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: boolean) {
   const maxWordsPerAya: Record<string, number> = {};
 
@@ -254,14 +287,16 @@ function main() {
     });
   }
 
-  const output = Object.values(dictMap).map((entry) => ({
-    english: entry.english,
-    arabic: Array.from(entry.arabic),
-    synonyms: Array.from(entry.synonyms),
-    // debug: entry.debug,
-  }));
+  normlizeDatasetWithLLM(dictMap).then((cleanedDictMap) => {
+    const output = Object.values(cleanedDictMap).map((entry) => ({
+      english: entry.english,
+      arabic: Array.from(entry.arabic),
+      synonyms: Array.from(entry.synonyms),
+      // debug: entry.debug,
+    }));
 
-  writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
+    writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
+  });
 }
 
 main();
