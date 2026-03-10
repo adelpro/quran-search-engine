@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.473.0",
-    "quran-search-engine": "*",
+    "quran-search-engine": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

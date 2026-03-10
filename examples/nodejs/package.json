@@ -8,6 +8,6 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "quran-search-engine": "*"
+    "quran-search-engine": "workspace:*"
   }
 }
