@@ -69,7 +69,10 @@
   },
   "dependencies": {
     "csv-parse": "^6.1.0",
-    "fuse.js": "^7.0.0"
+    "fuse.js": "^7.0.0",
+    "jsdom": "^28.1.0",
+    "puppeteer": "^24.39.0",
+    "puppeteer-core": "^24.39.0"
   },
   "size-limit": [
     {
