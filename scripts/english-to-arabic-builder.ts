@@ -1,5 +1,88 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { normalizeArabic } from '../src';
+import puppeteer from 'puppeteer-core';
+import { JSDOM } from 'jsdom';
+
+function extractLastAssistantText(html: string): string {
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  // Select all elements with the target class
+  const elements = document.querySelectorAll('.markdown');
+
+  if (!elements.length) {
+    console.log("No element found with class 'markdown'");
+    return '';
+  }
+
+  // Get the last element
+  const lastElement = elements[elements.length - 1];
+
+  // Return its plain text
+  return lastElement.textContent?.trim() || '';
+}
+
+/**
+ * Sends a message to ChatGPT and returns the full HTML of the last assistant message container
+ */
+async function getChatGPTResponseFullHTML(message: string): Promise<string> {
+  const browser = await puppeteer.connect({
+    browserURL: 'http://localhost:9222',
+  });
+
+  const pages = await browser.pages();
+  let page = pages.find((p) => p.url().includes('chat.openai.com'));
+
+  if (!page) {
+    page = await browser.newPage();
+    await page.goto('https://chat.openai.com/');
+  }
+
+  const inputSelector = '[contenteditable="true"]';
+  await page.waitForSelector(inputSelector);
+
+  // Count messages before sending
+  const beforeCount = await page.evaluate(() => document.querySelectorAll('div.gap-2').length);
+
+  // Send message
+  await page.click(inputSelector);
+  await page.keyboard.type(message);
+  await page.keyboard.press('Enter');
+  console.log('Prompt sent... waiting for response...');
+
+  // Wait for new message container
+  await page.waitForFunction(
+    (count) => document.querySelectorAll('div.gap-2').length > count,
+    {},
+    beforeCount,
+  );
+
+  // Short-polling loop
+  let lastHTML = '';
+  let stableCounter = 0;
+
+  while (true) {
+    const html = await page.evaluate(() => {
+      const last = document.documentElement.outerHTML;
+      if (!last) return '';
+
+      return last; // return the full element HTML including the container
+    });
+
+    if (html === lastHTML) {
+      stableCounter++;
+    } else {
+      stableCounter = 0;
+      lastHTML = html;
+    }
+
+    // Stop if HTML hasn't changed for 2 intervals
+    if (stableCounter >= 2) break;
+
+    await new Promise((res) => setTimeout(res, 100)); // poll every 100s
+  }
+
+  return extractLastAssistantText(lastHTML);
+}
 
 interface DictionaryEntry {
   english: string;
