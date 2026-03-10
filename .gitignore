@@ -5,6 +5,7 @@ node_modules
 .pnp.cjs
 
 # Yarn Berry
+.yarn
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
