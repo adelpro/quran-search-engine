@@ -1,6 +1,6 @@
 # Dependencies
 node_modules
-.pnp
+.pnp.*
 .pnp.js
 .pnp.cjs
 
