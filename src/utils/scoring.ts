@@ -48,11 +48,12 @@ export const computeScore = <TVerse extends VerseInput>(
       token,
       morphologyMap,
     );
-    if (textMatches.length > 0) {
-      score += textMatches.length * 3;
-      if (matchType === 'none') matchType = 'exact'; // Upgrade only if none
-      matchedTokens.push(...textMatches);
-      textMatches.forEach((t: string) => (tokenTypes[t] = 'exact'));
+    const uniqueTextMatches = new Set(textMatches);
+    if (uniqueTextMatches.size > 0) {
+      score += 3;
+      if (matchType === 'none') matchType = 'exact';
+      matchedTokens.push(...uniqueTextMatches);
+      uniqueTextMatches.forEach((t: string) => (tokenTypes[t] = 'exact'));
     }
 
     // 2. Lemma/Root Matches
@@ -67,11 +68,12 @@ export const computeScore = <TVerse extends VerseInput>(
           token,
           morphologyMap,
         );
-        if (lemmaMatches.length > 0) {
-          score += lemmaMatches.length * 2;
+        const uniqueLemmaMatches = new Set(lemmaMatches);
+        if (uniqueLemmaMatches.size > 0) {
+          score += 2;
           if (matchType !== 'exact') matchType = 'lemma';
-          matchedTokens.push(...lemmaMatches);
-          lemmaMatches.forEach((t: string) => {
+          matchedTokens.push(...uniqueLemmaMatches);
+          uniqueLemmaMatches.forEach((t: string) => {
             if (!tokenTypes[t]) tokenTypes[t] = 'lemma';
           });
         }
@@ -87,11 +89,12 @@ export const computeScore = <TVerse extends VerseInput>(
           morphologyMap,
           wordMap,
         );
-        if (rootMatches.length > 0) {
-          score += rootMatches.length * 1;
+        const uniqueRootMatches = new Set(rootMatches);
+        if (uniqueRootMatches.size > 0) {
+          score += 1;
           if (matchType !== 'exact' && matchType !== 'lemma') matchType = 'root';
-          matchedTokens.push(...rootMatches);
-          rootMatches.forEach((t: string) => {
+          matchedTokens.push(...uniqueRootMatches);
+          uniqueRootMatches.forEach((t: string) => {
             if (!tokenTypes[t]) tokenTypes[t] = 'root';
           });
         }
