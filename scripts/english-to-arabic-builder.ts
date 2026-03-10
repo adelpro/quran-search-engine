@@ -1,6 +1,25 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import puppeteer from 'puppeteer-core';
 import { JSDOM } from 'jsdom';
+import path from 'path';
+
+const CACHE_FILE = path.resolve('cache_llm_words.json');
+let cache_llm_words: Record<string, string> = {};
+if (existsSync(CACHE_FILE)) {
+  try {
+    cache_llm_words = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+  } catch (err) {
+    console.error('Failed to parse cache file, starting with empty cache', err);
+    cache_llm_words = {};
+  }
+} else {
+  writeFileSync(CACHE_FILE, JSON.stringify({}), 'utf-8');
+}
+function addWordToCache(key: string, normalized: string) {
+  cache_llm_words[key] = normalized;
+  // Write back to file
+  writeFileSync(CACHE_FILE, JSON.stringify(cache_llm_words, null, 2), 'utf-8');
+}
 
 function extractLastAssistantText(html: string): string {
   const dom = new JSDOM(html);
@@ -81,14 +100,22 @@ async function queryChatGpt(message: string): Promise<string> {
 
     await new Promise((res) => setTimeout(res, 100)); // poll every 100s
   }
+  const word = extractLastAssistantText(lastHTML);
+  await page.close();
 
-  return extractLastAssistantText(lastHTML);
+  return word;
 }
 
 async function normalizeEnglish(englishText: string): Promise<string> {
+  if (englishText in cache_llm_words) {
+    return cache_llm_words[englishText];
+  }
+
   const prompt: string = `Normalize this Holy Quran English sentence to a single canonical word representing its main meaning. Ignore articles like "the","a","an". Map similar meanings to the same word. Replace "God" with "Allah" but leave "Allah" unchanged. Examples:"The Most Merciful"→merciful,"The Most Gracious"→merciful,"Full of kindness and mercy"→merciful,"Strong and powerful"→powerful,"God is Most Merciful"→merciful,"Allah is Most Merciful"→merciful. Sentence:\`${englishText}\`. Return only the normalized word.`;
   const res = await queryChatGpt(prompt);
-  console.log(`normalized word: ${res}`);
+  console.log(`original word: ${englishText} <===> normalized word: ${res}`);
+  addWordToCache(englishText, res);
+  return res;
 }
 
 interface DictionaryEntry {
