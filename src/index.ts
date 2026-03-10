@@ -26,3 +26,4 @@ export {
   type SchemaError,
   type ValidationResult,
 } from './utils/schema';
+export { hasBooleanOperators, clearBooleanOperators } from './core/layers/boolean-search';
