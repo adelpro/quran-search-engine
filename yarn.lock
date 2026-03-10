@@ -9094,7 +9094,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "nodejs-example@workspace:examples/nodejs"
   dependencies:
-    quran-search-engine: "npm:*"
+    quran-search-engine: "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -9976,15 +9976,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"quran-search-engine@npm:*":
-  version: 0.1.5
-  resolution: "quran-search-engine@npm:0.1.5"
-  dependencies:
-    fuse.js: "npm:^7.0.0"
-  checksum: 10c0/a88b4730a68de7eb9b9066ceadd2456fd6c7a3249ae58e739c1887b88ead778f6a3ebfbe16935da4096dacb394ffbd4d7108dcbd90e6ffd1911c43f14f554e4d
-  languageName: node
-  linkType: hard
-
 "quran-search-engine@workspace:*, quran-search-engine@workspace:.":
   version: 0.0.0-use.local
   resolution: "quran-search-engine@workspace:."
@@ -10062,7 +10053,7 @@ __metadata:
     eslint-plugin-react-refresh: "npm:^0.4.24"
     globals: "npm:^16.5.0"
     lucide-react: "npm:^0.473.0"
-    quran-search-engine: "npm:*"
+    quran-search-engine: "workspace:*"
     react: "npm:^19.2.0"
     react-dom: "npm:^19.2.0"
     typescript: "npm:~5.9.3"
