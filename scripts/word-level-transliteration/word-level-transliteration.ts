@@ -236,7 +236,7 @@ function main() {
       totalVersesSeen++;
       const cleanedLine =
         transliterationVerses[verseIndex]?.replace(/\n/g, ' ').replace(/\d+$/, '').trim() ?? '';
-      let phoneticWords = tokenizePhoneticLine(cleanedLine);
+      const phoneticWords = tokenizePhoneticLine(cleanedLine);
       const phoneticOriginal = [...phoneticWords];
       const phoneticClean = phoneticWords.map(cleanPhoneticToken);
 
