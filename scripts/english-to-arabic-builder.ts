@@ -1,141 +1,30 @@
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
-import puppeteer from 'puppeteer-core';
-import { JSDOM } from 'jsdom';
 import path from 'path';
+import natural from 'natural';
 
-const CACHE_FILE = path.resolve('cache_llm_words.json');
-let cache_llm_words: Record<string, string> = {};
-if (existsSync(CACHE_FILE)) {
-  try {
-    cache_llm_words = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-  } catch (err) {
-    console.error('Failed to parse cache file, starting with empty cache', err);
-    cache_llm_words = {};
-  }
-} else {
-  writeFileSync(CACHE_FILE, JSON.stringify({}), 'utf-8');
-}
-function addWordToCache(key: string, normalized: string) {
-  cache_llm_words[key] = normalized;
+const mapped_nlp_words: Record<string, string> = {};
 
-  const tmp = CACHE_FILE + '.tmp';
+function extractKeyword(sentence: string): string {
+  const tfidf = new natural.TfIdf();
+  tfidf.addDocument(sentence);
 
-  // write to temp file first
-  writeFileSync(tmp, JSON.stringify(cache_llm_words, null, 2), 'utf-8');
+  const terms = tfidf.listTerms(0);
 
-  // atomic replace
-  renameSync(tmp, CACHE_FILE);
+  if (terms.length === 0) return '';
+
+  return terms[0].term;
 }
 
-function extractLastAssistantText(html: string): string {
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  // Select all elements with the target class
-  const elements = document.querySelectorAll('.markdown');
-  console.log(elements);
-  if (!elements.length) {
-    console.log("No element found with class 'markdown'");
-    return '';
-  }
-
-  // Get the last element
-  const lastElement = elements[elements.length - 1];
-
-  // Return its plain text
-  return lastElement.textContent?.trim() || '';
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-/**
- * Sends a message to ChatGPT and returns the full HTML of the last assistant message container
- */
-async function queryChatGpt(message: string): Promise<string> {
-  const browser = await puppeteer.connect({
-    browserURL: 'http://localhost:9222',
-    protocolTimeout: 60000,
-  });
-
-  const pages = await browser.pages();
-  let page = pages.find((p) => p.url().includes('chat.openai.com'));
-
-  if (!page) {
-    page = await browser.newPage();
-    await page.goto('https://chat.openai.com/');
-  }
-
-  const inputSelector = '[contenteditable="true"]';
-  await page.waitForSelector(inputSelector);
-
-  // Count messages before sending
-  const beforeCount = await page.evaluate(() => document.querySelectorAll('div.gap-2').length);
-
-  // Send message
-  await page.$eval(
-    inputSelector,
-    (el, message) => {
-      el.textContent = message;
-      el.dispatchEvent(new InputEvent('input', { bubbles: true }));
-    },
-    message,
-  );
-  await page.keyboard.press('Enter');
-  console.log('Prompt sent... waiting for response...');
-
-  // Wait for new message container
-  await page.waitForFunction(
-    (count) => document.querySelectorAll('div.gap-2').length > count,
-    {},
-    beforeCount,
-  );
-
-  // Short-polling loop
-  let lastHTML = '';
-  let stableCounter = 0;
-
-  // eslint-disable-next-line no-constant-condition
-  await sleep(600);
-  while (true) {
-    const html = await page.evaluate(() => {
-      const last = document.documentElement.outerHTML;
-      if (!last) return '';
-
-      return last; // return the full element HTML including the container
-    });
-
-    if (html === lastHTML) {
-      stableCounter++;
-    } else {
-      stableCounter = 0;
-      lastHTML = html;
-    }
-
-    // Stop if HTML hasn't changed for 2 intervals
-    if (stableCounter >= 2) break;
-
-    await new Promise((res) => setTimeout(res, 100)); // poll every 100ms
-  }
-  const word = extractLastAssistantText(lastHTML);
-
-  await page.close();
-
-  return word;
-}
+const notmeaningfullSentence: Set<string> = new Set<string>();
 
 async function normalizeEnglish(englishText: string): Promise<string> {
-  if (englishText in cache_llm_words && cache_llm_words[englishText] != '') {
-    return cache_llm_words[englishText];
-  }
-  if (englishText.trim().split(' ').length == 1) {
-    addWordToCache(englishText.trim(), englishText.trim());
-    return englishText.trim().toLowerCase();
-  }
-  const prompt: string = `Normalize this Holy Quran English sentence to a single canonical word representing its main meaning. Ignore articles like "the","a","an". Map similar meanings to the same word. Replace "God" with "Allah" but leave "Allah" unchanged. Examples:"The Most Merciful"→merciful,"The Most Gracious"→merciful,"Full of kindness and mercy"→merciful,"Strong and powerful"→powerful,"God is Most Merciful"→merciful,"Allah is Most Merciful"→merciful. Sentence:\`${englishText}\`. Return only the normalized word.`;
-  const res = await queryChatGpt(prompt);
+  const res = await extractKeyword(englishText.trim().toLowerCase());
   console.log(`original word: ${englishText} <===> normalized word: ${res}`);
-  addWordToCache(englishText, res);
+  if (res == '') {
+    notmeaningfullSentence.add(englishText.trim().toLowerCase());
+  } else {
+    mapped_nlp_words[englishText] = res;
+  }
   return res;
 }
 
@@ -238,7 +127,7 @@ function attemptAutoMergeFixes(quran: AyaMap, key: string) {
   }
 }
 
-async function normlizeDatasetWithLLM(quran: Record<string, DictionaryEntry>) {
+async function normlizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
   const updated_quran: Record<string, DictionaryEntry> = {};
 
   for (const key of Object.keys(quran)) {
@@ -338,7 +227,7 @@ async function main(): Promise<void> {
     });
   }
 
-  const cleanedDictMap = await normlizeDatasetWithLLM(dictMap);
+  const cleanedDictMap = await normlizeDatasetWithNlp(dictMap);
 
   const output = Object.values(cleanedDictMap).map((entry) => ({
     english: entry.english,
@@ -347,7 +236,22 @@ async function main(): Promise<void> {
     // debug: entry.debug,
   }));
 
+  const debugnotmeaningfullSentence: string[] = [];
+
+  for (const sentence of notmeaningfullSentence) {
+    const keyword = extractKeyword(sentence);
+    if (!keyword) {
+      // push the sentences with no meaningful word
+      debugnotmeaningfullSentence.push(sentence);
+    }
+  }
+
   writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
+  writeFileSync('debug_nlp_mapped_words.json', JSON.stringify(mapped_nlp_words, null, 2));
+  writeFileSync(
+    'debug_no_meaning_sentence.json',
+    JSON.stringify(debugnotmeaningfullSentence, null, 2),
+  );
 }
 
 (async () => {
