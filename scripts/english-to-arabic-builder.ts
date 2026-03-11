@@ -40,12 +40,16 @@ function extractLastAssistantText(html: string): string {
   return lastElement.textContent?.trim() || '';
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 /**
  * Sends a message to ChatGPT and returns the full HTML of the last assistant message container
  */
 async function queryChatGpt(message: string): Promise<string> {
   const browser = await puppeteer.connect({
     browserURL: 'http://localhost:9222',
+    protocolTimeout: 60000,
   });
 
   const pages = await browser.pages();
@@ -80,6 +84,7 @@ async function queryChatGpt(message: string): Promise<string> {
   let stableCounter = 0;
 
   // eslint-disable-next-line no-constant-condition
+  await sleep(200);
   while (true) {
     const html = await page.evaluate(() => {
       const last = document.documentElement.outerHTML;
@@ -98,16 +103,17 @@ async function queryChatGpt(message: string): Promise<string> {
     // Stop if HTML hasn't changed for 2 intervals
     if (stableCounter >= 2) break;
 
-    await new Promise((res) => setTimeout(res, 100)); // poll every 100s
+    await new Promise((res) => setTimeout(res, 100)); // poll every 100ms
   }
   const word = extractLastAssistantText(lastHTML);
+
   await page.close();
 
   return word;
 }
 
 async function normalizeEnglish(englishText: string): Promise<string> {
-  if (englishText in cache_llm_words) {
+  if (englishText in cache_llm_words && cache_llm_words[englishText] != '') {
     return cache_llm_words[englishText];
   }
 
@@ -149,7 +155,10 @@ function extractVisibleWords(text: string): string {
 }
 
 function removeParentheticals(word: string): string {
-  return word.replace(/\([^)]*\)\s*/g, '').trim();
+  return word
+    .replace(/\([^)]*\)\s*/g, '')
+    .trim()
+    .toLowerCase();
 }
 
 function arrayToMap(arr: Aya[]): AyaMap {
@@ -265,7 +274,7 @@ function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: b
   }
 }
 
-function main() {
+async function main(): Promise<void> {
   const raw = readFileSync('colored-english-wbw-translation.json', 'utf8');
   const sourceData: Record<string, any> = JSON.parse(raw);
   const dictMap: Record<string, DictionaryEntry> = {};
@@ -314,16 +323,29 @@ function main() {
     });
   }
 
-  normlizeDatasetWithLLM(dictMap).then((cleanedDictMap) => {
-    const output = Object.values(cleanedDictMap).map((entry) => ({
-      english: entry.english,
-      arabic: Array.from(entry.arabic),
-      synonyms: Array.from(entry.synonyms),
-      // debug: entry.debug,
-    }));
+  const cleanedDictMap = await normlizeDatasetWithLLM(dictMap);
 
-    writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
-  });
+  const output = Object.values(cleanedDictMap).map((entry) => ({
+    english: entry.english,
+    arabic: Array.from(entry.arabic),
+    synonyms: Array.from(entry.synonyms),
+    // debug: entry.debug,
+  }));
+
+  writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
 }
 
-main();
+(async () => {
+  let retry = true;
+  while (retry) {
+    try {
+      await main();
+      retry = false;
+    } catch (e) {
+      console.log('error crossword', e);
+      console.log('retrying');
+      // wait a bit before retrying to avoid tight loop
+      await new Promise((res) => setTimeout(res, 1000));
+    }
+  }
+})();
