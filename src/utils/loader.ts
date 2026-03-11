@@ -224,7 +224,7 @@ export const buildInvertedIndex = (
   const rootIndex = new Map<string, Set<number>>();
   const wordIndex = new Map<string, Set<number>>();
 
-  for (const [_, morph] of morphologyMap) {
+  for (const morph of morphologyMap.values()) {
     const gid = morph.gid;
     // Index each lemma
     if (morph.lemmas) {
@@ -308,6 +308,7 @@ export const loadInvertedIndex = async (): Promise<InvertedIndex> => {
     console.error('Failed to load inverted index:', error);
     throw new Error(
       'Could not load inverted index data. Ensure src/data/lemma-index.json, src/data/root-index.json, and src/data/word-index.json exist.',
+      { cause: error },
     );
   }
 };

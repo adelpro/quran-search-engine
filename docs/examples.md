@@ -33,9 +33,9 @@ yarn build --watch
 
 Several reference frameworks are bundled to demonstrate exactly how to architect your integrations flawlessly.
 
-| Application Type | Path                  | Run Command                  | Description                                                                                 |
-| ---------------- | --------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| React + Vite     | `examples/vite-react` | `yarn playground:react`      | Feature rich web-app showcasing a full search UI in React utilizing highlighted components. |
-| Vanilla TS       | `examples/vanilla-ts` | `yarn playground:vanilla`   | Pure browser testing without any VDOM or React overhead.                                    |
-| Angular          | `examples/angular`    | `yarn playground:angular`   | Dedicated Angular component highlighting app implementation.                                |
-| NodeJS CLI       | `examples/nodejs`     | `yarn playground:node`      | Bare-metal server side searching demonstrating command-line output.                         |
+| Application Type | Path                  | Run Command               | Description                                                                                 |
+| ---------------- | --------------------- | ------------------------- | ------------------------------------------------------------------------------------------- |
+| React + Vite     | `examples/vite-react` | `yarn playground:react`   | Feature rich web-app showcasing a full search UI in React utilizing highlighted components. |
+| Vanilla TS       | `examples/vanilla-ts` | `yarn playground:vanilla` | Pure browser testing without any VDOM or React overhead.                                    |
+| Angular          | `examples/angular`    | `yarn playground:angular` | Dedicated Angular component highlighting app implementation.                                |
+| NodeJS CLI       | `examples/nodejs`     | `yarn playground:node`    | Bare-metal server side searching demonstrating command-line output.                         |
