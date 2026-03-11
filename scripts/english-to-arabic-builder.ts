@@ -1,8 +1,37 @@
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
-import path from 'path';
 import natural from 'natural';
 
-const mapped_nlp_words: Record<string, string> = {};
+const wordnet = new natural.WordNet();
+const mappedNlpWords: Record<string, string> = {};
+
+async function getTopSynonyms(word: string, limit = 5): Promise<string[]> {
+  return new Promise((resolve) => {
+    wordnet.lookup(word, (results) => {
+      if (!results || results.length === 0) return resolve([]);
+
+      const synonymsMap = new Map<string, number>();
+
+      for (const result of results) {
+        // heuristic: fewer pointers = more relevant
+        const score = 1 / (result.ptrs.length + 1);
+        for (const syn of result.synonyms) {
+          const clean = syn.replace(/_/g, ' ');
+          synonymsMap.set(clean, (synonymsMap.get(clean) || 0) + score);
+        }
+      }
+
+      // remove original word & sort by score
+      const topSyns = Array.from(synonymsMap.entries())
+        .filter(([syn]) => syn.toLowerCase() !== word.toLowerCase())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([syn]) => syn);
+
+      console.log(`  top synonyms for "${word}":`, topSyns);
+      resolve(topSyns);
+    });
+  });
+}
 
 function extractKeyword(sentence: string): string {
   const tfidf = new natural.TfIdf();
@@ -15,15 +44,15 @@ function extractKeyword(sentence: string): string {
   return terms[0].term;
 }
 
-const notmeaningfullSentence: Set<string> = new Set<string>();
+const nonMeaningfulSentences: Set<string> = new Set<string>();
 
 async function normalizeEnglish(englishText: string): Promise<string> {
   const res = await extractKeyword(englishText.trim().toLowerCase());
   console.log(`original word: ${englishText} <===> normalized word: ${res}`);
   if (res == '') {
-    notmeaningfullSentence.add(englishText.trim().toLowerCase());
+    nonMeaningfulSentences.add(englishText.trim().toLowerCase());
   } else {
-    mapped_nlp_words[englishText] = res;
+    mappedNlpWords[englishText] = res;
   }
   return res;
 }
@@ -127,14 +156,14 @@ function attemptAutoMergeFixes(quran: AyaMap, key: string) {
   }
 }
 
-async function normlizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
-  const updated_quran: Record<string, DictionaryEntry> = {};
+async function normalizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
+  const updatedQuran: Record<string, DictionaryEntry> = {};
 
   for (const key of Object.keys(quran)) {
     const normlizedKey = await normalizeEnglish(key);
 
-    if (!(normlizedKey in updated_quran)) {
-      updated_quran[normlizedKey] = {
+    if (!(normlizedKey in updatedQuran)) {
+      updatedQuran[normlizedKey] = {
         english: normlizedKey,
         arabic: new Set<string>(),
         synonyms: new Set<string>(),
@@ -143,16 +172,17 @@ async function normlizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
     }
 
     for (const arabicWord of quran[key].arabic) {
-      updated_quran[normlizedKey].arabic.add(arabicWord);
+      updatedQuran[normlizedKey].arabic.add(arabicWord);
     }
 
-    updated_quran[normlizedKey].synonyms.add(quran[key].english);
+    // updated_quran[normlizedKey].synonyms.add(quran[key].english);
 
-    updated_quran[normlizedKey].debug.push({ key, wordText: normlizedKey });
+    updatedQuran[normlizedKey].debug.push({ key, wordText: normlizedKey });
   }
 
-  return updated_quran;
+  return updatedQuran;
 }
+
 function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: boolean) {
   const maxWordsPerAya: Record<string, number> = {};
 
@@ -176,6 +206,28 @@ function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: b
       else console.log(`warning possible misalignment check this key: ${ayaKey}`);
     }
   }
+}
+
+async function addSynonyms(quran: Record<string, DictionaryEntry>) {
+  const keys = Object.keys(quran);
+
+  await new Promise<void>((resolve) => {
+    let i = 0;
+
+    function next() {
+      if (i >= keys.length) return resolve(); // finished
+
+      const key = keys[i++];
+      getTopSynonyms(key, 5).then((result) => {
+        quran[key].synonyms = new Set(result);
+
+        // yield back to event loop every word
+        setImmediate(next);
+      });
+    }
+
+    next();
+  });
 }
 
 async function main(): Promise<void> {
@@ -227,7 +279,9 @@ async function main(): Promise<void> {
     });
   }
 
-  const cleanedDictMap = await normlizeDatasetWithNlp(dictMap);
+  const cleanedDictMap = await normalizeDatasetWithNlp(dictMap);
+
+  await addSynonyms(cleanedDictMap);
 
   const output = Object.values(cleanedDictMap).map((entry) => ({
     english: entry.english,
@@ -236,35 +290,22 @@ async function main(): Promise<void> {
     // debug: entry.debug,
   }));
 
-  const debugnotmeaningfullSentence: string[] = [];
+  const debugNotMeaningfulSentences: string[] = [];
 
-  for (const sentence of notmeaningfullSentence) {
+  for (const sentence of nonMeaningfulSentences) {
     const keyword = extractKeyword(sentence);
     if (!keyword) {
       // push the sentences with no meaningful word
-      debugnotmeaningfullSentence.push(sentence);
+      debugNotMeaningfulSentences.push(sentence);
     }
   }
 
   writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
-  writeFileSync('debug_nlp_mapped_words.json', JSON.stringify(mapped_nlp_words, null, 2));
+  writeFileSync('debug_nlp_mapped_words.json', JSON.stringify(mappedNlpWords, null, 2));
   writeFileSync(
     'debug_no_meaning_sentence.json',
-    JSON.stringify(debugnotmeaningfullSentence, null, 2),
+    JSON.stringify(debugNotMeaningfulSentences, null, 2),
   );
 }
 
-(async () => {
-  let retry = true;
-  while (retry) {
-    try {
-      await main();
-      retry = false;
-    } catch (e) {
-      console.log('error crossword', e);
-      console.log('retrying');
-      // wait a bit before retrying to avoid tight loop
-      await new Promise((res) => setTimeout(res, 1000));
-    }
-  }
-})();
+await main();
