@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
 import puppeteer from 'puppeteer-core';
 import { JSDOM } from 'jsdom';
 import path from 'path';
@@ -17,8 +17,14 @@ if (existsSync(CACHE_FILE)) {
 }
 function addWordToCache(key: string, normalized: string) {
   cache_llm_words[key] = normalized;
-  // Write back to file
-  writeFileSync(CACHE_FILE, JSON.stringify(cache_llm_words, null, 2), 'utf-8');
+
+  const tmp = CACHE_FILE + '.tmp';
+
+  // write to temp file first
+  writeFileSync(tmp, JSON.stringify(cache_llm_words, null, 2), 'utf-8');
+
+  // atomic replace
+  renameSync(tmp, CACHE_FILE);
 }
 
 function extractLastAssistantText(html: string): string {
@@ -67,8 +73,14 @@ async function queryChatGpt(message: string): Promise<string> {
   const beforeCount = await page.evaluate(() => document.querySelectorAll('div.gap-2').length);
 
   // Send message
-  await page.click(inputSelector);
-  await page.keyboard.type(message);
+  await page.$eval(
+    inputSelector,
+    (el, message) => {
+      el.textContent = message;
+      el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    },
+    message,
+  );
   await page.keyboard.press('Enter');
   console.log('Prompt sent... waiting for response...');
 
@@ -84,7 +96,7 @@ async function queryChatGpt(message: string): Promise<string> {
   let stableCounter = 0;
 
   // eslint-disable-next-line no-constant-condition
-  await sleep(200);
+  await sleep(600);
   while (true) {
     const html = await page.evaluate(() => {
       const last = document.documentElement.outerHTML;
@@ -116,7 +128,10 @@ async function normalizeEnglish(englishText: string): Promise<string> {
   if (englishText in cache_llm_words && cache_llm_words[englishText] != '') {
     return cache_llm_words[englishText];
   }
-
+  if (englishText.trim().split(' ').length == 1) {
+    addWordToCache(englishText.trim(), englishText.trim());
+    return englishText.trim().toLowerCase();
+  }
   const prompt: string = `Normalize this Holy Quran English sentence to a single canonical word representing its main meaning. Ignore articles like "the","a","an". Map similar meanings to the same word. Replace "God" with "Allah" but leave "Allah" unchanged. Examples:"The Most Merciful"→merciful,"The Most Gracious"→merciful,"Full of kindness and mercy"→merciful,"Strong and powerful"→powerful,"God is Most Merciful"→merciful,"Allah is Most Merciful"→merciful. Sentence:\`${englishText}\`. Return only the normalized word.`;
   const res = await queryChatGpt(prompt);
   console.log(`original word: ${englishText} <===> normalized word: ${res}`);
