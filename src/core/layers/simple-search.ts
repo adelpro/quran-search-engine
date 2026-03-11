@@ -111,3 +111,51 @@ export const simpleSearch = <T extends Record<string, unknown>>(
     return queryTokens.every((token) => fieldValue.includes(token));
   });
 };
+
+/**
+ * A duplicate function of simpleSearch, but with OR logic
+ * @param items - The collection to search through.
+ * @param query - The search string.
+ * @param searchField - The property name to search within (used in fallback mode).
+ * @param [wordIndex] - An optional pre-computed index mapping words to Global IDs (GIDs).
+ * @returns An array of items where at least on of tokens was found.
+ * @example
+ * // Search and get all results containing any of the query tokens
+ * const results = simpleSearchOr(verses, "الحمد لله", "standard", myWordIndex);
+ */
+export const simpleSearchOr = <T extends Record<string, unknown>>(
+  items: T[],
+  query: string,
+  searchField: keyof T,
+  wordIndex?: WordIndex,
+): T[] => {
+  const cleanQuery = normalizeArabic(query.replace(/[^\u0600-\u06FF\s]+/g, '').trim());
+  if (!cleanQuery) return [];
+
+  const queryTokens = cleanQuery.split(/\s+/);
+
+  // Fast path: O(1) lookups via wordIndex with OR logic
+  if (wordIndex) {
+    const matchingGids = new Set<number>();
+
+    for (const token of queryTokens) {
+      const gids = wordIndex.get(token);
+      // Don't return early! Just skip tokens that don't exist
+      if (gids && gids.size > 0) {
+        // Add ALL gids from this token (union)
+        gids.forEach((gid) => matchingGids.add(gid));
+      }
+    }
+
+    // After loop, check if we found any matches
+    if (matchingGids.size === 0) return [];
+    return items.filter((item) => matchingGids.has(item['gid'] as number));
+  }
+
+  // Fallback: linear scan with OR logic
+  return items.filter((item) => {
+    const fieldValue = normalizeArabic(String(item[searchField] || ''));
+    // Or logic: At least one tokens must be present
+    return queryTokens.some((token) => fieldValue.includes(token));
+  });
+};

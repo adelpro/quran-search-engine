@@ -6,7 +6,7 @@ import { phoneticMap, getPhoneticFuse } from '../utils/phonetic';
 import { InvalidPaginationError, MissingDependenciesError } from '../errors';
 
 import { validateRegex, performRegexSearch } from './layers/regex-search';
-import { filterVerses, simpleSearch } from './layers/simple-search';
+import { filterVerses, simpleSearch, simpleSearchOr } from './layers/simple-search';
 import { createArabicFuseSearch } from './layers/fuse-search';
 import { performAdvancedLinguisticSearch } from './layers/linguistic-search';
 import { performSemanticSearch } from './layers/semantic-search';
@@ -23,7 +23,14 @@ import type {
   ScoredVerse,
   InvertedIndex,
   VerseWithFuseMatches,
+  BooleanQuery,
 } from '../types';
+import {
+  clearBooleanOperators,
+  hasBooleanOperators,
+  parseBooleanQuery,
+  performBooleanSearch,
+} from './layers/boolean-search';
 
 /**
  * Performs a comprehensive search across the Quran.
@@ -142,8 +149,19 @@ export const search = <TVerse extends VerseInput>(
 
   const fuzzyEnabled = options.fuzzy !== false;
 
-  // 3. Setup phase: Tokenize and handle phonetic translation
-  const tokens = query.split(/\s+/);
+  // 3. Boolean operator detection and parsing
+  // If the query contains boolean operators (+, -, |), parse them into structured form
+  // and clean the query for normal search processing
+  const booleanQuery: BooleanQuery | null = hasBooleanOperators(query)
+    ? parseBooleanQuery(query)
+    : null;
+
+  // Remove boolean operators from query to extract clean search terms
+  // Example: "+الله | الرحمن -الجحيم" → "الله الرحمن الجحيم"
+  const operatorFreeQuery = clearBooleanOperators(query);
+
+  // 4. Setup phase: Tokenize and handle phonetic translation
+  const tokens = operatorFreeQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
     if (token && !isArabic(token)) {
@@ -193,8 +211,12 @@ export const search = <TVerse extends VerseInput>(
     ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])
     : null;
 
-  // 4. Executing Search Layers
-  const simpleMatches = simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
+  // 5. Executing Search Layers
+  // Use OR logic for boolean queries to get union of all terms, then filter with boolean logic
+  // Use AND logic for normal queries to get intersection (phrase matching)
+  const simpleMatches = booleanQuery
+    ? simpleSearchOr(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex)
+    : simpleSearch(quranData, cleanQuery, 'standard', invertedIndex?.wordIndex);
 
   const advancedMatches = performAdvancedLinguisticSearch(
     cleanQuery,
@@ -209,13 +231,22 @@ export const search = <TVerse extends VerseInput>(
 
   const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
 
-  // 5. Combine and Scored Deduplication
+  // 6. Boolean filtering (if boolean operators were present in query)
+  // First, combine all search results from different layers
   const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
+
+  // Then, if boolean query exists, filter combined results based on boolean logic
+  // This allows queries like "+الله -الرحمن الرحيم | العليم" to:
+  // 1. Search for all terms (الله, الرحمن, الرحيم, العليم) using all search layers
+  // 2. Filter results to keep only verses matching the boolean conditions
+  const booleanMatches = booleanQuery ? performBooleanSearch(booleanQuery, allMatches) : allMatches;
+
+  // 7. Scored deduplication and ranking
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap[cleanQuery];
 
-  for (const verse of allMatches) {
+  for (const verse of booleanMatches) {
     if (!gidSet.has(verse.gid)) {
       gidSet.add(verse.gid);
 
@@ -237,7 +268,7 @@ export const search = <TVerse extends VerseInput>(
   // Sort by relevance
   combined.sort((a, b) => b.matchScore - a.matchScore);
 
-  // 6. Pagination & Metadata
+  // 8. Pagination & Metadata
   const offset = (page - 1) * limit;
 
   const results = combined.slice(offset, offset + limit);

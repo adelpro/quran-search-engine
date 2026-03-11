@@ -158,3 +158,10 @@ export type InvertedIndex = {
   rootIndex: RootIndex;
   wordIndex: WordIndex;
 };
+
+/** Boolean query object for booleanSearch() **/
+export interface BooleanQuery {
+  must: string[]; // +term — all must match
+  exclude: string[]; // -term — none can match
+  either: string[]; // bare terms or | groups — at least one must match
+}
