@@ -8,8 +8,8 @@ This feature adds the ability to search the Quran using English words (and their
 
 ```typescript
 interface EnglishArabicConcept {
-  english: string[];  // All English variants (synonyms) in one field
-  arabic: string[];   // Arabic roots only - library handles the rest
+  english: string[]; // All English variants (synonyms) in one field
+  arabic: string[]; // Arabic roots only - library handles the rest
 }
 ```
 
@@ -95,6 +95,7 @@ if (token && !isArabic(token)) {
 ```
 
 This means:
+
 - Arabic queries → Direct search (no translation)
 - English/Latin queries → English translation lookup first, then phonetic fallback
 
@@ -106,8 +107,8 @@ import { search } from 'quran-search-engine';
 // Search using English word
 const result = search('truth', quranData, morphologyMap, wordMap, {
   lemma: true,
-  root: true,  // Important: enables root-based search
-  semantic: true
+  root: true, // Important: enables root-based search
+  semantic: true,
 });
 
 // The library will:
@@ -119,12 +120,12 @@ const result = search('truth', quranData, morphologyMap, wordMap, {
 
 ## Comparison: Phonetic vs English Translation
 
-| Feature | Phonetic | English Translation |
-|---------|----------|---------------------|
-| Input | Latin letters mimicking Arabic pronunciation | English words |
-| Example | "bismillah" → "بسم الله" | "truth" → ["حق", "صدق"] |
-| Type | Transliteration (sound-based) | Translation (meaning-based) |
-| Data | Pre-computed phonetic mappings | English synonyms → Arabic roots |
+| Feature | Phonetic                                     | English Translation             |
+| ------- | -------------------------------------------- | ------------------------------- |
+| Input   | Latin letters mimicking Arabic pronunciation | English words                   |
+| Example | "bismillah" → "بسم الله"                     | "truth" → ["حق", "صدق"]         |
+| Type    | Transliteration (sound-based)                | Translation (meaning-based)     |
+| Data    | Pre-computed phonetic mappings               | English synonyms → Arabic roots |
 
 ## Future Enhancements
 

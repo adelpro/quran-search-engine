@@ -111,15 +111,19 @@ Example formatting:
 
 ```markdown
 ### Added
+
 - Description
 
 ### Fixed
+
 - Description
 
 ### Changed
+
 - Description
 
 ### Refactored
+
 - Description
 ```
 

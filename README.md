@@ -138,7 +138,6 @@ const response: SearchResponse = search('الله الرحمن', quranData, morp
   semantic: true,
 });
 
-
 response.results.forEach((v) => {
   console.log(v.sura_id, v.aya_id, v.matchType, v.matchScore);
 });
@@ -163,10 +162,28 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
 // First call: computes and caches the result
-const result1 = search('الله', quranData, morphologyMap, wordMap, { lemma: true, root: true }, { page: 1, limit: 20 }, undefined, cache);
+const result1 = search(
+  'الله',
+  quranData,
+  morphologyMap,
+  wordMap,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+  undefined,
+  cache,
+);
 
 // Second call with same params: returns cached result instantly (same reference)
-const result2 = search('الله', quranData, morphologyMap, wordMap, { lemma: true, root: true }, { page: 1, limit: 20 }, undefined, cache);
+const result2 = search(
+  'الله',
+  quranData,
+  morphologyMap,
+  wordMap,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+  undefined,
+  cache,
+);
 
 console.log(result1 === result2); // true — cache hit
 ```
@@ -187,7 +204,6 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
   root: true,
   semantic: true,
 });
-
 
 console.log(response.results[0]);
 // Example output (shape):
@@ -254,7 +270,14 @@ This converts lemma/root lookups during search from **O(n)** linear scans to **O
 Use case: build the index once at startup and pass it to every `search()` call for maximum throughput.
 
 ```ts
-import { buildInvertedIndex, loadMorphology, loadQuranData, loadWordMap, search, type InvertedIndex } from 'quran-search-engine';
+import {
+  buildInvertedIndex,
+  loadMorphology,
+  loadQuranData,
+  loadWordMap,
+  search,
+  type InvertedIndex,
+} from 'quran-search-engine';
 
 const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadQuranData(),
@@ -266,11 +289,15 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const invertedIndex: InvertedIndex = buildInvertedIndex(morphologyMap, quranData);
 
 // Pass to every search call — O(1) lemma/root lookups
-const result = search('الرحمن', quranData, morphologyMap, wordMap,
+const result = search(
+  'الرحمن',
+  quranData,
+  morphologyMap,
+  wordMap,
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined,   // preComputedFuseIndex
-  undefined,   // cache
+  undefined, // preComputedFuseIndex
+  undefined, // cache
   invertedIndex,
 );
 ```
@@ -327,17 +354,17 @@ Main entry point. Combines:
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
-| Argument | Type | Description |
-| --- | --- | --- |
-| `query` | `string` | Search query (Arabic text or range like `2:255`) |
-| `quranData` | `TVerse[]` | Loaded verse array |
-| `morphologyMap` | `Map<number, MorphologyAya>` | Loaded morphology map |
-| `wordMap` | `WordMap` | Loaded word map |
-| `options` | `AdvancedSearchOptions` | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
-| `pagination` | `PaginationOptions` | Page and limit (default: `{ page: 1, limit: 20 }`) |
-| `preComputedFuseIndex` | `Fuse<TVerse>` \| `undefined` | Pre-built Fuse index — skips rebuild on every call |
-| `cache` | `LRUCache` \| `undefined` | LRU cache — returns cached result for identical calls |
-| `invertedIndex` | `InvertedIndex` \| `undefined` | Pre-built inverted index — O(1) lemma/root lookups |
+| Argument               | Type                           | Description                                                                    |
+| ---------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| `query`                | `string`                       | Search query (Arabic text or range like `2:255`)                               |
+| `quranData`            | `TVerse[]`                     | Loaded verse array                                                             |
+| `morphologyMap`        | `Map<number, MorphologyAya>`   | Loaded morphology map                                                          |
+| `wordMap`              | `WordMap`                      | Loaded word map                                                                |
+| `options`              | `AdvancedSearchOptions`        | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
+| `pagination`           | `PaginationOptions`            | Page and limit (default: `{ page: 1, limit: 20 }`)                             |
+| `preComputedFuseIndex` | `Fuse<TVerse>` \| `undefined`  | Pre-built Fuse index — skips rebuild on every call                             |
+| `cache`                | `LRUCache` \| `undefined`      | LRU cache — returns cached result for identical calls                          |
+| `invertedIndex`        | `InvertedIndex` \| `undefined` | Pre-built inverted index — O(1) lemma/root lookups                             |
 
 Set `options.fuzzy = false` to disable fuzzy fallback.
 **Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
@@ -352,8 +379,8 @@ const response = search(
   wordMap,
   { lemma: true, root: true, semantic: true }, // options
 
-  { page: 1, limit: 10 },      // pagination
-  undefined                    // preComputedFuseIndex (optional)
+  { page: 1, limit: 10 }, // pagination
+  undefined, // preComputedFuseIndex (optional)
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
@@ -401,11 +428,11 @@ const filtered = search('الله.*الرحمن', quranData, morphologyMap, word
 
 `search` also supports range queries that return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline.
 
-| Query   | Result                                      |
-| ------- | ------------------------------------------- |
-| `2:255` | Single verse (Al-Baqarah, verse 255)        |
-| `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7)|
-| `2:`    | Entire sura (all verses of Al-Baqarah)      |
+| Query   | Result                                       |
+| ------- | -------------------------------------------- |
+| `2:255` | Single verse (Al-Baqarah, verse 255)         |
+| `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7) |
+| `2:`    | Entire sura (all verses of Al-Baqarah)       |
 
 Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
 
@@ -436,7 +463,7 @@ const sura = search('1:', quranData, morphologyMap, wordMap);
 
 ```ts
 const response = search('Paradise', quranData, morphologyMap, wordMap, {
-  semantic: true
+  semantic: true,
 });
 // response.results => verses containing words related to Paradise
 ```
@@ -737,12 +764,12 @@ import { LRUCache } from 'quran-search-engine';
 
 const cache = new LRUCache<string, any>(100); // capacity = 100 entries
 
-cache.set('key', value);     // Store a value
-cache.get('key');             // Retrieve (moves to most-recent)
-cache.has('key');             // Check existence
-cache.delete('key');          // Remove one entry
-cache.clear();                // Remove all entries
-cache.size;                   // Current number of entries
+cache.set('key', value); // Store a value
+cache.get('key'); // Retrieve (moves to most-recent)
+cache.has('key'); // Check existence
+cache.delete('key'); // Remove one entry
+cache.clear(); // Remove all entries
+cache.size; // Current number of entries
 ```
 
 When the cache reaches capacity, the **least recently used** entry is automatically evicted.
@@ -767,8 +794,8 @@ function handleSearch(query: string, page: number) {
     wordMap,
     { lemma: true, root: true },
     { page, limit: 20 },
-    undefined,     // 7th — preComputedFuseIndex (optional)
-    searchCache,   // 8th — cache instance
+    undefined, // 7th — preComputedFuseIndex (optional)
+    searchCache, // 8th — cache instance
   );
 }
 
@@ -792,11 +819,11 @@ console.log(searchCache.size); // 3
 
 The cache key is derived from `JSON.stringify({ query, options, pagination })`. Two calls produce a cache hit only when **all three** match exactly:
 
-| Parameter  | Different value = different cache entry |
-| ---------- | --------------------------------------- |
-| `query`    | `"الله"` vs `"الحمد"` |
-| `options`  | `{ lemma: true }` vs `{ lemma: false }` |
-| `pagination` | `{ page: 1 }` vs `{ page: 2 }` |
+| Parameter    | Different value = different cache entry |
+| ------------ | --------------------------------------- |
+| `query`      | `"الله"` vs `"الحمد"`                   |
+| `options`    | `{ lemma: true }` vs `{ lemma: false }` |
+| `pagination` | `{ page: 1 }` vs `{ page: 2 }`          |
 
 ### Without cache (backward compatible)
 
@@ -883,7 +910,6 @@ export type SearchOptions = {
   fuzzy?: boolean;
   semantic?: boolean;
 };
-
 ```
 
 ### `PaginationOptions`
@@ -903,7 +929,6 @@ Overall “best” match class for a verse:
 
 ```ts
 export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'semantic' | 'none';
-
 ```
 
 ### `ScoredQuranText`
@@ -1064,10 +1089,18 @@ By default, `search()` performs O(n) linear scans through all morphology entries
 **Option A — Build from loaded data** (no extra I/O, costs one CPU pass at startup):
 
 ```ts
-import { buildInvertedIndex, loadMorphology, loadQuranData, loadWordMap, search } from 'quran-search-engine';
+import {
+  buildInvertedIndex,
+  loadMorphology,
+  loadQuranData,
+  loadWordMap,
+  search,
+} from 'quran-search-engine';
 
 const [quranData, morphologyMap, wordMap] = await Promise.all([
-  loadQuranData(), loadMorphology(), loadWordMap(),
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
 ]);
 
 // Build once — replaces O(n) scans with O(1) lookups
@@ -1076,12 +1109,14 @@ const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
 // Pass as 9th argument on every search
 const result = search(
   'الرحمن',
-  quranData, morphologyMap, wordMap,
+  quranData,
+  morphologyMap,
+  wordMap,
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined,       // preComputedFuseIndex
-  undefined,       // cache
-  invertedIndex,   // <--- 9th parameter
+  undefined, // preComputedFuseIndex
+  undefined, // cache
+  invertedIndex, // <--- 9th parameter
 );
 ```
 
@@ -1092,9 +1127,16 @@ import { loadInvertedIndex, search } from 'quran-search-engine';
 
 const invertedIndex = await loadInvertedIndex();
 
-const result = search('الرحمن', quranData, morphologyMap, wordMap,
-  { lemma: true, root: true }, { page: 1, limit: 20 },
-  undefined, undefined, invertedIndex,
+const result = search(
+  'الرحمن',
+  quranData,
+  morphologyMap,
+  wordMap,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+  undefined,
+  undefined,
+  invertedIndex,
 );
 ```
 
@@ -1102,9 +1144,13 @@ const result = search('الرحمن', quranData, morphologyMap, wordMap,
 
 ```ts
 import {
-  loadQuranData, loadMorphology, loadWordMap,
-  loadInvertedIndex, createArabicFuseSearch,
-  LRUCache, search,
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadInvertedIndex,
+  createArabicFuseSearch,
+  LRUCache,
+  search,
 } from 'quran-search-engine';
 import type { SearchResponse, QuranText } from 'quran-search-engine';
 
@@ -1125,11 +1171,13 @@ const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
 // All optimizations active
 const result = search(
   query,
-  quranData, morphologyMap, wordMap,
+  quranData,
+  morphologyMap,
+  wordMap,
   { lemma: true, root: true, fuzzy: true },
   { page: 1, limit: 20 },
-  fuseIndex,     // 7th — skip Fuse rebuild
-  cache,         // 8th — instant cache hit
+  fuseIndex, // 7th — skip Fuse rebuild
+  cache, // 8th — instant cache hit
   invertedIndex, // 9th — O(1) lemma/root lookups
 );
 ```

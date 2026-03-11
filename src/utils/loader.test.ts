@@ -171,9 +171,9 @@ describe('Loader Functions', () => {
 describe('buildInvertedIndex', () => {
   // Mock data for isolation
   const mockQuranData: QuranText[] = [
-    { gid: 1, standard: 'بسم الله الرحمن الرحيم', uthmani: 'test' } as any,
-    { gid: 2, standard: 'الحمد لله رب العالمين', uthmani: 'test' } as any,
-    { gid: 3, standard: 'الرحمن الرحيم', uthmani: 'test' } as any,
+    { gid: 1, standard: 'بسم الله الرحمن الرحيم', uthmani: 'test' } as QuranText,
+    { gid: 2, standard: 'الحمد لله رب العالمين', uthmani: 'test' } as QuranText,
+    { gid: 3, standard: 'الرحمن الرحيم', uthmani: 'test' } as QuranText,
   ];
 
   const mockMorphologyMap = new Map<number, MorphologyAya>([
