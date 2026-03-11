@@ -20,19 +20,19 @@ async function getTopSynonyms(word: string, limit = 5): Promise<string[]> {
         }
       }
 
-      // remove original word & sort by score
+      // remove original word, filter multi-word synonyms & sort by score
       const topSyns = Array.from(synonymsMap.entries())
-        .filter(([syn]) => syn.toLowerCase() !== word.toLowerCase())
+        .filter(([syn]) => syn.toLowerCase() !== word.toLowerCase() && !syn.includes(' '))
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit)
-        .map(([syn]) => syn);
+        .map(([syn]) => syn)
+        .map((syn) => removeParentheticals(syn));
 
       console.log(`  top synonyms for "${word}":`, topSyns);
       resolve(topSyns);
     });
   });
 }
-
 function extractKeyword(sentence: string): string {
   const tfidf = new natural.TfIdf();
   tfidf.addDocument(sentence);
@@ -308,4 +308,4 @@ async function main(): Promise<void> {
   );
 }
 
-await main();
+main();
