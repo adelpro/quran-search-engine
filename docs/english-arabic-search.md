@@ -126,9 +126,3 @@ const result = search('truth', quranData, morphologyMap, wordMap, {
 | Example | "bismillah" → "بسم الله"                     | "truth" → ["حق", "صدق"]         |
 | Type    | Transliteration (sound-based)                | Translation (meaning-based)     |
 | Data    | Pre-computed phonetic mappings               | English synonyms → Arabic roots |
-
-## Future Enhancements
-
-- Add `category` field for filtering semantic groups
-- Support for English phrase mappings
-- Integration with existing semantic search for concept expansion
