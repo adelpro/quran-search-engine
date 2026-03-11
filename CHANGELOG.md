@@ -7,49 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-07
+
 ### Added
 
+- **Architecture: `core/layers/` folder** — Search logic is now organized into dedicated layer files, each co-located with its own test file:
+  - `core/layers/simple-search.ts` + `simple-search.test.ts`
+  - `core/layers/fuse-search.ts` + `fuse-search.test.ts`
+  - `core/layers/linguistic-search.ts`
+  - `core/layers/regex-search.ts` + `regex-search.test.ts`
+  - `core/layers/semantic-search.ts`
+  - `core/layers/phonetic-search.ts` (phonetic utilities promoted to a search layer)
+- **Modular test suite** — Tests are now separated by concern. `search.test.ts` covers integration of the orchestrator; each layer and utility has its own dedicated test file.
+- **Regex Search**: Added optional `isRegex: true` support to `AdvancedSearchOptions` for pattern-based queries, with built-in safety validation for catastrophic backtracking.
 - **Documentation**: Comprehensive JSDoc comments for core search utilities in `search.ts`, `highlight.ts` and `tokenization.ts`.
-- **Phonetic Search**: Search for verses using Latin/English transliterations (e.a., "Bismillah"). Includes a fuzzy fallback mechanism (via Fuse.js) to handle typos in phonetic queries.
-- **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline
+- **Phonetic Search**: Search for verses using Latin/English transliterations (e.g. "Bismillah"). Includes a fuzzy fallback mechanism (via Fuse.js) to handle typos in phonetic queries.
+- **Range Search**: Queries like `2:255`, `1:1-7`, or `2:` now return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline.
 - **Semantic Search**: Concept-based mapping that links Arabic synonyms and English concepts to their relevant verses.
-- **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries
-- **New type**: `ParsedRange` type for structured range query representation
-
-- **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results
-- **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging)
+- **New exports**: `parseRangeQuery()` and `filterVersesByRange()` utilities for consumers to detect and handle range queries.
+- **New type**: `ParsedRange` type for structured range query representation.
+- **New match type**: `'range'` added to `MatchType` union and `SearchCounts` for clean separation from linguistic results.
+- **CI**: Added GitHub Actions workflow to automatically run tests, linting, and build on PRs (main, develop, staging).
 - **Error Handling for Data Loaders**: Implemented structured error handling for data loading operations:
   - **BaseError**: Foundation error class with type-safe error codes
   - **DataLoadError**: Base class for data loading errors with 3 specific error types:
-    - `DataFileNotFoundError` - Missing data files
-    - `DataParseError` - JSON parsing failures
-    - `DataSchemaInvalidError` - Invalid data structure
+    - `DataFileNotFoundError` — Missing data files
+    - `DataParseError` — JSON parsing failures
+    - `DataSchemaInvalidError` — Invalid data structure
   - **Error Codes**: Type-safe error code enums (`ErrorCode`, `ErrorType`)
   - **Schema Validation**: Data structure validation in all loader functions (`loadMorphology`, `loadWordMap`, `loadQuranData`)
-  - **Comprehensive Tests**: Full test coverage for error classes and loader error scenarios
-  - **Documentation**: Error handling guide in `src/errors/README.md`
 - **Error Handling Integration**: Integrated error handling into search, validation, and tokenization operations:
-  - **SearchError**: 3 error classes for search operations:
-    - `InvalidQueryError` - Invalid search queries
-    - `MissingDependenciesError` - Missing required dependencies (quranData, morphologyMap, wordMap)
-    - `SearchOperationFailedError` - Search operation failures
-  - **ValidationError**: 2 error classes for input validation:
-    - `InvalidPaginationError` - Invalid pagination parameters (page/limit must be positive integers)
-    - `InvalidOptionsError` - Invalid search options
-  - **TokenizationError**: 2 error classes for tokenization:
-    - `MissingMorphologyError` - Missing morphology data for a verse
-    - `InvalidModeError` - Invalid tokenization mode (must be text, lemma, or root)
-  - **Validation Integration**: Added pagination and dependency validation to `search()` function
-  - **Mode Validation**: Added mode parameter validation to `getPositiveTokens()` function
-  - **Error Tests**: Added 11 new integration tests to existing module test files (search.test.ts, tokenization.test.ts)
-  - **Error Codes**: Added 9 new error codes bringing total to 12 structured error codes
-- **Utility**: Added `isArabic` function in `src/utils/normalization.ts` that returns `true` if a string contains Arabic characters (Unicode range \u0600-\u06FF) (#3)
+  - **SearchError**: `InvalidQueryError`, `MissingDependenciesError`, `SearchOperationFailedError`
+  - **ValidationError**: `InvalidPaginationError`, `InvalidOptionsError`
+  - **TokenizationError**: `MissingMorphologyError`, `InvalidModeError`
+- **Utility**: Added `isArabic` function in `src/utils/normalization.ts`.
+
+### Changed
+
+- **Architecture: `utils/` reorganization** — Generic utilities (`tokenization.ts`, `lru-cache.ts`, `range-parser.ts`) moved from `core/` to `utils/`, keeping `core/` focused on the search orchestrator and its layers.
+- **TODO comment**: Added a placeholder in `search.ts` for a future English-to-Arabic translation/transliteration feature (alongside the existing phonetic lookup), serving as a reference for implementing that feature.
 
 ### Fixed
 
 - **Search**: Fixed bug in `filterVerses` where falling back to the full dataset occurred when a filter returned no results, ensuring strict filtering behavior.
-- **Search Filter Logic**: Fixed `filterVerses` function to return empty arrays when explicit filters (suraId, juzId, suraName) yield no results instead of falling back to all data
-
+- **Search Filter Logic**: Fixed `filterVerses` function to return empty arrays when explicit filters (suraId, juzId, suraName) yield no results instead of falling back to all data.
+- **Regex test**: Fixed `validateRegex` usage in tests — it expects a bare pattern string (e.g. `^الحمد`) not JS regex-literal syntax (`/^الحمد/`).
 
 ## [0.1.5]
 

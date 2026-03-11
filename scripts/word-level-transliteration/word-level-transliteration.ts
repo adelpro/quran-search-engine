@@ -2,6 +2,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
 
+type MismatchedWord = {
+  surah: number;
+  verse: number;
+  reason?: string;
+  ayah_offset_used?: number;
+  counts?: {
+    arabic: number;
+    normalized: number;
+    phonetic: number;
+    simple: number;
+  };
+  arabic?: string[];
+  normalized?: string[];
+  phonetic_original?: string[];
+  phonetic_clean?: string[];
+  simple?: string[];
+};
+
 // Cleans a phonetic token (trims, removes symbols, lowercases)
 function cleanPhoneticToken(token: string): string {
   return token.replace(/^[^\w\u0600-\u06FF]+|[^\w\u0600-\u06FF]+$/g, '').toLowerCase();
@@ -223,9 +241,7 @@ function main() {
     ['ٱلرَّحْمَٰنِ', 'الرحمان', 'alrrahmani', 'alrhman'],
     ['ٱلرَّحِيمِ', 'الرحيم', 'alrraheemi', 'alrhym'],
   ];
-  const not_matched_words: any[] = [];
-  let matchedVerses = 0,
-    totalVersesSeen = 0;
+  const not_matched_words: MismatchedWord[] = [];
 
   for (let surahId = 1; surahId <= 114; surahId++) {
     const surahPath = path.join(surahOutputDir, surahId.toString());
@@ -233,10 +249,9 @@ function main() {
     const transliterationVerses = fs.readFileSync(surahPath, 'utf-8').split('.');
 
     for (let verseIndex = 2; verseIndex < transliterationVerses.length; verseIndex++) {
-      totalVersesSeen++;
       const cleanedLine =
         transliterationVerses[verseIndex]?.replace(/\n/g, ' ').replace(/\d+$/, '').trim() ?? '';
-      let phoneticWords = tokenizePhoneticLine(cleanedLine);
+      const phoneticWords = tokenizePhoneticLine(cleanedLine);
       const phoneticOriginal = [...phoneticWords];
       const phoneticClean = phoneticWords.map(cleanPhoneticToken);
 
@@ -277,7 +292,6 @@ function main() {
             simpleLatinWords[i],
           ]);
         }
-        matchedVerses++;
         continue;
       }
 
@@ -292,7 +306,7 @@ function main() {
           console.log(
             `Merged seeds for Surah ${surahId} Verse ${verseIndex} (offset ${usedOffset}) → ${mergeAttempt.info}`,
           );
-          matchedVerses++;
+
           resolved = true;
         }
       }
@@ -306,7 +320,6 @@ function main() {
           console.log(
             `Split seeds for Surah ${surahId} Verse ${verseIndex} (offset ${usedOffset}) → ${splitAttempt.info}`,
           );
-          matchedVerses++;
           resolved = true;
         }
       }

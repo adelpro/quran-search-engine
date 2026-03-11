@@ -129,6 +129,52 @@ const response = search(
 );
 ```
 
+### Regex Search
+
+#### `validateRegex(pattern)`
+
+**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to cause catastrophic backtracking (ReDoS). Useful for UI-side validation before calling `search()` with `{ isRegex: true }`, similar to how `isArabic()` and `removeTashkeel()` are used for input validation.
+
+**Parameters:**
+
+- `pattern` (string): The raw regex string from the user.
+
+**Returns:** A compiled `RegExp` (with Unicode flag) ready for use against normalized Arabic text.
+
+**Throws:** `InvalidRegexError` if the pattern is syntactically invalid or contains dangerous constructs.
+
+```typescript
+import { validateRegex } from 'quran-search-engine';
+
+// UI validation before submitting the search
+try {
+  validateRegex(userInput); // valid pattern
+  // Safe to call search() with { isRegex: true }
+} catch (e) {
+  // Show validation error to the user
+}
+
+validateRegex('^.*ون$'); // Returns compiled RegExp
+validateRegex('(a+)+'); // Throws InvalidRegexError (nested quantifiers)
+```
+
+#### Using regex via `search()`
+
+The main way to run regex search is through the `search()` function with `{ isRegex: true }`. This handles validation, filtering, and pagination automatically:
+
+```typescript
+import { search } from 'quran-search-engine';
+
+const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+  lemma: false,
+  root: false,
+  isRegex: true,
+  suraId: 2, // optional: limit to Al-Baqarah
+});
+```
+
+---
+
 ### Highlighting
 
 #### `getHighlightRanges(text, matchedTokens, tokenTypes?)`
