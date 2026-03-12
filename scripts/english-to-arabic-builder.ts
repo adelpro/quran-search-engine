@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
+import pLimit from 'p-limit';
 import natural from 'natural';
 
 const wordnet = new natural.WordNet();
@@ -209,27 +210,78 @@ function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: b
 }
 
 async function addSynonyms(quran: Record<string, DictionaryEntry>) {
+  const limit = pLimit(500);
   const keys = Object.keys(quran);
 
-  await new Promise<void>((resolve) => {
-    let i = 0;
-
-    function next() {
-      if (i >= keys.length) return resolve(); // finished
-
-      const key = keys[i++];
-      getTopSynonyms(key, 5).then((result) => {
+  await Promise.all(
+    keys.map((key) =>
+      limit(async () => {
+        const result = await getTopSynonyms(key, 5);
         quran[key].synonyms = new Set(result);
-
-        // yield back to event loop every word
-        setImmediate(next);
-      });
-    }
-
-    next();
-  });
+      }),
+    ),
+  );
 }
 
+interface ExportedData {
+  english: string[];
+  arabic: string[];
+}
+
+async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
+  const limit = pLimit(500);
+
+  async function mapArabicToRoot(word: string, retries = 3, timeoutMs = 30000): Promise<string> {
+    const normalize = (w: string) => w.replace(/[\s-]/g, '');
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch('https://rootna.net/api/process-word', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        const result = normalize(<string>data.identifiedRoot);
+
+        if (result.length !== 3) {
+          throw new Error(`Invalid root length: ${result}`);
+        }
+        console.log(`${word}$ mapped to ${result}`);
+        return result;
+      } catch {
+        if (attempt === retries) return normalize(word);
+        await new Promise((res) => setTimeout(res, 1000));
+      }
+    }
+
+    return normalize(word);
+  }
+  const entries = Object.values(dataset);
+
+  const exportedData = await Promise.all(
+    entries
+      .filter((entry) => entry.english && entry.english.trim() !== '')
+      .map(async (entry) => {
+        const english = [...new Set([entry.english, ...entry.synonyms])];
+        const arabicArray = await Promise.all(
+          [...entry.arabic].map((word) => limit(() => mapArabicToRoot(word))),
+        );
+        const arabic = [...new Set(arabicArray)];
+        return { english, arabic };
+      }),
+  );
+
+  return exportedData;
+}
 async function main(): Promise<void> {
   const raw = readFileSync('colored-english-wbw-translation.json', 'utf8');
   const sourceData: Record<string, any> = JSON.parse(raw);
@@ -283,12 +335,7 @@ async function main(): Promise<void> {
 
   await addSynonyms(cleanedDictMap);
 
-  const output = Object.values(cleanedDictMap).map((entry) => ({
-    english: entry.english,
-    arabic: Array.from(entry.arabic),
-    synonyms: Array.from(entry.synonyms),
-    // debug: entry.debug,
-  }));
+  const exportFormat: ExportedData[] = await extractArabicRoots(cleanedDictMap);
 
   const debugNotMeaningfulSentences: string[] = [];
 
@@ -300,7 +347,7 @@ async function main(): Promise<void> {
     }
   }
 
-  writeFileSync('english-arabic-dictionary.json', JSON.stringify(output, null, 2));
+  writeFileSync('english-arabic-dictionary.json', JSON.stringify(exportFormat, null, 2));
   writeFileSync('debug_nlp_mapped_words.json', JSON.stringify(mappedNlpWords, null, 2));
   writeFileSync(
     'debug_no_meaning_sentence.json',
