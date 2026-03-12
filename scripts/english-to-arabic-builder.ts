@@ -230,40 +230,13 @@ interface ExportedData {
 
 async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
   const limit = pLimit(500);
-
+  const wordMap = JSON.parse(readFileSync('../src/data/word-map.json', 'utf8'));
   async function mapArabicToRoot(word: string, retries = 3, timeoutMs = 30000): Promise<string> {
     const normalize = (w: string) => w.replace(/[\s-]/g, '');
-
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-        const response = await fetch('https://rootna.net/api/process-word', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeout);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        const result = normalize(<string>data.identifiedRoot);
-
-        if (result.length !== 3) {
-          throw new Error(`Invalid root length: ${result}`);
-        }
-        console.log(`${word}$ mapped to ${result}`);
-        return result;
-      } catch {
-        if (attempt === retries) return normalize(word);
-        await new Promise((res) => setTimeout(res, 1000));
-      }
+    if (word in wordMap) {
+      return normalize(wordMap[word].root);
     }
-
-    return normalize(word);
+    return '';
   }
   const entries = Object.values(dataset);
 

@@ -151,7 +151,7 @@
       "بشر",
       "وري",
       "خلف",
-      "ما",
+      "موه",
       "شيأ",
       "رحم",
       "وما",
@@ -177,7 +177,7 @@
   },
   {
     "english": ["day", "daytime", "daylight"],
-    "arabic": ["يوم", "نهر", "بوم", "أمس", "هذا", "فصل"]
+    "arabic": ["يوم", "نهر", "بوم", "أمس", "ذا", "فصل"]
   },
   {
     "english": ["judgment", "judgement", "mind", "perspicacity", "judging", "sagacity"],
@@ -206,12 +206,12 @@
       "فتي",
       "عتب",
       "سءل",
-      "سلهم"
+      "سله"
     ]
   },
   {
     "english": ["guide", "template", "templet", "steer", "guidebook", "direct"],
-    "arabic": ["هدي", "أمم", "رشد", "يهدون", "بهد", "أدلكم", "نهد"]
+    "arabic": ["هدي", "أمم", "رشد", "هدى", "بهد", "دل", "نهد"]
   },
   {
     "english": ["path", "way", "track", "course", "route", "itinerary"],
@@ -231,28 +231,28 @@
       "غير",
       "لمم",
       "لا",
-      "ما",
+      "موه",
       "ليس",
       "أنن",
       "ألم",
       "فلو",
-      "لن",
-      "ألا",
+      "لو",
       "علم",
       "ولي",
       "وما",
       "ءون",
       "لوم",
       "فلم",
-      "فما",
-      "وهل",
+      "فمه",
+      "هل",
       "فلن",
       "أفل",
       "فلس",
       "لول",
       "ولو",
       "لوي",
-      "لكيلا",
+      "ألا",
+      "كي",
       "لون",
       "كون",
       "ألو",
@@ -265,7 +265,7 @@
       "لبث",
       "أنا",
       "ءنو",
-      "هذا",
+      "ذا",
       "جأي",
       "جرم",
       "حيي",
@@ -328,7 +328,7 @@
   },
   {
     "english": ["no", "nobelium"],
-    "arabic": ["لا", "فلو", "كلا", "ولي", "وما", "ألا", "كلل", "جرم"]
+    "arabic": ["لا", "فلو", "كلا", "ولي", "وما", "لو", "كلل", "جرم"]
   },
   {
     "english": ["doubt", "dubiousness", "doubtfulness", "question", "uncertainty", "incertitude"],
@@ -344,7 +344,7 @@
   },
   {
     "english": ["believe", "trust", "think", "consider", "conceive"],
-    "arabic": ["ءمن", "أمن", "ظنن", "الذين", "ياأيها", "بهو", "يقن", "صدق"]
+    "arabic": ["ءمن", "أمن", "ظنن", "أل", "أي", "بهو", "يقن", "صدق"]
   },
   {
     "english": ["unseen", "unanticipated", "unforeseen", "unlooked-for", "unobserved"],
@@ -389,17 +389,14 @@
       "قدد",
       "أين",
       "أني",
-      "إنه",
+      "أن",
       "ليس",
-      "إنهم",
+      "هم",
       "نمو",
       "فقد",
       "أنو",
-      "إننا",
       "أنا",
-      "إنكم",
       "أنى",
-      "فإنك",
       "وقي",
       "ءون",
       "وقد",
@@ -410,7 +407,7 @@
       "همم",
       "ءنك",
       "لفف",
-      "إنهما",
+      "هو",
       "ردد"
     ]
   },
@@ -430,7 +427,6 @@
       "أمر",
       "دعو",
       "ءون",
-      "فإما",
       "جزع",
       "قرب",
       "وعظ",
@@ -486,11 +482,11 @@
   },
   {
     "english": ["punishment", "penalty", "penalization", "penalisation"],
-    "arabic": ["عذب", "رجز", "بأس", "نكل", "عقب", "رجس", "ذا", "بءس", "نكر"]
+    "arabic": ["عذب", "رجز", "بأس", "نكل", "عقب", "رجس", "ذو", "بءس", "نكر"]
   },
   {
     "english": ["great", "capital", "majuscule", "bang-up", "bully", "corking"],
-    "arabic": ["عظم", "كبر", "بعد", "عزز", "شدد", "كثر", "بقنطار", "يوم", "بشق", "أول", "بأس"]
+    "arabic": ["عظم", "كبر", "بعد", "عزز", "شدد", "كثر", "قنطر", "يوم", "بشق", "أول", "بأس"]
   },
   {
     "english": ["people", "multitude", "masses", "mass", "citizenry"],
@@ -584,13 +580,13 @@
   },
   {
     "english": ["beware", "mind"],
-    "arabic": ["ألا", "حذر"]
+    "arabic": ["لو", "حذر"]
   },
   {
     "english": ["ones"],
     "arabic": [
       "فسد",
-      "الذين",
+      "أل",
       "لعن",
       "نزل",
       "وسم",
@@ -642,7 +638,7 @@
   {
     "english": ["certainly", "surely", "sure"],
     "arabic": [
-      "إنهم",
+      "هم",
       "ذهب",
       "لمم",
       "فقد",
@@ -677,7 +673,7 @@
       "دعو",
       "شرذ",
       "ظلل",
-      "لآتوها",
+      "لهو",
       "كون",
       "بعث",
       "ذوق",
@@ -700,7 +696,7 @@
   },
   {
     "english": ["meet", "suffer", "encounter", "fitting", "receive", "see"],
-    "arabic": ["لقي", "خلو", "ملاقوه"]
+    "arabic": ["لقي", "خلو"]
   },
   {
     "english": ["evil", "malefic", "malevolent", "malign", "vicious", "immorality"],
@@ -777,9 +773,9 @@
     "arabic": [
       "لذذ",
       "لذي",
-      "ذا",
+      "ذو",
       "حوط",
-      "للذي",
+      "الذي",
       "وحد",
       "بعض",
       "خرج",
@@ -813,12 +809,11 @@
       "أمن",
       "بخع",
       "أخذ",
-      "والذي",
       "أتي",
       "طلب",
       "أكل",
       "فلن",
-      "التي",
+      "ألذي",
       "طرد",
       "قطع",
       "ضلل",
@@ -985,7 +980,7 @@
       "أمر",
       "عود",
       "نول",
-      "يردوكم",
+      "رد",
       "ملك",
       "ألو",
       "مدد",
@@ -1035,8 +1030,7 @@
       "أتل",
       "فرق",
       "لا",
-      "ألا",
-      "لن",
+      "لو",
       "حيو",
       "نال",
       "نزع",
@@ -1064,9 +1058,9 @@
       "زهق",
       "عذر",
       "جري",
-      "ما",
+      "موه",
       "لهو",
-      "فزيلنا",
+      "زل",
       "عرف",
       "ذوق",
       "بطل",
@@ -1083,7 +1077,7 @@
       "سوي",
       "نعم",
       "رسل",
-      "ضرّ",
+      "ضر",
       "قدم",
       "تمم",
       "جبو",
@@ -1097,7 +1091,7 @@
       "خلص",
       "قرب",
       "نكل",
-      "ونمير",
+      "نمر",
       "حفظ",
       "برح",
       "بهم",
@@ -1120,7 +1114,7 @@
       "بين",
       "نفد",
       "لون",
-      "ولن",
+      "لن",
       "نقض",
       "دعو",
       "جوب",
@@ -1178,10 +1172,9 @@
       "صبر",
       "شقق",
       "عضض",
-      "ويلقون",
       "عبأ",
       "كذب",
-      "فنظل",
+      "فنضل",
       "كبب",
       "ترك",
       "ذبح",
@@ -1244,9 +1237,9 @@
       "لتو",
       "صعق",
       "مري",
-      "سوف",
+      "لايوجدجذر",
       "بقي",
-      "رجت",
+      "رج",
       "بؤس",
       "شرب",
       "ضرب",
@@ -1287,7 +1280,7 @@
   },
   {
     "english": ["sky", "flip", "toss", "pitch"],
-    "arabic": ["سمو", "ويا"]
+    "arabic": ["سمو", "وي"]
   },
   {
     "english": ["thunder", "boom", "smack", "skag", "scag", "roar"],
@@ -1323,7 +1316,7 @@
   },
   {
     "english": ["ears"],
-    "arabic": ["أذن", "سنابل", "سبل", "سنبله"]
+    "arabic": ["أذن", "سنبل", "سبل"]
   },
   {
     "english": ["thunderclaps"],
@@ -1355,7 +1348,7 @@
   },
   {
     "english": ["whenever"],
-    "arabic": ["كلما", "أكل", "كلم", "أذن", "ما"]
+    "arabic": ["كل", "أكل", "كلم", "أذن", "موه"]
   },
   {
     "english": ["flashes"],
@@ -1379,7 +1372,7 @@
   },
   {
     "english": ["every"],
-    "arabic": ["أكل", "بكل", "كلما", "ما", "كلل", "وكل", "نفس"]
+    "arabic": ["أكل", "بكل", "كل", "موه", "كلل", "وكل", "نفس"]
   },
   {
     "english": ["thing", "matter", "affair"],
@@ -1391,7 +1384,7 @@
   },
   {
     "english": ["mankind", "world", "humanity", "humankind", "humans", "man"],
-    "arabic": ["أنس", "ياأيها", "جمع"]
+    "arabic": ["أنس", "أي", "جمع"]
   },
   {
     "english": ["created"],
@@ -1417,7 +1410,7 @@
       "علم",
       "ساء",
       "نذر",
-      "لتهتدوا",
+      "هدى",
       "رضو",
       "قرف",
       "ردد",
@@ -1491,7 +1484,7 @@
       "رسل",
       "طغو",
       "قبس",
-      "لكيلا",
+      "كي",
       "خزي",
       "رضع",
       "سلك",
@@ -1562,7 +1555,7 @@
       "عرف",
       "حبط",
       "صمم",
-      "ذلك",
+      "ذا",
       "لزم",
       "وكر",
       "نبت",
@@ -1618,7 +1611,7 @@
   },
   {
     "english": ["therewith"],
-    "arabic": ["بهو", "فيه"]
+    "arabic": ["بهو", "في"]
   },
   {
     "english": ["fruits"],
@@ -1662,7 +1655,7 @@
   },
   {
     "english": ["whose"],
-    "arabic": ["التي", "من", "لون", "يدو", "الذين", "أمن", "ومن", "سمو", "وقد"]
+    "arabic": ["ألذي", "من", "لون", "يدو", "أل", "أمن", "ومن", "سمو", "وقد"]
   },
   {
     "english": ["fuel", "fire"],
@@ -1670,7 +1663,7 @@
   },
   {
     "english": ["men", "workforce", "manpower", "hands"],
-    "arabic": ["أنس", "رجل", "أول", "ذوي", "نفر", "ولي", "صدق", "صوم", "حفظ", "ذكر", "لبب", "برجال"]
+    "arabic": ["أنس", "رجل", "أول", "ذوي", "نفر", "ولي", "صدق", "صوم", "حفظ", "ذكر", "لبب", "برجل"]
   },
   {
     "english": ["stones"],
@@ -1678,7 +1671,7 @@
   },
   {
     "english": ["prepared", "disposed", "fain", "inclined"],
-    "arabic": ["أعدت", "عدو", "عدد", "عود"]
+    "arabic": ["عد", "عدو", "عدد", "عود"]
   },
   {
     "english": ["give", "yield", "throw", "pay", "afford", "hold"],
@@ -1755,7 +1748,7 @@
   },
   {
     "english": ["therein"],
-    "arabic": ["فيه", "بهو", "هنو", "علو", "وفي"]
+    "arabic": ["فيه", "في", "بهو", "هنو", "علو", "وفي"]
   },
   {
     "english": ["spouses"],
@@ -1775,15 +1768,15 @@
   },
   {
     "english": ["even", "yet", "still", "regular", "tied", "level"],
-    "arabic": ["ما", "سوي", "من", "لوي", "أول", "ولو", "ءون", "قوم", "شفع"]
+    "arabic": ["موه", "سوي", "من", "لوي", "أول", "ولو", "ءون", "قوم", "شفع"]
   },
   {
     "english": ["mosquito"],
-    "arabic": ["بعوضة"]
+    "arabic": ["بعوض"]
   },
   {
     "english": ["something"],
-    "arabic": ["فما", "شيء", "أمر", "شيأ"]
+    "arabic": ["فمه", "شيء", "أمر", "شيأ"]
   },
   {
     "english": ["thus", "so", "thusly", "therefore", "hence", "thence"],
@@ -1807,7 +1800,7 @@
   },
   {
     "english": ["guides"],
-    "arabic": ["هدي", "يهدون"]
+    "arabic": ["هدي", "هدى"]
   },
   {
     "english": ["defiantly", "rebelliously", "contumaciously"],
@@ -1864,7 +1857,7 @@
       "أذن",
       "متع",
       "فهم",
-      "أمليت",
+      "مل",
       "خلف",
       "أمم",
       "وضع",
@@ -1921,7 +1914,7 @@
   },
   {
     "english": ["angels"],
-    "arabic": ["ملك", "ألك", "بالملائكة", "زبن"]
+    "arabic": ["ملك", "ألك", "زبن"]
   },
   {
     "english": ["going", "sledding", "departure", "passing", "loss"],
@@ -1977,7 +1970,7 @@
       "لنو",
       "بني",
       "علو",
-      "فينا",
+      "في",
       "عني",
       "أخذ",
       "أوى",
@@ -2002,7 +1995,7 @@
       "مثل",
       "علي",
       "أول",
-      "أيّ",
+      "أي",
       "ولد",
       "أتى",
       "ومن"
@@ -2018,7 +2011,7 @@
   },
   {
     "english": ["reveal", "unveil", "unwrap", "disclose", "discover", "expose"],
-    "arabic": ["بدو", "علن", "نوح", "بدأ", "علم", "جلو", "نوحيها", "نزل"]
+    "arabic": ["بدو", "علن", "نوح", "بدأ", "علم", "جلو", "نوحي", "نزل"]
   },
   {
     "english": ["conceal", "hide"],
@@ -2042,7 +2035,7 @@
   },
   {
     "english": ["arrogant", "chesty", "self-important"],
-    "arabic": ["كبر", "علو", "هو"]
+    "arabic": ["كبر", "علو", "هويهوأ"]
   },
   {
     "english": ["became"],
@@ -2094,7 +2087,7 @@
   },
   {
     "english": ["wherever", "wheresoever"],
-    "arabic": ["حيث", "أين", "ما", "حثث"]
+    "arabic": ["حي", "أين", "موه", "حثث"]
   },
   {
     "english": ["wish", "bid", "care", "like", "regard", "compliments"],
@@ -2105,7 +2098,7 @@
     "arabic": [
       "قرب",
       "ملك",
-      "منهما",
+      "هم",
       "يوم",
       "حول",
       "عمر",
@@ -2121,7 +2114,7 @@
       "ثني",
       "أنث",
       "ثلث",
-      "واللذان",
+      "الذي",
       "أخو",
       "بين",
       "شهر",
@@ -2143,7 +2136,7 @@
       "أبو",
       "فتى",
       "صحب",
-      "أَي",
+      "أي",
       "ذرع",
       "جنن",
       "بحر",
@@ -2151,11 +2144,11 @@
       "يتم",
       "سدن",
       "صدف",
-      "هذان",
-      "هاتين",
+      "ذا",
+      "هين",
       "سحر",
       "أجل",
-      "برهانان",
+      "برهن",
       "قلب",
       "ضعف",
       "خصم",
@@ -2184,7 +2177,7 @@
       "سبب",
       "أخذ",
       "فشل",
-      "فتمسكم",
+      "مس",
       "كيد",
       "فزل",
       "قعد",
@@ -2240,10 +2233,10 @@
       "لقي",
       "شطر",
       "أول",
-      "إلي",
+      "ألى",
       "عني",
       "ألي",
-      "للذين",
+      "الذي",
       "ولي",
       "يسر",
       "عسر"
@@ -2259,7 +2252,7 @@
   },
   {
     "english": ["whoever"],
-    "arabic": ["أمن", "من", "لون", "ومن", "لمن", "كون", "بمن", "شيأ"]
+    "arabic": ["أمن", "من", "لون", "ومن", "لمن", "كون", "شيأ"]
   },
   {
     "english": ["follows"],
@@ -2295,7 +2288,7 @@
   },
   {
     "english": ["upon"],
-    "arabic": ["علو", "ألو", "بهو", "بهم", "لنو", "أتي", "إلي", "فعل", "جيء", "جبن", "أتى", "علي"]
+    "arabic": ["علو", "ألو", "بهو", "بهم", "لنو", "أتي", "ألى", "فعل", "جيء", "جبن", "أتى", "علي"]
   },
   {
     "english": ["fulfill", "fulfil", "satisfy", "accomplish", "execute", "action"],
@@ -2397,7 +2390,7 @@
       "لذذ",
       "وقد",
       "قدد",
-      "ألا",
+      "لو",
       "لهو",
       "علو",
       "فقد",
@@ -2415,7 +2408,7 @@
       "جمع",
       "سلط",
       "قتل",
-      "لهمت",
+      "لهت",
       "أمن",
       "أمر",
       "سرف",
@@ -2461,7 +2454,7 @@
       "رجم",
       "وفي",
       "جعل",
-      "ليوسف",
+      "يوسف",
       "نصح",
       "حفظ",
       "حزن",
@@ -2500,7 +2493,7 @@
       "ذهب",
       "نزل",
       "مسك",
-      "لأظنك",
+      "ظن",
       "عجل",
       "نفد",
       "سوف",
@@ -2553,7 +2546,7 @@
       "وحد",
       "أحد",
       "دين",
-      "لإبراهيم",
+      "أبرهم",
       "مرر",
       "زلف",
       "حسن",
@@ -2566,7 +2559,7 @@
       "لمن",
       "علل",
       "بين",
-      "ليصدونهم",
+      "صد",
       "رأي",
       "عرف",
       "عذب",
@@ -2734,7 +2727,7 @@
       "صرف",
       "عرض",
       "فول",
-      "يردوكم",
+      "رد",
       "سود",
       "بيض",
       "قلب",
@@ -2746,7 +2739,7 @@
       "صدف",
       "تول",
       "نرد",
-      "وصدوا",
+      "صد",
       "بتت",
       "نوب",
       "كبر",
@@ -2808,7 +2801,7 @@
   },
   {
     "english": ["quails"],
-    "arabic": ["والسلوى"]
+    "arabic": ["سلو"]
   },
   {
     "english": ["good", "unspoiled", "unspoilt", "honest", "effective", "well"],
@@ -2884,7 +2877,7 @@
   },
   {
     "english": ["stone", "pit", "gem", "gemstone", "endocarp", "lapidate"],
-    "arabic": ["حجر", "نصب", "ترجمون"]
+    "arabic": ["حجر", "نصب", "ترجم"]
   },
   {
     "english": ["gushed"],
@@ -2916,7 +2909,7 @@
   },
   {
     "english": ["spreading", "dissemination", "airing", "spread"],
-    "arabic": ["فسد", "نشر", "صافات"]
+    "arabic": ["فسد", "نشر", "صف"]
   },
   {
     "english": ["endure", "wear", "weather", "brave", "last", "suffer"],
@@ -2948,7 +2941,7 @@
       "بهو",
       "بشر",
       "روح",
-      "وأهش",
+      "هش",
       "ربك",
       "رجع",
       "برأ",
@@ -3001,7 +2994,7 @@
   },
   {
     "english": ["drew"],
-    "arabic": ["بوء", "نزع", "فساهم"]
+    "arabic": ["بوء", "نزع", "فسه"]
   },
   {
     "english": ["wrath", "anger", "ire", "ira"],
@@ -3099,16 +3092,11 @@
       "معي",
       "في",
       "لون",
-      "ومنهم",
+      "هم",
       "منو",
-      "فمنهم",
       "همم",
       "ومن",
-      "منن",
-      "ممن",
-      "فينا",
-      "وممن",
-      "ومنا"
+      "منن"
     ]
   },
   {
@@ -3233,7 +3221,7 @@
   },
   {
     "english": ["near", "nigh", "close", "about", "almost", "most"],
-    "arabic": ["كود", "قرب", "عند", "دون", "لدن", "أول", "ذا", "أله", "من", "ودن"]
+    "arabic": ["كود", "قرب", "عند", "دون", "لدن", "أول", "ذو", "أله", "من", "ودن"]
   },
   {
     "english": ["killed"],
@@ -3249,7 +3237,7 @@
   },
   {
     "english": ["concerning"],
-    "arabic": ["فيه", "بهو", "نهي", "في", "عنو", "نفس", "فيما", "أخر", "ذنب", "ربب", "وقي"]
+    "arabic": ["فيه", "بهو", "في", "نهي", "عنو", "نفس", "أخر", "ذنب", "ربب", "وقي"]
   },
   {
     "english": ["concealing", "concealment", "hiding"],
@@ -3296,7 +3284,7 @@
   },
   {
     "english": ["fall", "hang", "flow", "shine", "strike", "come"],
-    "arabic": ["هبط", "خرر", "صوب", "سقط", "وقع", "يخروا", "غيظ", "فقع", "يخرون", "صعق", "كدر"]
+    "arabic": ["هبط", "خرر", "صوب", "سقط", "وقع", "خر", "غيظ", "فقع", "صعق", "كدر"]
   },
   {
     "english": ["unaware", "incognizant"],
@@ -3388,7 +3376,7 @@
   },
   {
     "english": ["numbered"],
-    "arabic": ["معدودة", "معدودات"]
+    "arabic": ["عد"]
   },
   {
     "english": ["taken", "interpreted"],
@@ -3405,7 +3393,7 @@
       "بكي",
       "ملك",
       "ألو",
-      "بجالوت",
+      "جل",
       "فعل",
       "نفس",
       "دون",
@@ -3422,11 +3410,11 @@
   },
   {
     "english": ["parents"],
-    "arabic": ["ولد", "أبو", "أبويكم", "كون"]
+    "arabic": ["ولد", "أبو", "أب", "كون"]
   },
   {
     "english": ["relatives"],
-    "arabic": ["قرب", "ذوي", "ذا", "عشر", "رحم"]
+    "arabic": ["قرب", "ذوي", "ذو", "عشر", "رحم"]
   },
   {
     "english": ["orphans"],
@@ -3457,7 +3445,7 @@
   },
   {
     "english": ["homes"],
-    "arabic": ["دور", "بيت", "دارهم", "دار", "سكن"]
+    "arabic": ["دور", "بيت", "دره", "دار", "سكن"]
   },
   {
     "english": ["ratified", "sanctioned"],
@@ -3521,7 +3509,7 @@
   },
   {
     "english": ["messengers"],
-    "arabic": ["رسل", "أيها", "ياأيها"]
+    "arabic": ["رسل", "ءيه", "أي"]
   },
   {
     "english": ["isa"],
@@ -3554,12 +3542,12 @@
       "أرد",
       "أمن",
       "شهو",
-      "تردن",
+      "رد",
       "رود",
       "رغب",
       "حرص",
       "بغي",
-      "همت",
+      "هم",
       "أرض",
       "رجا",
       "هوى",
@@ -3592,7 +3580,7 @@
   },
   {
     "english": ["though"],
-    "arabic": ["كون", "ءون", "خلق", "بما", "كأن", "يقن"]
+    "arabic": ["كون", "ءون", "خلق", "ب", "كأن", "يقن"]
   },
   {
     "english": ["recognized", "recognised", "accepted"],
@@ -3652,7 +3640,7 @@
   },
   {
     "english": ["home", "interior", "internal", "national", "base"],
-    "arabic": ["دور", "بيت", "دارهم", "ولد", "بدر"]
+    "arabic": ["دور", "بيت", "دره", "ولد", "بدر"]
   },
   {
     "english": ["exclusively", "entirely", "solely", "alone", "only"],
@@ -3664,7 +3652,7 @@
   },
   {
     "english": ["ever", "always", "e'er"],
-    "arabic": ["أبد", "حيي", "رقب", "حيث", "عجل", "حلم", "رحم", "شهد", "حفي", "بقي", "قرب"]
+    "arabic": ["أبد", "حيي", "رقب", "حي", "عجل", "حلم", "رحم", "شهد", "حفي", "بقي", "قرب"]
   },
   {
     "english": ["knower", "apprehender"],
@@ -3684,7 +3672,7 @@
   },
   {
     "english": ["granted", "given"],
-    "arabic": ["عمر", "أتي", "أتى", "متع", "ملو", "وهب", "يلقاها", "جعل"]
+    "arabic": ["عمر", "أتي", "أتى", "متع", "ملو", "وهب", "لقي", "جعل"]
   },
   {
     "english": ["thousand", "1000", "m", "k"],
@@ -3692,11 +3680,11 @@
   },
   {
     "english": ["year", "class", "twelvemonth", "yr"],
-    "arabic": ["سنو", "عمم", "حول", "هذا"]
+    "arabic": ["سنو", "عمم", "حول", "ذا"]
   },
   {
     "english": ["remove", "absent", "transfer", "murder", "slay", "hit"],
-    "arabic": ["بمزحزحه", "كفر", "ذهب", "كشف", "نزع", "خلع"]
+    "arabic": ["زحزح", "كفر", "ذهب", "كشف", "نزع", "خلع"]
   },
   {
     "english": ["seer", "visionary", "illusionist", "prophet", "prophesier", "oracle"],
@@ -3760,7 +3748,7 @@
   },
   {
     "english": ["magic", "thaumaturgy", "charming", "magical", "sorcerous", "witching"],
-    "arabic": ["سحر", "هذا"]
+    "arabic": ["سحر", "ذا"]
   },
   {
     "english": ["babylon"],
@@ -3820,11 +3808,11 @@
   },
   {
     "english": ["chooses"],
-    "arabic": ["يختص", "جبو", "صفو", "خير"]
+    "arabic": ["خص", "جبو", "صفو", "خير"]
   },
   {
     "english": ["possessor", "owner"],
-    "arabic": ["ذوو", "ذوي", "لذذ", "ذا", "أيد", "رفع", "درج", "وذو", "مرر", "فضل"]
+    "arabic": ["ذوو", "ذوي", "لذذ", "ذو", "أيد", "رفع", "درج", "وذو", "مرر", "فضل"]
   },
   {
     "english": ["bounty", "premium", "bounteousness", "amplitude", "bountifulness"],
@@ -3925,7 +3913,7 @@
   },
   {
     "english": ["whatever", "any", "whatsoever"],
-    "arabic": ["وما", "ومما", "ومن", "فما", "ما", "مما", "من", "همم", "أنما", "ءيي", "أيي", "لمم"]
+    "arabic": ["وما", "من", "ومن", "فمه", "موه", "همم", "إن", "ءيي", "أيي", "لمم"]
   },
   {
     "english": ["send", "post", "commit", "institutionalize", "institutionalise", "charge"],
@@ -4049,7 +4037,7 @@
   },
   {
     "english": ["religion", "faith"],
-    "arabic": ["ملتهم", "دين", "ملل", "أمم", "ودن", "أله"]
+    "arabic": ["لهب", "دين", "ملل", "أمم", "ودن", "أله"]
   },
   {
     "english": ["desires"],
@@ -4065,7 +4053,7 @@
   },
   {
     "english": ["ibrahim", "abraham"],
-    "arabic": ["أبر", "بإبراهيم", "لإبراهيم", "قول"]
+    "arabic": ["أبر", "أبرهم", "قول"]
   },
   {
     "english": ["fulfilled"],
@@ -4170,11 +4158,11 @@
   },
   {
     "english": ["show", "appearance", "usher", "display", "prove", "demonstrate"],
-    "arabic": ["رأى", "رنك", "رحم", "أدلكم", "نري", "رأي"]
+    "arabic": ["رأى", "رنك", "رحم", "دل", "نري", "رأي"]
   },
   {
     "english": ["ways", "shipway", "slipway"],
-    "arabic": ["نسك", "سنن", "سبل", "سبب", "طرق", "عرج"]
+    "arabic": ["نسك", "سن", "سبل", "سبب", "طرق", "عرج"]
   },
   {
     "english": ["raise", "lift", "rise", "elevate", "resurrect", "upraise"],
@@ -4218,11 +4206,11 @@
   },
   {
     "english": ["die", "pall", "go", "dice", "fail", "break"],
-    "arabic": ["موت", "تمم", "وفي", "بميتين"]
+    "arabic": ["موت", "تمم", "وفي", "مائة"]
   },
   {
     "english": ["forefathers"],
-    "arabic": ["أبو", "أول", "لآبائهم", "آباءهم", "قدم", "عبد"]
+    "arabic": ["أبو", "أول", "أب", "قدم", "عبد"]
   },
   {
     "english": ["isaac"],
@@ -4250,7 +4238,7 @@
   },
   {
     "english": ["dissension", "discord", "disagreement", "dissonance"],
-    "arabic": ["شقق", "فتن", "شقاقي"]
+    "arabic": ["شقق", "فتن", "شق"]
   },
   {
     "english": ["coloring", "colouring", "color", "colour"],
@@ -4592,7 +4580,7 @@
   },
   {
     "english": ["thereby"],
-    "arabic": ["بهو", "فيه", "وهب"]
+    "arabic": ["بهو", "في", "وهب"]
   },
   {
     "english": ["dispersing"],
@@ -4647,7 +4635,7 @@
       "ردد",
       "فيء",
       "صور",
-      "ردوها",
+      "رد",
       "توب",
       "حور"
     ]
@@ -4694,7 +4682,7 @@
   },
   {
     "english": ["swine"],
-    "arabic": ["الخنزير", "خنز"]
+    "arabic": ["خنزر", "خنز"]
   },
   {
     "english": ["dedicated", "consecrated", "consecrate"],
@@ -4816,7 +4804,7 @@
   },
   {
     "english": ["true", "admittedly", "avowedly", "confessedly", "straight"],
-    "arabic": ["صدق", "حقق", "حنف", "هو"]
+    "arabic": ["صدق", "حقق", "حنف", "هويهوأ"]
   },
   {
     "english": ["prescribed", "positive", "appointed", "decreed", "ordained", "official"],
@@ -4836,7 +4824,7 @@
   },
   {
     "english": ["female", "distaff"],
-    "arabic": ["أنث", "سرق", "وإمائكم", "وأد"]
+    "arabic": ["أنث", "سرق", "أما", "وأد"]
   },
   {
     "english": ["pardoned"],
@@ -4844,7 +4832,7 @@
   },
   {
     "english": ["brother", "comrade", "buddy", "chum", "crony", "pal"],
-    "arabic": ["أخو", "بأخ"]
+    "arabic": ["أخو"]
   },
   {
     "english": ["suitable", "suited", "desirable", "worthy"],
@@ -4996,7 +4984,7 @@
   },
   {
     "english": ["garments"],
-    "arabic": ["لبس", "سرب", "ثوب", "وسرابيل"]
+    "arabic": ["لبس", "سرب", "ثوب", "سربل"]
   },
   {
     "english": ["ordained", "appointed", "decreed", "prescribed"],
@@ -5349,7 +5337,7 @@
   },
   {
     "english": ["hell", "blaze", "hellhole", "inferno", "hades", "netherworld"],
-    "arabic": ["جهم", "بجهنم", "سقر", "لجهنم"]
+    "arabic": ["جهم", "جهنم", "سقر"]
   },
   {
     "english": ["sells"],
@@ -5441,7 +5429,7 @@
   },
   {
     "english": ["think", "intend", "mean", "opine", "suppose", "imagine"],
-    "arabic": ["حسب", "ظنن", "فند", "لأظنك"]
+    "arabic": ["حسب", "ظنن", "فند", "ظن"]
   },
   {
     "english": ["touched", "fey", "moved", "affected", "stirred"],
@@ -5453,11 +5441,11 @@
   },
   {
     "english": ["shaken", "jolted"],
-    "arabic": ["وزلزلوا", "زلزلت"]
+    "arabic": ["زلزل"]
   },
   {
     "english": ["unquestionably", "unimpeachably", "decidedly", "emphatically", "definitely"],
-    "arabic": ["ألا"]
+    "arabic": ["لو"]
   },
   {
     "english": ["help", "avail", "aid", "service", "facilitate", "assistance"],
@@ -5485,7 +5473,7 @@
   },
   {
     "english": ["hindering", "clogging", "impeding", "obstructive"],
-    "arabic": ["وصد", "وبصدهم", "صدد"]
+    "arabic": ["وصد", "صد", "صدد"]
   },
   {
     "english": ["driving", "impulsive", "drive"],
@@ -5493,7 +5481,7 @@
   },
   {
     "english": ["able", "able-bodied", "capable"],
-    "arabic": ["طوع", "ذوو", "قدر", "سطع", "ما", "ذوي", "نقم"]
+    "arabic": ["طوع", "ذوو", "قدر", "سطع", "موه", "ذوي", "نقم"]
   },
   {
     "english": ["dies"],
@@ -5668,7 +5656,7 @@
   },
   {
     "english": ["back", "backward", "backwards", "rearward", "rearwards"],
-    "arabic": ["بردهن", "دبر", "ظهر", "نقذ"]
+    "arabic": ["برهن", "دبر", "ظهر", "نقذ"]
   },
   {
     "english": ["reconciliation", "rapprochement", "balancing"],
@@ -5732,7 +5720,7 @@
   },
   {
     "english": ["hinder", "back", "hind", "handicap", "hamper"],
-    "arabic": ["عضل", "تصدون", "وصدوا", "صدد", "ليصدوا", "فصد", "تصدونا", "عوق", "يصدكم"]
+    "arabic": ["عضل", "صد", "صدد", "فصد", "عوق"]
   },
   {
     "english": ["marrying"],
@@ -5768,7 +5756,7 @@
   },
   {
     "english": ["father", "don", "father-god", "fatherhood", "sire", "padre"],
-    "arabic": ["ولد", "أبو", "عمم", "ياأبت", "أبيكم", "أباكم", "أبيهم", "أَب", "قول"]
+    "arabic": ["ولد", "أبو", "عمم", "أب", "قول"]
   },
   {
     "english": ["clothing", "vesture", "wear", "wearable", "habiliment"],
@@ -5826,19 +5814,16 @@
       "برز",
       "ترك",
       "لذر",
-      "فتذروها",
-      "فخلوا",
+      "ذر",
+      "خل",
       "نذر",
       "بتر",
-      "تذرن",
       "ذرو",
       "أذن",
-      "فذروه",
       "هجر",
       "ذرر",
       "ذرأ",
-      "عزل",
-      "تذرهم"
+      "عزل"
     ]
   },
   {
@@ -5979,11 +5964,11 @@
   },
   {
     "english": ["chiefs"],
-    "arabic": ["ملأ", "ما", "سود"]
+    "arabic": ["ملأ", "موه", "سود"]
   },
   {
     "english": ["prophet", "prophesier", "oracle", "seer", "vaticinator"],
-    "arabic": ["نبء", "نبأ", "ياأيها", "من"]
+    "arabic": ["نبء", "نبأ", "أي", "من"]
   },
   {
     "english": ["appoint", "name", "nominate", "constitute", "charge"],
@@ -5999,7 +5984,7 @@
   },
   {
     "english": ["yet", "still", "however", "nevertheless", "withal", "nonetheless"],
-    "arabic": ["فلما", "لحق", "ثمم", "بلل", "وهم", "جعل", "أخذ"]
+    "arabic": ["لم", "لحق", "ثمم", "بلل", "وهم", "جعل", "أخذ"]
   },
   {
     "english": ["talut"],
@@ -6079,7 +6064,7 @@
   },
   {
     "english": ["certain", "sure", "sealed"],
-    "arabic": ["ظنن", "أمر", "فظنوا", "يقن"]
+    "arabic": ["ظنن", "أمر", "ظن", "يقن"]
   },
   {
     "english": ["company", "caller", "companionship", "fellowship", "society", "companion"],
@@ -6147,7 +6132,7 @@
   },
   {
     "english": ["friendship"],
-    "arabic": ["خلل", "خلّ"]
+    "arabic": ["خلل", "خل"]
   },
   {
     "english": ["deniers"],
@@ -6235,7 +6220,7 @@
   },
   {
     "english": ["overturned", "upset", "upturned"],
-    "arabic": ["خوي", "أفك", "بعثرت"]
+    "arabic": ["خوي", "أفك", "بعثر"]
   },
   {
     "english": ["roofs"],
@@ -6247,7 +6232,7 @@
   },
   {
     "english": ["long", "farseeing", "farsighted", "foresighted", "foresightful", "prospicient"],
-    "arabic": ["كمم", "بما", "دوم", "فما", "بعد", "ما", "حقب", "طول", "طمع"]
+    "arabic": ["كمم", "ب", "دوم", "فمه", "بعد", "موه", "حقب", "طول", "طمع"]
   },
   {
     "english": ["remained"],
@@ -6255,7 +6240,7 @@
   },
   {
     "english": ["change", "deepen", "variety", "transfer", "exchange", "interchange"],
-    "arabic": ["يتسنه", "غير", "بدل"]
+    "arabic": ["سنه", "غير", "بدل"]
   },
   {
     "english": ["donkey"],
@@ -6279,7 +6264,7 @@
   },
   {
     "english": ["incline", "ramp", "dispose", "slope", "tend", "lean"],
-    "arabic": ["فصرهن", "ميل", "ركن", "هوي", "فيأ", "صغي", "جنح", "صبو"]
+    "arabic": ["صر", "ميل", "ركن", "هوي", "فيأ", "صغي", "جنح", "صبو"]
   },
   {
     "english": ["hill", "mound"],
@@ -6431,7 +6416,7 @@
   },
   {
     "english": ["poverty", "poorness", "impoverishment"],
-    "arabic": ["فقر", "سكن", "ملق", "عول", "خصّ"]
+    "arabic": ["فقر", "سكن", "ملق", "عول", "خص"]
   },
   {
     "english": ["immorality", "evil", "wickedness", "iniquity"],
@@ -6443,7 +6428,7 @@
   },
   {
     "english": ["none"],
-    "arabic": ["وما", "ولي", "فما", "لا", "ما", "فلو"]
+    "arabic": ["وما", "ولي", "فمه", "لا", "موه", "فلو"]
   },
   {
     "english": ["remembers"],
@@ -6499,7 +6484,7 @@
   },
   {
     "english": ["touch", "contact", "spot", "trace", "ghost", "tinge"],
-    "arabic": ["مسس", "تمسوها", "يتماسا"]
+    "arabic": ["مسس", "مس"]
   },
   {
     "english": ["trade", "craft", "swap", "swop", "patronage", "switch"],
@@ -6594,7 +6579,7 @@
   },
   {
     "english": ["limited", "modified", "circumscribed", "special", "express"],
-    "arabic": ["سفه", "معدود", "قطع"]
+    "arabic": ["سفه", "عد", "قطع"]
   },
   {
     "english": ["capable", "open", "subject", "able"],
@@ -6606,7 +6591,7 @@
   },
   {
     "english": ["guardian", "defender", "protector", "shielder"],
-    "arabic": ["ولي", "حفظ", "وكل", "همن", "المهيمن"]
+    "arabic": ["ولي", "حفظ", "وكل", "همن", "هيمن"]
   },
   {
     "english": ["errs"],
@@ -6618,7 +6603,7 @@
   },
   {
     "english": ["weary", "aweary", "tire", "fatigue", "jade", "pall"],
-    "arabic": ["تسأموا"]
+    "arabic": ["سئم"]
   },
   {
     "english": ["just", "barely", "hardly", "scarcely", "scarce", "simply"],
@@ -6774,11 +6759,11 @@
   },
   {
     "english": ["heaps", "tons", "dozens", "lots", "piles", "scores"],
-    "arabic": ["والقناطير"]
+    "arabic": ["قنطر"]
   },
   {
     "english": ["stored"],
-    "arabic": ["المقنطرة"]
+    "arabic": ["قنطر"]
   },
   {
     "english": ["gold", "gilded", "golden", "aureate", "gilt", "amber"],
@@ -6786,7 +6771,7 @@
   },
   {
     "english": ["silver", "silvery", "silvern", "flatware", "argent", "silverish"],
-    "arabic": ["فضض", "برق", "هذه"]
+    "arabic": ["فضض", "برق", "ذا"]
   },
   {
     "english": ["horses"],
@@ -6882,7 +6867,7 @@
   },
   {
     "english": ["away", "aside", "off", "by", "out", "forth"],
-    "arabic": ["نزع", "أخذ", "صدر", "ذهب", "خطف", "وفي", "بعد", "أفنضرب", "بكي", "فسح"]
+    "arabic": ["نزع", "أخذ", "صدر", "ذهب", "خطف", "وفي", "بعد", "فندر", "بكي", "فسح"]
   },
   {
     "english": ["honor", "honour", "purity", "pureness", "laurels", "reward"],
@@ -7370,7 +7355,7 @@
   },
   {
     "english": ["forbid", "prevent", "forestall", "foreclose", "preclude", "prohibit"],
-    "arabic": ["وهن", "حرم", "نهي", "حوش", "أنهكما", "نهك"]
+    "arabic": ["وهن", "حرم", "نهي", "حوش", "نهى", "نهك"]
   },
   {
     "english": ["hasten", "expedite", "rush", "induce", "stimulate", "hurry"],
@@ -7386,7 +7371,7 @@
   },
   {
     "english": ["destroyed", "ruined"],
-    "arabic": ["هلك", "برأ", "دمر", "تبر", "ثبر", "خرب", "قتل", "فدمدم"]
+    "arabic": ["هلك", "برأ", "دمر", "تبر", "ثبر", "خرب", "قتل", "دمدم"]
   },
   {
     "english": ["intimates"],
@@ -7466,7 +7451,7 @@
   },
   {
     "english": ["inclined", "disposed", "fain", "prepared"],
-    "arabic": ["همت", "صوغ", "ركن"]
+    "arabic": ["هم", "صوغ", "ركن"]
   },
   {
     "english": ["lost", "bemused", "confused", "missed", "helpless", "baffled"],
@@ -7558,7 +7543,7 @@
   },
   {
     "english": ["situations"],
-    "arabic": ["سنن"]
+    "arabic": ["سن"]
   },
   {
     "english": ["travel", "journey", "trip", "jaunt", "locomotion", "traveling"],
@@ -7578,7 +7563,7 @@
   },
   {
     "english": ["alternate", "alternating", "jump", "understudy", "alternative"],
-    "arabic": ["نداولها"]
+    "arabic": ["داول"]
   },
   {
     "english": ["martyrs"],
@@ -7586,7 +7571,7 @@
   },
   {
     "english": ["destroy", "demolish", "destruct", "ruin"],
-    "arabic": ["محق", "هلك", "طمس", "برأ", "نهلك", "دمر", "وبق"]
+    "arabic": ["محق", "هلك", "طمس", "برأ", "دمر", "وبق"]
   },
   {
     "english": ["steadfast", "staunch", "unswerving", "firm", "steady", "stiff"],
@@ -7598,15 +7583,15 @@
   },
   {
     "english": ["decree", "rule", "edict", "fiat", "order", "rescript"],
-    "arabic": ["كتب", "قدر", "أمر", "أله", "فاقض", "قضي"]
+    "arabic": ["كتب", "قدر", "أمر", "أله", "قض", "قضي"]
   },
   {
     "english": ["determined", "dictated", "set", "compulsive", "driven"],
-    "arabic": ["أجل", "همم", "معدودة", "سمو", "علم", "برم", "عزم", "وهم", "قدر"]
+    "arabic": ["أجل", "همم", "عد", "سمو", "علم", "برم", "عزم", "وهم", "قدر"]
   },
   {
     "english": ["thereof", "thence", "therefrom"],
-    "arabic": ["هنو", "نهي", "همم", "مما", "مثل"]
+    "arabic": ["هنو", "نهي", "همم", "من", "مثل"]
   },
   {
     "english": ["religious", "spiritual"],
@@ -7765,7 +7750,7 @@
   },
   {
     "english": ["defrauds"],
-    "arabic": ["غلل", "غلّ"]
+    "arabic": ["غلل", "غل"]
   },
   {
     "english": ["defrauded"],
@@ -7801,7 +7786,7 @@
   },
   {
     "english": ["avert", "debar", "forefend", "forfend", "obviate", "deflect"],
-    "arabic": ["درأ", "صرف", "يصدنك", "صدد", "يصدنكم", "غني"]
+    "arabic": ["درأ", "صرف", "صد", "صدد", "غني"]
   },
   {
     "english": ["rejoicing", "exultation", "jubilation", "exultant", "exulting", "jubilant"],
@@ -8109,7 +8094,7 @@
   },
   {
     "english": ["soon", "shortly", "presently"],
-    "arabic": ["قرب", "سوف", "رأى", "أتي", "هزم", "فرغ", "رهق", "صلي"]
+    "arabic": ["قرب", "سوف", "لايوجدجذر", "رأى", "أتي", "هزم", "فرغ", "رهق", "صلي"]
   },
   {
     "english": ["force", "force-out", "effect", "storm", "squeeze", "thrust"],
@@ -8133,7 +8118,7 @@
   },
   {
     "english": ["heap", "bus", "jalopy", "pile", "stack", "batch"],
-    "arabic": ["قنطارا", "ركم", "كثر"]
+    "arabic": ["قنطر", "ركم", "كثر"]
   },
   {
     "english": ["slander", "aspersion", "calumny", "defamation", "denigration", "defame"],
@@ -8149,7 +8134,7 @@
   },
   {
     "english": ["fathers"],
-    "arabic": ["أبو", "آباءهم", "لآبائهم"]
+    "arabic": ["أبو", "أب"]
   },
   {
     "english": ["daughters"],
@@ -8353,7 +8338,7 @@
   },
   {
     "english": ["leveled"],
-    "arabic": ["سوي", "برز", "دكت"]
+    "arabic": ["سوي", "برز", "دك"]
   },
   {
     "english": ["statement", "affirmation", "assertion", "instruction", "command", "argument"],
@@ -8381,7 +8366,7 @@
   },
   {
     "english": ["tayammum"],
-    "arabic": ["فتيمموا"]
+    "arabic": ["يمم"]
   },
   {
     "english": ["clean", "fair", "clear", "plumb", "plum", "neat"],
@@ -8449,7 +8434,7 @@
   },
   {
     "english": ["manifest", "apparent", "evident", "palpable", "patent", "plain"],
-    "arabic": ["بين", "فصل", "حصحص", "ظهر", "جهر"]
+    "arabic": ["بين", "فصل", "حص", "ظهر", "جهر"]
   },
   {
     "english": ["superstition"],
@@ -8477,11 +8462,11 @@
   },
   {
     "english": ["shade", "tad", "lampshade", "nuance", "nicety", "subtlety"],
-    "arabic": ["ظلل", "وظل"]
+    "arabic": ["ظلل", "ظل"]
   },
   {
     "english": ["thick", "thickly", "midst", "deep", "compact", "heavyset"],
-    "arabic": ["ظلل", "ركب", "ألفافا", "غلب"]
+    "arabic": ["ظلل", "ركب", "لف", "غلب"]
   },
   {
     "english": ["trusts"],
@@ -8509,11 +8494,11 @@
   },
   {
     "english": ["astray", "wide"],
-    "arabic": ["ضلل", "غوي", "أيها"]
+    "arabic": ["ضلل", "غوي", "ءيه"]
   },
   {
     "english": ["aversion", "averting", "antipathy", "distaste"],
-    "arabic": ["صدودا", "نفر", "عرض"]
+    "arabic": ["صد", "نفر", "عرض"]
   },
   {
     "english": ["befalls"],
@@ -8857,7 +8842,7 @@
   },
   {
     "english": ["assault", "rape", "violation", "ravishment", "attack", "assail"],
-    "arabic": ["فيميلون", "جلب"]
+    "arabic": ["فيلم", "جلب"]
   },
   {
     "english": ["attack", "tone-beginning", "fire", "flak", "flack", "blast"],
@@ -9060,7 +9045,7 @@
   },
   {
     "english": ["wavering", "vacillant", "vacillating", "fluctuation", "hesitation", "vacillation"],
-    "arabic": ["مذبذبين"]
+    "arabic": ["ذبذب"]
   },
   {
     "english": ["depths"],
@@ -9319,7 +9304,7 @@
   },
   {
     "english": ["tayyammum"],
-    "arabic": ["فتيمموا"]
+    "arabic": ["يمم"]
   },
   {
     "english": ["bound", "destined", "apprenticed", "articled", "indentured"],
@@ -9359,7 +9344,7 @@
   },
   {
     "english": ["forgot"],
-    "arabic": ["أنس", "نسي", "فنسي"]
+    "arabic": ["أنس", "نسي"]
   },
   {
     "english": ["reminded"],
@@ -9671,7 +9656,7 @@
   },
   {
     "english": ["priests"],
-    "arabic": ["قسيسين"]
+    "arabic": ["قس"]
   },
   {
     "english": ["monks"],
@@ -9894,7 +9879,7 @@
   },
   {
     "english": ["providers"],
-    "arabic": ["رزق", "برازقين"]
+    "arabic": ["رزق", "برزق"]
   },
   {
     "english": ["punished"],
@@ -9930,7 +9915,7 @@
   },
   {
     "english": ["parchment", "sheepskin", "lambskin"],
-    "arabic": ["قرطاس", "رقق"]
+    "arabic": ["قرطس", "رقق"]
   },
   {
     "english": ["angel", "backer", "saint"],
@@ -9970,7 +9955,7 @@
   },
   {
     "english": ["averted"],
-    "arabic": ["صرف", "مرد", "فصد", "وصدها", "وصد"]
+    "arabic": ["صرف", "مرد", "فصد", "صد", "وصد"]
   },
   {
     "english": ["affliction"],
@@ -10070,7 +10055,7 @@
   },
   {
     "english": ["wings"],
-    "arabic": ["جنح", "صافات"]
+    "arabic": ["جنح", "صف"]
   },
   {
     "english": ["communities"],
@@ -10141,7 +10126,7 @@
   },
   {
     "english": ["criminals"],
-    "arabic": ["جرم", "أيها"]
+    "arabic": ["جرم", "ءيه"]
   },
   {
     "english": ["relates"],
@@ -10249,7 +10234,7 @@
   },
   {
     "english": ["star", "leading", "prima", "starring", "stellar"],
-    "arabic": ["كوكبا", "كوب", "نجم"]
+    "arabic": ["كوكب", "كوب", "نجم"]
   },
   {
     "english": ["moon", "lunation", "moonlight", "moonshine", "daydream"],
@@ -10269,7 +10254,7 @@
   },
   {
     "english": ["yusuf"],
-    "arabic": ["ويوسف", "يسف", "ليوسف", "سرر", "بيوسف"]
+    "arabic": ["يوسف", "يسف", "سرر"]
   },
   {
     "english": ["elijah"],
@@ -10277,7 +10262,7 @@
   },
   {
     "english": ["elisha"],
-    "arabic": ["واليسع"]
+    "arabic": ["يسع"]
   },
   {
     "english": ["lut"],
@@ -10293,7 +10278,7 @@
   },
   {
     "english": ["parchments"],
-    "arabic": ["قراطيس"]
+    "arabic": ["قرطس"]
   },
   {
     "english": ["discourse", "dissertate", "discuss", "converse", "discussion", "treatment"],
@@ -10353,7 +10338,7 @@
   },
   {
     "english": ["stars"],
-    "arabic": ["نجم", "كوب", "كوكبا"]
+    "arabic": ["نجم", "كوب", "كوكب"]
   },
   {
     "english": ["produced"],
@@ -10473,7 +10458,7 @@
   },
   {
     "english": ["compelled"],
-    "arabic": ["ضرّ", "ضرر", "كره"]
+    "arabic": ["ضر", "ضرر", "كره"]
   },
   {
     "english": ["inspire", "revolutionize", "revolutionise", "animate", "invigorate", "enliven"],
@@ -10689,7 +10674,7 @@
   },
   {
     "english": ["affair", "affaire", "intimacy", "liaison", "involvement", "amour"],
-    "arabic": ["أمر", "هذا", "خطب", "شأن"]
+    "arabic": ["أمر", "ذا", "خطب", "شأن"]
   },
   {
     "english": ["dying", "anxious", "death", "demise"],
@@ -10744,7 +10729,7 @@
   },
   {
     "english": ["whispered"],
-    "arabic": ["فوسوس"]
+    "arabic": ["وسوس"]
   },
   {
     "english": ["shame", "pity", "disgrace", "dishonor", "dishonour", "attaint"],
@@ -11055,7 +11040,7 @@
   },
   {
     "english": ["feel", "find", "palpate", "finger", "spirit", "tone"],
-    "arabic": ["أمن", "وجل", "طمن", "يحض", "حضض"]
+    "arabic": ["أمن", "وجل", "طمن", "حض", "حضض"]
   },
   {
     "english": ["asleep", "benumbed", "numb", "deceased", "departed"],
@@ -11155,7 +11140,7 @@
   },
   {
     "english": ["behold"],
-    "arabic": ["ألا", "أذي", "أذن"]
+    "arabic": ["لو", "أذي", "أذن"]
   },
   {
     "english": ["bewitch", "magnetize", "mesmerize", "mesmerise", "magnetise", "spellbind"],
@@ -11263,7 +11248,7 @@
   },
   {
     "english": ["ornaments"],
-    "arabic": ["حلي", "زين", "وزخرفا"]
+    "arabic": ["حلي", "زين", "زخرف"]
   },
   {
     "english": ["image", "double", "look-alike", "range", "persona", "effigy"],
@@ -11379,7 +11364,7 @@
   },
   {
     "english": ["lower", "lour", "frown", "glower", "depress"],
-    "arabic": ["دنو", "سفل", "غضض", "خفض", "يغضضن"]
+    "arabic": ["دنو", "سفل", "غضض", "خفض", "غض"]
   },
   {
     "english": ["testified"],
@@ -11599,7 +11584,7 @@
   },
   {
     "english": ["terrify", "terrorize", "terrorise"],
-    "arabic": ["ترهبون"]
+    "arabic": ["رهب"]
   },
   {
     "english": ["urge", "itch", "exhort", "recommend", "advocate", "impulse"],
@@ -11739,7 +11724,7 @@
   },
   {
     "english": ["vastness", "enormousness", "grandness", "greatness", "immenseness", "immensity"],
-    "arabic": ["بما", "رحب"]
+    "arabic": ["ب", "رحب"]
   },
   {
     "english": ["fleeing"],
@@ -11767,7 +11752,7 @@
   },
   {
     "english": ["imitate", "copy", "simulate"],
-    "arabic": ["ضﻫﻮ"]
+    "arabic": ["ض"]
   },
   {
     "english": ["extinguish", "eliminate", "quench", "annihilate", "eradicate", "decimate"],
@@ -11967,7 +11952,7 @@
   },
   {
     "english": ["nothing", "nil", "nix", "nada", "null", "aught"],
-    "arabic": ["ما", "قول", "وما", "أنن", "غير", "شيأ"]
+    "arabic": ["موه", "قول", "وما", "أنن", "غير", "شيأ"]
   },
   {
     "english": ["attain", "reach", "hit", "strike", "discover", "make"],
@@ -12003,7 +11988,7 @@
   },
   {
     "english": ["heat", "warmth", "passion", "estrus", "oestrus", "rut"],
-    "arabic": ["حرر", "حرّ", "وقد"]
+    "arabic": ["حرر", "حر", "وقد"]
   },
   {
     "english": ["stay", "remain", "quell", "appease", "outride", "persist"],
@@ -12442,7 +12427,7 @@
   },
   {
     "english": ["direct", "aim", "verbatim", "unmediated", "calculate", "directly"],
-    "arabic": ["قوم", "دلك", "أدلكم", "ندلكم"]
+    "arabic": ["قوم", "دلك", "دل"]
   },
   {
     "english": ["repeller"],
@@ -12841,7 +12826,7 @@
   },
   {
     "english": ["shirt"],
-    "arabic": ["قمص", "هذا"]
+    "arabic": ["قمص", "ذا"]
   },
   {
     "english": ["describe", "draw", "identify", "discover", "key", "distinguish"],
@@ -12865,7 +12850,7 @@
   },
   {
     "english": ["dirhams"],
-    "arabic": ["دراهم"]
+    "arabic": ["درهم"]
   },
   {
     "english": ["keen", "knifelike", "piercing", "cutting", "stabbing", "lancinate"],
@@ -12916,7 +12901,7 @@
   },
   {
     "english": ["aziz"],
-    "arabic": ["عزز", "ياأيها"]
+    "arabic": ["عزز", "أي"]
   },
   {
     "english": ["impassioned", "ardent", "fervent", "fervid", "fiery", "perfervid"],
@@ -13151,7 +13136,7 @@
   },
   {
     "english": ["despair", "desperation"],
-    "arabic": ["يئس", "يئوسا", "بلس", "قنط", "يأس", "يءس"]
+    "arabic": ["يئس", "بلس", "قنط", "يأس", "يءس"]
   },
   {
     "english": ["despairs"],
@@ -13183,7 +13168,7 @@
   },
   {
     "english": ["caused"],
-    "arabic": ["نزغ", "نبت", "فجر", "فرق", "ورث", "تبع", "خسف", "بني", "وأسلنا"]
+    "arabic": ["نزغ", "نبت", "فجر", "فرق", "ورث", "تبع", "خسف", "بني", "أسل"]
   },
   {
     "english": ["sovereignty", "reign"],
@@ -13382,7 +13367,7 @@
   },
   {
     "english": ["hindered"],
-    "arabic": ["وصدوا", "صددتم", "وصدوكم"]
+    "arabic": ["صد"]
   },
   {
     "english": ["harder"],
@@ -13434,7 +13419,7 @@
   },
   {
     "english": ["purulent", "pussy"],
-    "arabic": ["صديد"]
+    "arabic": ["صد"]
   },
   {
     "english": ["swallowing"],
@@ -13578,7 +13563,7 @@
   },
   {
     "english": ["scorching"],
-    "arabic": ["سمم", "لوح", "سمّ"]
+    "arabic": ["سمم", "لوح", "سم"]
   },
   {
     "english": ["breathed", "voiceless"],
@@ -13697,7 +13682,7 @@
   },
   {
     "english": ["pasture", "crop", "graze", "eatage", "forage", "pasturage"],
-    "arabic": ["تسيمون", "رعي"]
+    "arabic": ["سمن", "رعي"]
   },
   {
     "english": ["varying", "variable"],
@@ -13721,7 +13706,7 @@
   },
   {
     "english": ["shake", "judder", "trill", "shingle", "didder", "milkshake"],
-    "arabic": ["ميد", "وهزي", "زلل", "ورى"]
+    "arabic": ["ميد", "هز", "زلل", "ورى"]
   },
   {
     "english": ["roads", "roadstead"],
@@ -13745,7 +13730,7 @@
   },
   {
     "english": ["oppose", "counterbalance", "controvert", "contradict", "react", "pit"],
-    "arabic": ["شقق", "خلف", "يحادون", "حاد"]
+    "arabic": ["شقق", "خلف", "حد"]
   },
   {
     "english": ["justified"],
@@ -13753,7 +13738,7 @@
   },
   {
     "english": ["wherein"],
-    "arabic": ["فيه", "ما"]
+    "arabic": ["في", "موه", "فيه"]
   },
   {
     "english": ["gradual"],
@@ -13781,7 +13766,7 @@
   },
   {
     "english": ["bury", "immerse", "swallow", "sink", "forget", "entomb"],
-    "arabic": ["يدسه"]
+    "arabic": ["دس"]
   },
   {
     "english": ["similitude", "counterpart", "twin", "likeness", "alikeness"],
@@ -13973,7 +13958,7 @@
   },
   {
     "english": ["inner", "internal", "inside", "privileged", "intimate", "interior"],
-    "arabic": ["خلّ", "بطن"]
+    "arabic": ["خل", "بطن"]
   },
   {
     "english": ["reinforced", "built", "strengthened"],
@@ -14376,7 +14361,7 @@
   },
   {
     "english": ["walls"],
-    "arabic": ["سرادقها", "جدر"]
+    "arabic": ["سردق", "جدر"]
   },
   {
     "english": ["molten", "liquefied", "liquified"],
@@ -14452,7 +14437,7 @@
   },
   {
     "english": ["rebelled"],
-    "arabic": ["فسق", "فعل", "عتت"]
+    "arabic": ["فسق", "فعل", "عت"]
   },
   {
     "english": ["misleaders"],
@@ -14527,11 +14512,11 @@
   },
   {
     "english": ["dhul"],
-    "arabic": ["ذوي", "قرن", "ياذا", "كفل"]
+    "arabic": ["ذوي", "قرن", "ذو", "كفل"]
   },
   {
     "english": ["either"],
-    "arabic": ["أمم", "فإما"]
+    "arabic": ["أمم", "أمر"]
   },
   {
     "english": ["shelter", "protection"],
@@ -14706,11 +14691,11 @@
   },
   {
     "english": ["prolonged", "extended", "elongated", "lengthened", "drawn-out", "lengthy"],
-    "arabic": ["مليا", "طول", "ملو"]
+    "arabic": ["ملأ", "طول", "ملو"]
   },
   {
     "english": ["idris"],
-    "arabic": ["درس", "وإدريس"]
+    "arabic": ["درس"]
   },
   {
     "english": ["lusts"],
@@ -14765,7 +14750,7 @@
   },
   {
     "english": ["inciting"],
-    "arabic": ["أزّ"]
+    "arabic": ["أز"]
   },
   {
     "english": ["incitement", "incitation", "provocation", "exhortation"],
@@ -14989,7 +14974,7 @@
   },
   {
     "english": ["deprivation", "loss", "privation", "want", "neediness"],
-    "arabic": ["هضما"]
+    "arabic": ["هضم"]
   },
   {
     "english": ["warnings"],
@@ -15049,7 +15034,7 @@
   },
   {
     "english": ["flee", "fly"],
-    "arabic": ["لا", "ركض", "فرر", "فررتم", "فرن"]
+    "arabic": ["لا", "ركض", "فرر", "فر", "فرن"]
   },
   {
     "english": ["ceased"],
@@ -15249,7 +15234,7 @@
   },
   {
     "english": ["convulsion", "turmoil", "upheaval", "paroxysm", "fit"],
-    "arabic": ["زلزلة"]
+    "arabic": ["زلزل"]
   },
   {
     "english": ["pregnant", "fraught", "meaning", "significant"],
@@ -15341,7 +15326,7 @@
   },
   {
     "english": ["pearl", "bone", "ivory", "off-white", "drop", "bead"],
-    "arabic": ["ولؤلؤا", "اللؤلؤ"]
+    "arabic": ["لألأ"]
   },
   {
     "english": ["silk"],
@@ -15393,7 +15378,7 @@
   },
   {
     "english": ["lined", "seamed"],
-    "arabic": ["صواف", "صفف", "صفو"]
+    "arabic": ["صف", "صفف", "صفو"]
   },
   {
     "english": ["defends"],
@@ -15688,7 +15673,7 @@
   },
   {
     "english": ["glass", "glaze", "methamphetamine", "methedrine", "meth", "deoxyephedrine"],
-    "arabic": ["زجج", "قرّ"]
+    "arabic": ["زجج", "قر"]
   },
   {
     "english": ["brilliant", "bright", "superb", "vivid", "brainy", "glorious"],
@@ -15956,7 +15941,7 @@
   },
   {
     "english": ["comfort", "ease", "solace", "consolation", "quilt", "comforter"],
-    "arabic": ["قرر", "قرت"]
+    "arabic": ["قرر", "قر"]
   },
   {
     "english": ["chamber", "bedroom", "bedchamber"],
@@ -16168,7 +16153,7 @@
   },
   {
     "english": ["hoopoe", "hoopoo"],
-    "arabic": ["الهدهد"]
+    "arabic": ["هدهد"]
   },
   {
     "english": ["saba"],
@@ -16268,7 +16253,7 @@
   },
   {
     "english": ["haman"],
-    "arabic": ["وهم", "همّ", "همن"]
+    "arabic": ["وهم", "هم", "همن"]
   },
   {
     "english": ["suckle", "breastfeed", "suck", "nurse", "wet-nurse", "lactate"],
@@ -16472,7 +16457,7 @@
   },
   {
     "english": ["spider", "wanderer"],
-    "arabic": ["العنكبوت"]
+    "arabic": ["عنكب"]
   },
   {
     "english": ["weakest"],
@@ -16516,7 +16501,7 @@
   },
   {
     "english": ["relative", "congener", "congenator", "congeneric", "proportional", "comparative"],
-    "arabic": ["ذا", "قرب"]
+    "arabic": ["ذو", "قرب"]
   },
   {
     "english": ["manifold", "multiplex", "multiply"],
@@ -16651,7 +16636,7 @@
   },
   {
     "english": ["guiding", "directing", "directional", "directive"],
-    "arabic": ["يهدون", "هدي"]
+    "arabic": ["هدى", "هدي"]
   },
   {
     "english": ["interior", "internal", "midland", "upcountry", "inner", "home"],
@@ -16683,7 +16668,7 @@
   },
   {
     "english": ["miserly", "mean", "mingy", "tight"],
-    "arabic": ["أشحة"]
+    "arabic": ["شح"]
   },
   {
     "english": ["revolving"],
@@ -16998,7 +16983,7 @@
   },
   {
     "english": ["membrane"],
-    "arabic": ["قطمير"]
+    "arabic": ["قطمر"]
   },
   {
     "english": ["heavily", "heavy", "intemperately", "hard"],
@@ -17022,7 +17007,7 @@
   },
   {
     "english": ["pearls"],
-    "arabic": ["ولؤلؤا", "لءل", "اللؤلؤ", "لأل"]
+    "arabic": ["لألأ", "لءل", "لأل"]
   },
   {
     "english": ["weariness", "fatigue", "tiredness"],
@@ -17420,7 +17405,7 @@
   },
   {
     "english": ["shiver", "shudder", "thrill", "throb", "tremble", "shake"],
-    "arabic": ["تقشعر"]
+    "arabic": ["قشعر"]
   },
   {
     "english": ["relax", "loosen", "unbend", "slack", "slacken", "unwind"],
@@ -17572,7 +17557,7 @@
   },
   {
     "english": ["furious", "angered", "enraged", "infuriated", "maddened", "ferocious"],
-    "arabic": ["صرصرا"]
+    "arabic": ["صرصر"]
   },
   {
     "english": ["blindness", "sightlessness", "cecity"],
@@ -17727,7 +17712,7 @@
   },
   {
     "english": ["angered", "enraged", "furious", "infuriated", "maddened"],
-    "arabic": ["آسفونا", "سخط"]
+    "arabic": ["أسف", "سخط"]
   },
   {
     "english": ["precedent"],
@@ -17803,7 +17788,7 @@
   },
   {
     "english": ["drag", "puff", "dredge", "trail", "embroil", "tangle"],
-    "arabic": ["فاعتلوه"]
+    "arabic": ["علتو"]
   },
   {
     "english": ["wearing", "exhausting", "tiring", "wearying", "wear", "erosion"],
@@ -18055,7 +18040,7 @@
   },
   {
     "english": ["whispers"],
-    "arabic": ["توسوس", "يوسوس"]
+    "arabic": ["وسوس"]
   },
   {
     "english": ["jugular"],
@@ -18143,7 +18128,7 @@
   },
   {
     "english": ["supporters"],
-    "arabic": ["بركنه"]
+    "arabic": ["بركن"]
   },
   {
     "english": ["madman", "lunatic", "maniac"],
@@ -18207,7 +18192,7 @@
   },
   {
     "english": ["controllers"],
-    "arabic": ["المصيطرون"]
+    "arabic": ["سيطرة"]
   },
   {
     "english": ["stairway", "staircase"],
@@ -18311,7 +18296,7 @@
   },
   {
     "english": ["pouring", "gushing"],
-    "arabic": ["منهمر", "هول", "ثجاجا"]
+    "arabic": ["همر", "هول", "ثج"]
   },
   {
     "english": ["predestined", "foreordained", "predestinate"],
@@ -18411,7 +18396,7 @@
   },
   {
     "english": ["cushions"],
-    "arabic": ["رفرف", "نمر"]
+    "arabic": ["رف", "نمر"]
   },
   {
     "english": ["carpets"],
@@ -19215,15 +19200,15 @@
   },
   {
     "english": ["crystal", "quartz", "lechatelierite", "crystallization"],
-    "arabic": ["قواريرا", "قرّ"]
+    "arabic": ["قر"]
   },
   {
     "english": ["zanjabil"],
-    "arabic": ["زنجبيلا"]
+    "arabic": ["زنجب"]
   },
   {
     "english": ["salsabil"],
-    "arabic": ["سلسبيلا"]
+    "arabic": ["سلسل"]
   },
   {
     "english": ["progressively", "increasingly"],
@@ -19833,6 +19818,6 @@
   },
   {
     "english": ["whisperer"],
-    "arabic": ["الوسواس"]
+    "arabic": ["وسوس"]
   }
 ]
