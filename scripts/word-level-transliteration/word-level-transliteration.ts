@@ -199,7 +199,7 @@ function main() {
   const ayahData = quranRows.map((row: any) => ({
     id: String(row.gid ?? ''),
     number: String(row.aya_id ?? ''),
-    text: row.uthmani ?? '',
+    text: row.standard ?? '',
     number_in_surah: String(row.aya_id ?? ''),
     page: String(row.page_id ?? ''),
     sura_id: String(row.sura_id ?? ''),
@@ -221,19 +221,7 @@ function main() {
   });
 
   //keywords to merge to match number of words of quran words with phonetics quran words
-  const mergeSeeds = [
-    'ya',
-    'awa',
-    'waal',
-    'baAAda',
-    'ha',
-    'wa',
-    'likay',
-    'waya',
-    'ayna',
-    'ma',
-    'wanaa',
-  ];
+  const mergeSeeds = ['ya', 'awa', 'waal', 'baAAda', 'ha', 'wa', 'likay', 'waya', 'ayna'];
 
   //keywords to split to match number of words of quran words with phonetics quran word
   const splitSeedsMap: Record<string, string[]> = {
@@ -241,8 +229,10 @@ function main() {
     feema: ['fee', 'ma'],
     mimma: ['min', 'ma'],
     amman: ['am', 'man'],
-    walianaaamikum: ['wa', 'lianaaamikum'],
-    awaman: ['awa', 'man'],
+    haantum: ['ha', 'antum'],
+    yabnaomma: ['ya', 'bna', 'omma'],
+    malee: ['ma', 'lee'],
+    waallawi: ['waal', 'lawi'],
   };
 
   // Seed basmala as it's removed before from everywhere
@@ -258,6 +248,11 @@ function main() {
     ['مِن', 'من', 'min', 'min'],
     ['سُلَیمَٰنَ', 'سلمان', 'sulaymana', 'sulaymana'],
     ['وَإِنَّهُ', 'وانه', 'wainnahu', 'wainnahu'],
+
+    //refactor records consistency
+    ['يَبْنَؤُمَّ', 'يبنوام', 'yabnaomma', 'ybnuom'],
+    ['مَالِي', 'مالي', 'malee', 'male'],
+    ['وَأَلَّوِ', 'والو', 'waallawi', 'walw'],
   ];
   const not_matched_words: MismatchedWord[] = [];
 
