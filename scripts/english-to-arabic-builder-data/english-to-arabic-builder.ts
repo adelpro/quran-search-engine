@@ -230,7 +230,7 @@ interface ExportedData {
 
 async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
   const limit = pLimit(500);
-  const wordMap = JSON.parse(readFileSync('../src/data/word-map.json', 'utf8'));
+  const wordMap = JSON.parse(readFileSync('../../src/data/word-map.json', 'utf8'));
   async function mapArabicToRoot(word: string, retries = 3, timeoutMs = 30000): Promise<string> {
     const normalize = (w: string) => w.replace(/[\s-]/g, '');
     if (word in wordMap) {
@@ -260,7 +260,7 @@ async function main(): Promise<void> {
   const sourceData: Record<string, any> = JSON.parse(raw);
   const dictMap: Record<string, DictionaryEntry> = {};
 
-  const quran: AyaMap = arrayToMap(JSON.parse(readFileSync('../src/data/quran.json', 'utf8')));
+  const quran: AyaMap = arrayToMap(JSON.parse(readFileSync('../../src/data/quran.json', 'utf8')));
 
   const splitFixes: { key: string; splitsWords: string[] }[] = [
     { key: '37:130:3', splitsWords: ['إلياسين'] },
@@ -320,7 +320,7 @@ async function main(): Promise<void> {
     }
   }
 
-  writeFileSync('english-arabic-dictionary.json', JSON.stringify(exportFormat, null, 2));
+  writeFileSync('quran-english-arabic-roots.json', JSON.stringify(exportFormat, null, 2));
   writeFileSync('debug_nlp_mapped_words.json', JSON.stringify(mappedNlpWords, null, 2));
   writeFileSync(
     'debug_no_meaning_sentence.json',
