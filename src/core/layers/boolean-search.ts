@@ -27,7 +27,10 @@ export function hasBooleanOperators(query: string): boolean {
  * // Returns: "محمد رسول"
  */
 export function clearBooleanOperators(query: string): string {
-  return query.replace(/[+-|]/g, '').trim().replace(/\s+/g, ' ');
+  return query
+    .replace(/[+|\\-]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 // ==================== Boolean Query Parser ====================

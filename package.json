@@ -33,8 +33,8 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest",
-    "lint": "npx eslint . --cache --concurrency=auto --max-warnings=0",
-    "lint:fix": "npx eslint . --fix --cache --concurrency=auto",
+    "lint": "npx eslint . --cache --max-warnings=0",
+    "lint:fix": "npx eslint . --fix --cache",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.agent\"",
     "docs:start": "cd docs && npx fumapress",
     "format": "prettier --write .",
@@ -57,7 +57,7 @@
   "license": "MIT",
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "npx eslint --fix --cache --concurrency=auto",
+      "npx eslint --fix --cache",
       "prettier --write"
     ]
   },
@@ -87,10 +87,6 @@
     "fuse.js": "^7.0.0"
   },
   "size-limit": [
-    {
-      "path": "dist/index.js",
-      "limit": "2 MB"
-    },
     {
       "path": "dist/index.mjs",
       "limit": "2 MB"
