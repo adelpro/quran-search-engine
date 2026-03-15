@@ -27,3 +27,11 @@ export {
   type ValidationResult,
 } from './utils/schema';
 export { hasBooleanOperators, clearBooleanOperators } from './core/layers/boolean-search';
+
+export {
+  createSearchWorker,
+  supportsWorkers,
+  type CreateSearchWorkerOptions,
+  type FallbackDependencies,
+  type SearchWorkerClient,
+} from './worker';
