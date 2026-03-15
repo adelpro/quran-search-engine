@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js';
-import phoneticData from '../data/phonetic_inverted_index.json';
+import phoneticData from '../data/phonetic.json';
 
 type PhoneticDictionary = Record<string, string[]>;
 

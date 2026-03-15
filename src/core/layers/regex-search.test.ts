@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { validateRegex, performRegexSearch } from './regex-search';
-import { search } from './search';
-import { InvalidRegexError } from '../errors';
-import type { QuranText, WordMap, MorphologyAya } from '../types';
+import { search } from '../search';
+import { InvalidRegexError } from '../../errors';
+import type { QuranText, WordMap, MorphologyAya, ScoredVerse } from '../../types';
 
 // ── shared mock data ──────────────────────────────────────────────────────────
 
@@ -123,8 +123,8 @@ describe('performRegexSearch', () => {
     const results = performRegexSearch(re, mockQuranData);
     // verses 1 (الرحيم) and 3 (الرحيم) both end with يم
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results.every((r) => r.matchType === 'regex')).toBe(true);
-    expect(results.every((r) => r.matchScore === 1)).toBe(true);
+    expect(results.every((r: ScoredVerse<QuranText>) => r.matchType === 'regex')).toBe(true);
+    expect(results.every((r: ScoredVerse<QuranText>) => r.matchScore === 1)).toBe(true);
   });
 
   it('returns empty array when no verse matches', () => {
@@ -135,15 +135,15 @@ describe('performRegexSearch', () => {
   it('all results have empty matchedTokens', () => {
     const re = validateRegex('الله');
     const results = performRegexSearch(re, mockQuranData);
-    expect(results.every((r) => r.matchedTokens.length === 0)).toBe(true);
+    expect(results.every((r: ScoredVerse<QuranText>) => r.matchedTokens.length === 0)).toBe(true);
   });
 
   it('matches against normalized text (ignores diacritics)', () => {
     // "الرَّحْمَنِ" with tashkeel should still match via normalization
     const re = validateRegex('الرحمن');
     const results = performRegexSearch(re, mockQuranData);
-    expect(results.some((r) => r.gid === 1)).toBe(true);
-    expect(results.some((r) => r.gid === 3)).toBe(true);
+    expect(results.some((r: ScoredVerse<QuranText>) => r.gid === 1)).toBe(true);
+    expect(results.some((r: ScoredVerse<QuranText>) => r.gid === 3)).toBe(true);
   });
 });
 
@@ -157,7 +157,7 @@ describe('search() with isRegex: true', () => {
       isRegex: true,
     });
     expect(result.results.length).toBeGreaterThan(0);
-    expect(result.results.every((r) => r.matchType === 'regex')).toBe(true);
+    expect(result.results.every((r: ScoredVerse<QuranText>) => r.matchType === 'regex')).toBe(true);
     expect(result.counts.regex).toBe(result.counts.total);
     expect(result.counts.simple).toBe(0);
     expect(result.counts.lemma).toBe(0);
@@ -230,6 +230,6 @@ describe('search() with isRegex: true', () => {
       isRegex: false,
     });
     // Should use the normal pipeline, not the regex branch
-    expect(result.results.every((r) => r.matchType !== 'regex')).toBe(true);
+    expect(result.results.every((r: ScoredVerse<QuranText>) => r.matchType !== 'regex')).toBe(true);
   });
 });

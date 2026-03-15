@@ -148,14 +148,14 @@ import { validateRegex } from 'quran-search-engine';
 
 // UI validation before submitting the search
 try {
-  validateRegex(userInput);  // valid pattern
+  validateRegex(userInput); // valid pattern
   // Safe to call search() with { isRegex: true }
 } catch (e) {
   // Show validation error to the user
 }
 
 validateRegex('^.*ون$'); // Returns compiled RegExp
-validateRegex('(a+)+');   // Throws InvalidRegexError (nested quantifiers)
+validateRegex('(a+)+'); // Throws InvalidRegexError (nested quantifiers)
 ```
 
 #### Using regex via `search()`

@@ -6,6 +6,7 @@ import {
   buildInvertedIndex,
   loadInvertedIndex,
 } from './loader';
+import type { QuranText, MorphologyAya } from '../types';
 import fs from 'fs';
 
 describe('Loader Functions', () => {
@@ -168,12 +169,42 @@ describe('Loader Functions', () => {
 });
 
 describe('buildInvertedIndex', () => {
+  // Mock data for isolation
+  const mockQuranData: QuranText[] = [
+    { gid: 1, standard: 'بسم الله الرحمن الرحيم', uthmani: 'test' } as QuranText,
+    { gid: 2, standard: 'الحمد لله رب العالمين', uthmani: 'test' } as QuranText,
+    { gid: 3, standard: 'الرحمن الرحيم', uthmani: 'test' } as QuranText,
+  ];
+
+  const mockMorphologyMap = new Map<number, MorphologyAya>([
+    [
+      1,
+      {
+        gid: 1,
+        lemmas: ['بسم', 'الله', 'الرحمن', 'الرحيم'],
+        roots: ['ب س م', 'ا ل ه', 'ر ح م', 'ر ح م'],
+      },
+    ],
+    [
+      2,
+      {
+        gid: 2,
+        lemmas: ['الحمد', 'لله', 'رب', 'العالمين'],
+        roots: ['ح م د', 'ا ل ه', 'ر ب ب', 'ع ل م'],
+      },
+    ],
+    [
+      3,
+      {
+        gid: 3,
+        lemmas: ['الرحمن', 'الرحيم'],
+        roots: ['ر ح م', 'ر ح م'],
+      },
+    ],
+  ]);
+
   it('should build indices from real data', async () => {
-    const [morphologyMap, wordMap, quranData] = await Promise.all([
-      loadMorphology(),
-      loadWordMap(),
-      loadQuranData(),
-    ]);
+    const [quranData, morphologyMap] = await Promise.all([loadQuranData(), loadMorphology()]);
     const index = buildInvertedIndex(morphologyMap, quranData);
 
     expect(index.lemmaIndex).toBeInstanceOf(Map);
@@ -184,28 +215,33 @@ describe('buildInvertedIndex', () => {
     expect(index.wordIndex.size).toBeGreaterThan(0);
   });
 
-  it('should have GID sets as values', async () => {
-    const [morphologyMap, wordMap, quranData] = await Promise.all([
-      loadMorphology(),
-      loadWordMap(),
-      loadQuranData(),
-    ]);
-    const index = buildInvertedIndex(morphologyMap, quranData);
+  it('should map normalized lemmas to correct GIDs', () => {
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
 
-    // Check a lemma entry has a Set of numbers
-    const firstLemmaEntry = index.lemmaIndex.values().next().value;
-    expect(firstLemmaEntry).toBeInstanceOf(Set);
-    expect(firstLemmaEntry!.size).toBeGreaterThan(0);
+    // "الرحمن" appears in gid 1 and gid 3
+    const rahmanGids = index.lemmaIndex.get('الرحمن');
+    expect(rahmanGids).toBeDefined();
+    expect(rahmanGids!.has(1)).toBe(true);
+    expect(rahmanGids!.has(3)).toBe(true);
+  });
 
-    // Check a root entry has a Set of numbers
-    const firstRootEntry = index.rootIndex.values().next().value;
-    expect(firstRootEntry).toBeInstanceOf(Set);
-    expect(firstRootEntry!.size).toBeGreaterThan(0);
+  it('should map normalized roots to correct GIDs', () => {
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
 
-    // Check a word entry has a Set of numbers
-    const firstWordEntry = index.wordIndex.values().next().value;
-    expect(firstWordEntry).toBeInstanceOf(Set);
-    expect(firstWordEntry!.size).toBeGreaterThan(0);
+    // Root "ر ح م" appears in gid 1 and gid 3
+    const rahmRoot = index.rootIndex.get('ر ح م');
+    expect(rahmRoot).toBeDefined();
+    expect(rahmRoot!.has(1)).toBe(true);
+    expect(rahmRoot!.has(3)).toBe(true);
+  });
+
+  it('should handle empty morphology map', () => {
+    const emptyMap = new Map<number, MorphologyAya>();
+    const index = buildInvertedIndex(emptyMap, mockQuranData);
+
+    expect(index.lemmaIndex.size).toBe(0);
+    expect(index.rootIndex.size).toBe(0);
+    expect(index.wordIndex.size).toBeGreaterThan(0);
   });
 });
 
@@ -220,10 +256,9 @@ describe('loadInvertedIndex', () => {
   });
 
   it('should have Set<number> values matching buildInvertedIndex output', async () => {
-    const [loaded, morphologyMap, wordMap, quranData] = await Promise.all([
+    const [loaded, morphologyMap, quranData] = await Promise.all([
       loadInvertedIndex(),
       loadMorphology(),
-      loadWordMap(),
       loadQuranData(),
     ]);
     const built = buildInvertedIndex(morphologyMap, quranData);
