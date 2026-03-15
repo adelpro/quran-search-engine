@@ -1207,6 +1207,8 @@ const results = search(
 
 This avoids rebuilding the index (~5-20ms) on every keystroke.
 
+For benchmarking, memory profiling, worker offloading, and runnable benchmark scripts, see the [Performance Guide](docs/performance.md).
+
 **Key Differences from Unit Tests:**
 
 - **Scope**: Integration test vs. isolated unit tests
