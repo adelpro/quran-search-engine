@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { parse } from 'csv-parse/sync';
 
 type MismatchedWord = {
   surah: number;
@@ -194,9 +193,16 @@ function main() {
   const quranJsonPath = '../../src/data/quran.json';
   const quranContent = fs.readFileSync(quranJsonPath, 'utf-8');
 
-  const quranRows = JSON.parse(quranContent);
+  const quranRows = JSON.parse(quranContent) as Array<{
+    gid?: number;
+    aya_id?: number;
+    standard?: string;
+    page_id?: number;
+    sura_id?: number;
+    juz_id?: number;
+  }>;
 
-  const ayahData = quranRows.map((row: any) => ({
+  const ayahData = quranRows.map((row) => ({
     id: String(row.gid ?? ''),
     number: String(row.aya_id ?? ''),
     text: row.standard ?? '',
@@ -208,6 +214,7 @@ function main() {
     sajda: '', // not present in JSON
     created_at: '',
     updated_at: '',
+    normalized_text: '',
   }));
 
   const ayahLookup = new Map<string, (typeof ayahData)[0]>();

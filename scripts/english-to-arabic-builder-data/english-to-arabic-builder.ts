@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import pLimit from 'p-limit';
 import natural from 'natural';
 
@@ -228,16 +228,25 @@ interface ExportedData {
   arabic: string[];
 }
 
-async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
+async function extractArabicRoots(
+  dataset: Record<string, DictionaryEntry>,
+): Promise<ExportedData[]> {
   const limit = pLimit(500);
-  const wordMap = JSON.parse(readFileSync('../../src/data/word-map.json', 'utf8'));
-  async function mapArabicToRoot(word: string, retries = 3, timeoutMs = 30000): Promise<string> {
+  const wordMap: Record<
+    string,
+    {
+      root?: string;
+    }
+  > = JSON.parse(readFileSync('../../src/data/word-map.json', 'utf8'));
+
+  const mapArabicToRoot = async (word: string): Promise<string> => {
     const normalize = (w: string) => w.replace(/[\s-]/g, '');
-    if (word in wordMap) {
-      return normalize(wordMap[word].root);
+    const entry = wordMap[word];
+    if (entry?.root) {
+      return normalize(entry.root);
     }
     return '';
-  }
+  };
   const entries = Object.values(dataset);
 
   const exportedData = await Promise.all(
