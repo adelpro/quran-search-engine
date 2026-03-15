@@ -1,3 +1,5 @@
+/* global self, postMessage */
+
 import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from '../utils/loader';
 import { search } from '../core/search';
 import { LRUCache } from '../core/lru-cache';

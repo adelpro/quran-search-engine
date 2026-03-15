@@ -14,7 +14,7 @@ import type { WorkerRequest, WorkerResponse, SearchWorkerClient } from './types'
 // ── Feature detection ──────────────────────────────────────────
 
 export function supportsWorkers(): boolean {
-  return typeof Worker !== 'undefined';
+  return typeof globalThis.Worker !== 'undefined';
 }
 
 // ── requestId generation ───────────────────────────────────────
@@ -27,7 +27,12 @@ function generateRequestId(): string {
 // ── Worker-backed client ───────────────────────────────────────
 
 function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
-  const worker = new Worker(workerUrl, { type: 'module' });
+  const WorkerCtor = globalThis.Worker;
+  if (!WorkerCtor) {
+    throw new Error('Web Workers are not supported in this environment.');
+  }
+
+  const worker = new WorkerCtor(workerUrl, { type: 'module' });
 
   const pending = new Map<
     string,
