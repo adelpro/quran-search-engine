@@ -1,0 +1,107 @@
+import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from '../utils/loader';
+import { search } from '../core/search';
+import { LRUCache } from '../core/lru-cache';
+import type { QuranText, MorphologyAya, WordMap, SearchResponse, InvertedIndex } from '../types';
+import type { WorkerRequest, InitDataResponse, SearchResultResponse, ErrorResponse } from './types';
+
+// ── Worker-scoped state ────────────────────────────────────────
+
+let quranData: QuranText[] | null = null;
+let morphologyMap: Map<number, MorphologyAya> | null = null;
+let wordMap: WordMap | null = null;
+let invertedIndex: InvertedIndex | null = null;
+const cache = new LRUCache<string, SearchResponse<QuranText>>(100);
+
+// ── Helpers ────────────────────────────────────────────────────
+
+function postTyped(msg: InitDataResponse | SearchResultResponse<QuranText> | ErrorResponse): void {
+  postMessage(msg);
+}
+
+// ── Message handler ────────────────────────────────────────────
+
+self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
+  const msg = event.data;
+
+  switch (msg.type) {
+    case 'INIT_DATA': {
+      try {
+        const [qd, morph, wm] = await Promise.all([
+          loadQuranData(),
+          loadMorphology(),
+          loadWordMap(),
+        ]);
+
+        quranData = qd;
+        morphologyMap = morph;
+        wordMap = wm;
+        invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+
+        postTyped({
+          type: 'INIT_DATA_RESULT',
+          requestId: msg.requestId,
+          success: true,
+        });
+      } catch (err) {
+        postTyped({
+          type: 'INIT_DATA_RESULT',
+          requestId: msg.requestId,
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      break;
+    }
+
+    case 'RUN_SEARCH': {
+      const start = performance.now();
+
+      if (!quranData || !morphologyMap || !wordMap) {
+        postTyped({
+          type: 'ERROR',
+          requestId: msg.requestId,
+          error: 'Worker data not initialized. Call INIT_DATA first.',
+        });
+        return;
+      }
+
+      try {
+        const result = search(
+          msg.query,
+          quranData,
+          morphologyMap,
+          wordMap,
+          msg.options,
+          msg.pagination,
+          undefined,
+          cache,
+          invertedIndex ?? undefined,
+        );
+
+        postTyped({
+          type: 'SEARCH_RESULT',
+          requestId: msg.requestId,
+          data: result,
+          timingMs: performance.now() - start,
+        });
+      } catch (err) {
+        postTyped({
+          type: 'ERROR',
+          requestId: msg.requestId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      break;
+    }
+
+    case 'DISPOSE': {
+      cache.clear();
+      quranData = null;
+      morphologyMap = null;
+      wordMap = null;
+      invertedIndex = null;
+      self.close();
+      break;
+    }
+  }
+};

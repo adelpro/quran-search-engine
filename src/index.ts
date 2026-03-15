@@ -23,3 +23,12 @@ export {
   type SchemaError,
   type ValidationResult,
 } from './utils/schema';
+
+// Worker utilities (browser-only, opt-in)
+export {
+  createSearchWorker,
+  supportsWorkers,
+  type CreateSearchWorkerOptions,
+  type FallbackDependencies,
+  type SearchWorkerClient,
+} from './worker';

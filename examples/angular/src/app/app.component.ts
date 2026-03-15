@@ -8,12 +8,15 @@ import {
   loadWordMap,
   search,
   LRUCache,
+  createSearchWorker,
+  supportsWorkers,
   type AdvancedSearchOptions,
   type MatchType,
   type MorphologyAya,
   type QuranText,
   type ScoredVerse,
   type SearchResponse,
+  type SearchWorkerClient,
   type WordMap,
 } from 'quran-search-engine';
 
@@ -375,21 +378,37 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private debounceHandle: number | null = null;
   private searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
+  private workerClient: SearchWorkerClient | null = null;
 
   async ngOnInit(): Promise<void> {
     this.loadState = 'loading';
     this.errorMessage = '';
 
     try {
-      const [quranData, morphologyMap, wordMap] = await Promise.all([
-        loadQuranData(),
-        loadMorphology(),
-        loadWordMap(),
-      ]);
+      if (supportsWorkers()) {
+        try {
+          const client = createSearchWorker({
+            workerUrl: new URL('quran-search-engine/worker', import.meta.url),
+          });
+          await client.initData();
+          this.workerClient = client;
+        } catch (err) {
+          console.warn('Web Worker init failed, falling back to main thread:', err);
+        }
+      }
 
-      this.quranData = quranData;
-      this.morphologyMap = morphologyMap;
-      this.wordMap = wordMap;
+      if (!this.workerClient) {
+        const [quranData, morphologyMap, wordMap] = await Promise.all([
+          loadQuranData(),
+          loadMorphology(),
+          loadWordMap(),
+        ]);
+
+        this.quranData = quranData;
+        this.morphologyMap = morphologyMap;
+        this.wordMap = wordMap;
+      }
+
       this.loadState = 'ready';
     } catch (err: unknown) {
       this.loadState = 'error';
@@ -401,6 +420,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.debounceHandle !== null) {
       window.clearTimeout(this.debounceHandle);
     }
+    this.workerClient?.terminate();
   }
 
   onQueryChange(): void {
@@ -414,8 +434,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   runSearch(resetPage: boolean): void {
-    if (!this.quranData || !this.morphologyMap || !this.wordMap) return;
-
     const trimmed = this.query.trim();
     if (!trimmed) {
       this.response = null;
@@ -429,12 +447,24 @@ export class AppComponent implements OnInit, OnDestroy {
       lemma: this.options.lemma,
       root: this.options.root,
       fuzzy: this.options.fuzzy,
-      //+
       suraId: this.options.suraId,
       juzId: this.options.juzId,
       suraName: this.options.suraName,
       semantic: this.options.semantic,
     };
+
+    if (this.workerClient) {
+      this.workerClient
+        .runSearch(trimmed, searchOptions, { page: this.page, limit: this.limit })
+        .then((res) => {
+          this.response = res;
+          this.rebuildHighlightCache();
+        })
+        .catch((err) => console.error('Worker search error:', err));
+      return;
+    }
+
+    if (!this.quranData || !this.morphologyMap || !this.wordMap) return;
 
     this.response = search(
       trimmed,
@@ -443,8 +473,8 @@ export class AppComponent implements OnInit, OnDestroy {
       this.wordMap,
       searchOptions,
       { page: this.page, limit: this.limit },
-      undefined, // preComputedFuseIndex
-      this.searchCache, // LRU cache — identical queries return cached results
+      undefined,
+      this.searchCache,
     );
 
     this.rebuildHighlightCache();

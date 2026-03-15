@@ -37,6 +37,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
 - [Performance Optimization](#performance-optimization-advanced)
+- [Web Worker Offloading](#web-worker-offloading-browser)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
 - [Example apps](#example-apps)
@@ -1163,6 +1164,43 @@ const results = search(
 
 This avoids rebuilding the index (~5-20ms) on every keystroke.
 
+### Web Worker Offloading (Browser)
+
+For browser apps, you can run the entire search pipeline off the main thread using the built-in Web Worker support. This keeps the UI responsive even during heavy queries.
+
+```ts
+import { createSearchWorker, supportsWorkers } from 'quran-search-engine';
+
+// 1. Create a worker client (with automatic fallback)
+const client = createSearchWorker({
+  // URL to the worker script — most bundlers support this pattern:
+  workerUrl: new URL('quran-search-engine/worker', import.meta.url),
+  // Optional: provide pre-loaded data for the fallback path
+  // (used when Workers are not available, e.g. in older browsers)
+  // fallbackDeps: { quranData, morphologyMap, wordMap },
+});
+
+// 2. Initialize data inside the Worker (loads quran.json, morphology, etc.)
+await client.initData();
+
+// 3. Run searches — returns a Promise<SearchResponse>
+const response = await client.runSearch(
+  'الرحمن',
+  { lemma: true, root: true, fuzzy: true, semantic: true },
+  { page: 1, limit: 20 },
+);
+
+// 4. Clean up when done
+client.terminate();
+```
+
+**How it works:**
+
+- When `Worker` is available and `workerUrl` is provided, data loading and search execution happen entirely inside a dedicated Web Worker thread.
+- If Worker creation fails (e.g. CSP restrictions) or the browser doesn't support Workers, the factory falls back to running search on the main thread using the provided `fallbackDeps`.
+- The Worker maintains its own internal `LRUCache`, so repeated queries are fast without any extra setup.
+- Use `supportsWorkers()` to check availability before constructing the client if you want explicit control.
+
 **Key Differences from Unit Tests:**
 
 - **Scope**: Integration test vs. isolated unit tests
@@ -1180,10 +1218,12 @@ src/
 │   ├── search.test.ts       # Search algorithm, inverted index, LRU cache, and Fuse tests
 │   ├── lru-cache.test.ts    # LRU cache tests
 │   └── tokenization.test.ts # Token matching tests
-└── utils/
-    ├── loader.test.ts       # Data loading tests
-    ├── normalization.test.ts # Text processing tests
-    └── highlight.ts         # Highlighting utilities
+├── utils/
+│   ├── loader.test.ts       # Data loading tests
+│   ├── normalization.test.ts # Text processing tests
+│   └── highlight.ts         # Highlighting utilities
+└── worker/
+    └── searchWorkerClient.test.ts # Worker client + fallback tests
 ```
 
 ## Development
