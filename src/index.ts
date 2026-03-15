@@ -27,12 +27,3 @@ export {
   type ValidationResult,
 } from './utils/schema';
 export { hasBooleanOperators, clearBooleanOperators } from './core/layers/boolean-search';
-
-// Worker utilities (browser-only, opt-in)
-export {
-  createSearchWorker,
-  supportsWorkers,
-  type CreateSearchWorkerOptions,
-  type FallbackDependencies,
-  type SearchWorkerClient,
-} from './worker';
