@@ -191,27 +191,24 @@ function main() {
   });
 
   //Read quran csv quran from raw_data dir
-  const ayahCsvPath = path.join(__dirname, 'raw_data', 'ayahs.csv');
-  const ayahCsvContent = fs.readFileSync(ayahCsvPath, 'utf-8');
-  const parsedRows: string[][] = parse(ayahCsvContent, { skip_empty_lines: true });
-  const ayahColumns = [
-    'id',
-    'number',
-    'text',
-    'number_in_surah',
-    'page',
-    'sura_id',
-    'hizb_id',
-    'juz_id',
-    'sajda',
-    'created_at',
-    'updated_at',
-  ];
-  const ayahData = parsedRows.map((row) => {
-    const rec: Record<string, string> = {};
-    ayahColumns.forEach((c, i) => (rec[c] = row[i] ?? ''));
-    return rec;
-  });
+  const quranJsonPath = '../../src/data/quran.json';
+  const quranContent = fs.readFileSync(quranJsonPath, 'utf-8');
+
+  const quranRows = JSON.parse(quranContent);
+
+  const ayahData = quranRows.map((row: any) => ({
+    id: String(row.gid ?? ''),
+    number: String(row.aya_id ?? ''),
+    text: row.standard ?? '',
+    number_in_surah: String(row.aya_id ?? ''),
+    page: String(row.page_id ?? ''),
+    sura_id: String(row.sura_id ?? ''),
+    hizb_id: '', // not present in JSON
+    juz_id: String(row.juz_id ?? ''),
+    sajda: '', // not present in JSON
+    created_at: '',
+    updated_at: '',
+  }));
 
   const ayahLookup = new Map<string, (typeof ayahData)[0]>();
   ayahData.forEach((a) => ayahLookup.set(`${Number(a.sura_id)}-${Number(a.number_in_surah)}`, a));
@@ -232,14 +229,30 @@ function main() {
     feema: ['fee', 'ma'],
     mimma: ['min', 'ma'],
     amman: ['am', 'man'],
+    haantum: ['ha', 'antum'],
+    yabnaomma: ['ya', 'bna', 'omma'],
+    malee: ['ma', 'lee'],
+    waallawi: ['waal', 'lawi'],
   };
 
   // Seed basmala as it's removed before from everywhere
   const allRecords: Array<[string, string, string, string]> = [
+    // Manually add the basmala because it was removed during the cleaning step.
     ['بِسْمِ', 'بسم', 'Bismi', 'bsm'],
     ['ٱللَّهِ', 'الله', 'Allahi', 'allh'],
     ['ٱلرَّحْمَٰنِ', 'الرحمان', 'alrrahmani', 'alrhman'],
     ['ٱلرَّحِيمِ', 'الرحيم', 'alrraheemi', 'alrhym'],
+
+    // Manually add 27:30 because it contains the basmala, which was removed earlier and causes misalignment.
+    ['إِنَّهُ', 'انه', 'Innahu', 'innahu'],
+    ['مِن', 'من', 'min', 'min'],
+    ['سُلَیمَٰنَ', 'سلمان', 'sulaymana', 'sulaymana'],
+    ['وَإِنَّهُ', 'وانه', 'wainnahu', 'wainnahu'],
+
+    //refactor records consistency
+    ['يَبْنَؤُمَّ', 'يبنوام', 'yabnaomma', 'ybnuom'],
+    ['مَالِي', 'مالي', 'malee', 'male'],
+    ['وَأَلَّوِ', 'والو', 'waallawi', 'walw'],
   ];
   const not_matched_words: MismatchedWord[] = [];
 
