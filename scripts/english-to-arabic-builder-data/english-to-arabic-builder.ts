@@ -184,7 +184,7 @@ async function normalizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
   return updatedQuran;
 }
 
-function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: boolean) {
+function validateLengths(quran: AyaMap, parsed: Record<string, unknown>, tryToFix: boolean) {
   const maxWordsPerAya: Record<string, number> = {};
 
   for (const [key] of Object.entries(parsed)) {
@@ -266,7 +266,7 @@ async function extractArabicRoots(
 }
 async function main(): Promise<void> {
   const raw = readFileSync('colored-english-wbw-translation.json', 'utf8');
-  const sourceData: Record<string, any> = JSON.parse(raw);
+  const sourceData: Record<string, unknown> = JSON.parse(raw);
   const dictMap: Record<string, DictionaryEntry> = {};
 
   const quran: AyaMap = arrayToMap(JSON.parse(readFileSync('../../src/data/quran.json', 'utf8')));
