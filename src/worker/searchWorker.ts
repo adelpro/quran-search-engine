@@ -2,7 +2,7 @@
 
 import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from '../utils/loader';
 import { search } from '../core/search';
-import { LRUCache } from '../core/lru-cache';
+import { LRUCache } from '../utils/lru-cache';
 import type { QuranText, MorphologyAya, WordMap, SearchResponse, InvertedIndex } from '../types';
 import type { WorkerRequest, InitDataResponse, SearchResultResponse, ErrorResponse } from './types';
 

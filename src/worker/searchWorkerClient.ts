@@ -1,5 +1,5 @@
 import { search } from '../core/search';
-import { LRUCache } from '../core/lru-cache';
+import { LRUCache } from '../utils/lru-cache';
 import type {
   AdvancedSearchOptions,
   PaginationOptions,
@@ -34,13 +34,8 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
 
   const worker = new WorkerCtor(workerUrl, { type: 'module' });
 
-  const pending = new Map<
-    string,
-    {
-      resolve: (value: void | SearchResponse<QuranText>) => void;
-      reject: (reason: unknown) => void;
-    }
-  >();
+  type PendingResolve = (value: void | SearchResponse<QuranText>) => void;
+  const pending = new Map<string, { resolve: PendingResolve; reject: (reason: unknown) => void }>();
 
   worker.onmessage = (event: MessageEvent<WorkerResponse<QuranText>>) => {
     const msg = event.data;
@@ -90,7 +85,10 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
     initData(): Promise<void> {
       const requestId = generateRequestId();
       return new Promise<void>((resolve, reject) => {
-        pending.set(requestId, { resolve, reject });
+        pending.set(requestId, {
+          resolve: resolve as PendingResolve,
+          reject,
+        });
         post({ type: 'INIT_DATA', requestId });
       });
     },
@@ -102,7 +100,10 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
     ): Promise<SearchResponse> {
       const requestId = generateRequestId();
       return new Promise<SearchResponse>((resolve, reject) => {
-        pending.set(requestId, { resolve, reject });
+        pending.set(requestId, {
+          resolve: resolve as PendingResolve,
+          reject,
+        });
         post({ type: 'RUN_SEARCH', requestId, query, options, pagination });
       });
     },
