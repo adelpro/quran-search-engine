@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/searchWorker.d.ts",
+      "import": "./dist/worker/searchWorker.mjs",
+      "require": "./dist/worker/searchWorker.js"
     }
   },
   "files": [

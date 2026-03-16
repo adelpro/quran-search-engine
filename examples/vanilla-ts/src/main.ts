@@ -4,10 +4,13 @@ import {
   loadWordMap,
   search,
   LRUCache,
+  createSearchWorker,
+  supportsWorkers,
   type QuranText,
   type MorphologyAya,
   type WordMap,
   type SearchResponse,
+  type SearchWorkerClient,
   getHighlightRanges,
 } from 'quran-search-engine';
 
@@ -17,6 +20,7 @@ class QuranSearchApp {
   private wordMap: WordMap | null = null;
   private loading = true;
   private cache = new LRUCache<string, SearchResponse>(50);
+  private workerClient: SearchWorkerClient | null = null;
 
   private searchInput: HTMLInputElement;
   private lemmaCheckbox: HTMLInputElement;
@@ -46,14 +50,29 @@ class QuranSearchApp {
   private async init() {
     try {
       this.showLoading();
-      const [data, morphology, dictionary] = await Promise.all([
-        loadQuranData(),
-        loadMorphology(),
-        loadWordMap(),
-      ]);
-      this.quranData = data;
-      this.morphologyMap = morphology;
-      this.wordMap = dictionary;
+
+      if (supportsWorkers()) {
+        try {
+          const client = createSearchWorker({
+            workerUrl: new URL('quran-search-engine/worker', import.meta.url),
+          });
+          await client.initData();
+          this.workerClient = client;
+        } catch (err) {
+          console.warn('Web Worker init failed, falling back to main thread:', err);
+        }
+      }
+
+      if (!this.workerClient) {
+        const [data, morphology, dictionary] = await Promise.all([
+          loadQuranData(),
+          loadMorphology(),
+          loadWordMap(),
+        ]);
+        this.quranData = data;
+        this.morphologyMap = morphology;
+        this.wordMap = dictionary;
+      }
     } catch (error) {
       console.error('Failed to load Quran data:', error);
       this.showError('Failed to load Quran data');
@@ -79,7 +98,7 @@ class QuranSearchApp {
     }) as T;
   }
 
-  private handleSearch() {
+  private async handleSearch() {
     const query = this.searchInput.value.trim();
     if (!query || this.loading) {
       this.resultsDiv.innerHTML = '';
@@ -91,23 +110,28 @@ class QuranSearchApp {
       root: this.rootCheckbox.checked,
       fuzzy: this.fuzzyCheckbox.checked,
       semantic: this.semanticCheckbox.checked,
-      //new
       suraId: this.suraIdInput.value ? parseInt(this.suraIdInput.value) : undefined,
       juzId: this.juzIdInput.value ? parseInt(this.juzIdInput.value) : undefined,
       suraName: this.suraNameInput.value || undefined,
     };
 
     try {
-      const response = search(
-        query,
-        this.quranData,
-        this.morphologyMap!,
-        this.wordMap!,
-        options,
-        { page: 1, limit: 20 },
-        undefined, // preComputedFuseIndex
-        this.cache, // LRU cache
-      );
+      let response: SearchResponse;
+
+      if (this.workerClient) {
+        response = await this.workerClient.runSearch(query, options, { page: 1, limit: 20 });
+      } else {
+        response = search(
+          query,
+          this.quranData,
+          this.morphologyMap!,
+          this.wordMap!,
+          options,
+          { page: 1, limit: 20 },
+          undefined,
+          this.cache,
+        );
+      }
 
       this.renderResults(response);
     } catch (error) {

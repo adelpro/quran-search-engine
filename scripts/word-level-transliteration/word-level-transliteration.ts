@@ -193,30 +193,29 @@ function main() {
   const quranJsonPath = '../../src/data/quran.json';
   const quranContent = fs.readFileSync(quranJsonPath, 'utf-8');
 
-  const quranRows = JSON.parse(quranContent);
+  const quranRows = JSON.parse(quranContent) as Array<{
+    gid?: number;
+    aya_id?: number;
+    standard?: string;
+    page_id?: number;
+    sura_id?: number;
+    juz_id?: number;
+  }>;
 
-  const ayahData = quranRows.map(
-    (row: {
-      gid?: number;
-      aya_id?: number;
-      standard?: string;
-      page_id?: number;
-      sura_id?: number;
-      juz_id?: number;
-    }) => ({
-      id: String(row.gid ?? ''),
-      number: String(row.aya_id ?? ''),
-      text: row.standard ?? '',
-      number_in_surah: String(row.aya_id ?? ''),
-      page: String(row.page_id ?? ''),
-      sura_id: String(row.sura_id ?? ''),
-      hizb_id: '', // not present in JSON
-      juz_id: String(row.juz_id ?? ''),
-      sajda: '', // not present in JSON
-      created_at: '',
-      updated_at: '',
-    }),
-  );
+  const ayahData = quranRows.map((row) => ({
+    id: String(row.gid ?? ''),
+    number: String(row.aya_id ?? ''),
+    text: row.standard ?? '',
+    number_in_surah: String(row.aya_id ?? ''),
+    page: String(row.page_id ?? ''),
+    sura_id: String(row.sura_id ?? ''),
+    hizb_id: '', // not present in JSON
+    juz_id: String(row.juz_id ?? ''),
+    sajda: '', // not present in JSON
+    created_at: '',
+    updated_at: '',
+    normalized_text: '',
+  }));
 
   const ayahLookup = new Map<string, (typeof ayahData)[0]>();
   ayahData.forEach((a) => ayahLookup.set(`${Number(a.sura_id)}-${Number(a.number_in_surah)}`, a));

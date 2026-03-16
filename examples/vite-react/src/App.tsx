@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
   search,
   LRUCache,
+  createSearchWorker,
+  supportsWorkers,
   type QuranText,
   type MorphologyAya,
   type WordMap,
   type SearchResponse,
+  type SearchWorkerClient,
 } from 'quran-search-engine';
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from './useDebounce';
 import { VerseItem } from './components/VerseItem';
 import './App.css';
 
-// Module-level cache — persists across React re-renders
+// Module-level cache — persists across React re-renders (fallback only)
 const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
 function App() {
@@ -23,6 +26,9 @@ function App() {
   const [morphologyMap, setMorphologyMap] = useState<Map<number, MorphologyAya> | null>(null);
   const [wordMap, setWordMap] = useState<WordMap | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+
+  const workerClient = useRef<SearchWorkerClient | null>(null);
 
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 300);
@@ -36,35 +42,79 @@ function App() {
     semantic: true,
     suraId: undefined as number | undefined,
     juzId: undefined as number | undefined,
-    suraName: '', // Advanced filter by Surah name
+    suraName: '',
   });
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // 1. Initial Data Loading
+  // 1. Initial Data Loading + Worker init
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
       try {
-        const [data, morphology, dictionary] = await Promise.all([
-          loadQuranData(),
-          loadMorphology(),
-          loadWordMap(),
-        ]);
-        setQuranData(data);
-        setMorphologyMap(morphology);
-        setWordMap(dictionary);
+        if (supportsWorkers()) {
+          try {
+            const client = createSearchWorker({
+              workerUrl: new URL(
+                'quran-search-engine/worker',
+                import.meta.url,
+              ),
+            });
+            await client.initData();
+            if (!cancelled) workerClient.current = client;
+          } catch (err) {
+            console.warn('Web Worker init failed, falling back to main thread:', err);
+          }
+        }
+
+        if (!workerClient.current) {
+          const [data, morphology, dictionary] = await Promise.all([
+            loadQuranData(),
+            loadMorphology(),
+            loadWordMap(),
+          ]);
+          if (!cancelled) {
+            setQuranData(data);
+            setMorphologyMap(morphology);
+            setWordMap(dictionary);
+          }
+        }
       } catch (error) {
         console.error('Failed to load Quran data:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     init();
+
+    return () => {
+      cancelled = true;
+      workerClient.current?.terminate();
+    };
   }, []);
 
-  // 2. Search Logic
+  // 2. Search Logic — Worker path (async) or fallback (sync)
   useEffect(() => {
-    if (!loading && quranData.length > 0 && morphologyMap && wordMap && debouncedQuery.trim()) {
+    if (loading || !debouncedQuery.trim()) {
+      setSearchResponse(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    if (workerClient.current) {
+      setSearching(true);
+      workerClient.current
+        .runSearch(debouncedQuery, options, { page: currentPage, limit: PAGE_SIZE })
+        .then((res) => {
+          if (!cancelled) setSearchResponse(res);
+        })
+        .catch((err) => console.error('Worker search error:', err))
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    } else if (quranData.length > 0 && morphologyMap && wordMap) {
       const response = search(
         debouncedQuery,
         quranData,
@@ -72,14 +122,15 @@ function App() {
         wordMap,
         options,
         { page: currentPage, limit: PAGE_SIZE },
-        undefined, // preComputedFuseIndex
-        searchCache, // LRU cache — identical queries return cached results instantly
+        undefined,
+        searchCache,
       );
-
       setSearchResponse(response);
-    } else {
-      setSearchResponse(null);
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedQuery, options, currentPage, quranData, morphologyMap, wordMap, loading]);
 
   // Reset page when query or options change
@@ -113,7 +164,11 @@ function App() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <Search className="search-icon" size={24} />
+        {searching ? (
+          <Loader2 className="search-icon animate-spin" size={24} />
+        ) : (
+          <Search className="search-icon" size={24} />
+        )}
       </div>
 
       <div className="options-group">

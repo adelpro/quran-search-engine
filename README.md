@@ -37,6 +37,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
 - [Performance Optimization](#performance-optimization-advanced)
+- [Web Worker Offloading](#web-worker-offloading-browser)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
 - [Example apps](#example-apps)
@@ -1226,10 +1227,12 @@ src/
 │   ├── search.test.ts       # Search algorithm, inverted index, LRU cache, and Fuse tests
 │   ├── lru-cache.test.ts    # LRU cache tests
 │   └── tokenization.test.ts # Token matching tests
-└── utils/
-    ├── loader.test.ts       # Data loading tests
-    ├── normalization.test.ts # Text processing tests
-    └── highlight.ts         # Highlighting utilities
+├── utils/
+│   ├── loader.test.ts       # Data loading tests
+│   ├── normalization.test.ts # Text processing tests
+│   └── highlight.ts         # Highlighting utilities
+└── worker/
+    └── searchWorkerClient.test.ts # Worker client + fallback tests
 ```
 
 ## Development
