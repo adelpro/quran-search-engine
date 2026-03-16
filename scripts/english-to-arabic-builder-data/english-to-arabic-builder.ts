@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, renameSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import pLimit from 'p-limit';
 import natural from 'natural';
 
@@ -184,7 +184,7 @@ async function normalizeDatasetWithNlp(quran: Record<string, DictionaryEntry>) {
   return updatedQuran;
 }
 
-function validateLengths(quran: AyaMap, parsed: Record<string, any>, tryToFix: boolean) {
+function validateLengths(quran: AyaMap, parsed: Record<string, unknown>, tryToFix: boolean) {
   const maxWordsPerAya: Record<string, number> = {};
 
   for (const [key] of Object.entries(parsed)) {
@@ -231,7 +231,7 @@ interface ExportedData {
 async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
   const limit = pLimit(500);
   const wordMap = JSON.parse(readFileSync('../../src/data/word-map.json', 'utf8'));
-  async function mapArabicToRoot(word: string, retries = 3, timeoutMs = 30000): Promise<string> {
+  async function mapArabicToRoot(word: string, _retries = 3, _timeoutMs = 30000): Promise<string> {
     const normalize = (w: string) => w.replace(/[\s-]/g, '');
     if (word in wordMap) {
       return normalize(wordMap[word].root);
@@ -257,7 +257,7 @@ async function extractArabicRoots(dataset: Record<string, DictionaryEntry>) {
 }
 async function main(): Promise<void> {
   const raw = readFileSync('colored-english-wbw-translation.json', 'utf8');
-  const sourceData: Record<string, any> = JSON.parse(raw);
+  const sourceData: Record<string, unknown> = JSON.parse(raw);
   const dictMap: Record<string, DictionaryEntry> = {};
 
   const quran: AyaMap = arrayToMap(JSON.parse(readFileSync('../../src/data/quran.json', 'utf8')));

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { parse } from 'csv-parse/sync';
 
 type MismatchedWord = {
   surah: number;
@@ -196,19 +195,28 @@ function main() {
 
   const quranRows = JSON.parse(quranContent);
 
-  const ayahData = quranRows.map((row: any) => ({
-    id: String(row.gid ?? ''),
-    number: String(row.aya_id ?? ''),
-    text: row.standard ?? '',
-    number_in_surah: String(row.aya_id ?? ''),
-    page: String(row.page_id ?? ''),
-    sura_id: String(row.sura_id ?? ''),
-    hizb_id: '', // not present in JSON
-    juz_id: String(row.juz_id ?? ''),
-    sajda: '', // not present in JSON
-    created_at: '',
-    updated_at: '',
-  }));
+  const ayahData = quranRows.map(
+    (row: {
+      gid?: number;
+      aya_id?: number;
+      standard?: string;
+      page_id?: number;
+      sura_id?: number;
+      juz_id?: number;
+    }) => ({
+      id: String(row.gid ?? ''),
+      number: String(row.aya_id ?? ''),
+      text: row.standard ?? '',
+      number_in_surah: String(row.aya_id ?? ''),
+      page: String(row.page_id ?? ''),
+      sura_id: String(row.sura_id ?? ''),
+      hizb_id: '', // not present in JSON
+      juz_id: String(row.juz_id ?? ''),
+      sajda: '', // not present in JSON
+      created_at: '',
+      updated_at: '',
+    }),
+  );
 
   const ayahLookup = new Map<string, (typeof ayahData)[0]>();
   ayahData.forEach((a) => ayahLookup.set(`${Number(a.sura_id)}-${Number(a.number_in_surah)}`, a));
