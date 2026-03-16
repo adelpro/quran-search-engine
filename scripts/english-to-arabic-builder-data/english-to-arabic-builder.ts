@@ -239,7 +239,11 @@ async function extractArabicRoots(
     }
   > = JSON.parse(readFileSync('../../src/data/word-map.json', 'utf8'));
 
-  const mapArabicToRoot = async (word: string): Promise<string> => {
+  const mapArabicToRoot = async (
+    word: string,
+    _retries = 3,
+    _timeoutMs = 30000,
+  ): Promise<string> => {
     const normalize = (w: string) => w.replace(/[\s-]/g, '');
     const entry = wordMap[word];
     if (entry?.root) {

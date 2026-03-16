@@ -1208,42 +1208,7 @@ const results = search(
 
 This avoids rebuilding the index (~5-20ms) on every keystroke.
 
-### Web Worker Offloading (Browser)
-
-For browser apps, you can run the entire search pipeline off the main thread using the built-in Web Worker support. This keeps the UI responsive even during heavy queries.
-
-```ts
-import { createSearchWorker, supportsWorkers } from 'quran-search-engine';
-
-// 1. Create a worker client (with automatic fallback)
-const client = createSearchWorker({
-  // URL to the worker script — most bundlers support this pattern:
-  workerUrl: new URL('quran-search-engine/worker', import.meta.url),
-  // Optional: provide pre-loaded data for the fallback path
-  // (used when Workers are not available, e.g. in older browsers)
-  // fallbackDeps: { quranData, morphologyMap, wordMap },
-});
-
-// 2. Initialize data inside the Worker (loads quran.json, morphology, etc.)
-await client.initData();
-
-// 3. Run searches — returns a Promise<SearchResponse>
-const response = await client.runSearch(
-  'الرحمن',
-  { lemma: true, root: true, fuzzy: true, semantic: true },
-  { page: 1, limit: 20 },
-);
-
-// 4. Clean up when done
-client.terminate();
-```
-
-**How it works:**
-
-- When `Worker` is available and `workerUrl` is provided, data loading and search execution happen entirely inside a dedicated Web Worker thread.
-- If Worker creation fails (e.g. CSP restrictions) or the browser doesn't support Workers, the factory falls back to running search on the main thread using the provided `fallbackDeps`.
-- The Worker maintains its own internal `LRUCache`, so repeated queries are fast without any extra setup.
-- Use `supportsWorkers()` to check availability before constructing the client if you want explicit control.
+For benchmarking, memory profiling, worker offloading, and runnable benchmark scripts, see the [Performance Guide](docs/performance.md).
 
 **Key Differences from Unit Tests:**
 
