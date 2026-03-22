@@ -13,9 +13,9 @@
       "require": "./dist/index.js"
     },
     "./worker": {
-      "types": "./dist/worker/searchWorker.d.ts",
-      "import": "./dist/worker/searchWorker.mjs",
-      "require": "./dist/worker/searchWorker.js"
+      "types": "./dist/worker/search-worker.d.ts",
+      "import": "./dist/worker/search-worker.mjs",
+      "require": "./dist/worker/search-worker.js"
     }
   },
   "files": [
