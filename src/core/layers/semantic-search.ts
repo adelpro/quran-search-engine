@@ -1,6 +1,6 @@
 import semanticData from '../../data/semantic.json';
 import { normalizeArabic, isArabic } from '../../utils/normalization';
-import type { VerseInput, ScoredVerse, AdvancedSearchOptions } from '../../types';
+import type { VerseInput, ScoredVerse, AdvancedSearchOptions, InvertedIndex } from '../../types';
 
 interface SemanticConcept {
   english: string[];
@@ -38,6 +38,7 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
   options: AdvancedSearchOptions,
   semanticMap?: Map<string, string[]>,
   originalQuery?: string,
+  invertedIndex?: InvertedIndex,
 ): ScoredVerse<TVerse>[] => {
   if (!options.semantic || !semanticMap) return [];
 
@@ -82,49 +83,93 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
 
   if (matchedArabicWords.size === 0) return [];
 
+  const semanticIndex = invertedIndex?.semanticIndex;
+  const wordIndex = invertedIndex?.wordIndex;
   const results: ScoredVerse<TVerse>[] = [];
+  const matchedGids = new Set<number>();
 
-  for (const verse of quranData.values()) {
-    if (options.suraId && verse.sura_id !== options.suraId) continue;
-    if (options.juzId && verse.juz_id !== options.juzId) continue;
-    if (options.suraName && verse.sura_name !== options.suraName) continue;
-
-    const normalizedVerse = normalizeArabic(verse.standard);
-    const matchedKeywords: string[] = [];
-
-    if (directArabicTokens.length > 0) {
-      for (const keyword of directArabicTokens) {
-        if (normalizedVerse.includes(keyword)) {
-          matchedKeywords.push(keyword);
+  if (semanticIndex) {
+    for (const word of matchedArabicWords) {
+      const gids = semanticIndex.get(word);
+      if (gids) {
+        for (const gid of gids) {
+          matchedGids.add(gid);
         }
       }
     }
+  } else if (wordIndex) {
+    for (const word of matchedArabicWords) {
+      const gids = wordIndex.get(word) || wordIndex.get(normalizeArabic(word));
+      if (gids) {
+        for (const gid of gids) {
+          matchedGids.add(gid);
+        }
+      }
+    }
+  } else {
+    for (const verse of quranData.values()) {
+      if (options.suraId && verse.sura_id !== options.suraId) continue;
+      if (options.juzId && verse.juz_id !== options.juzId) continue;
+      if (options.suraName && verse.sura_name !== options.suraName) continue;
 
-    if (matchedEnglishWords.length > 0) {
-      for (const engWord of matchedEnglishWords) {
-        const arabicSynonyms = semanticMap.get(engWord);
-        if (arabicSynonyms) {
-          for (const synonym of arabicSynonyms) {
-            if (normalizedVerse.includes(synonym)) {
-              matchedKeywords.push(synonym);
+      const normalizedVerse = normalizeArabic(verse.standard);
+      const matchedKeywords: string[] = [];
+
+      if (directArabicTokens.length > 0) {
+        for (const keyword of directArabicTokens) {
+          if (normalizedVerse.includes(keyword)) {
+            matchedKeywords.push(keyword);
+          }
+        }
+      }
+
+      if (matchedEnglishWords.length > 0) {
+        for (const engWord of matchedEnglishWords) {
+          const arabicSynonyms = semanticMap.get(engWord);
+          if (arabicSynonyms) {
+            for (const synonym of arabicSynonyms) {
+              if (normalizedVerse.includes(synonym)) {
+                matchedKeywords.push(synonym);
+              }
             }
           }
         }
       }
-    }
 
-    const arabicSynonymTokens = Array.from(matchedArabicWords).filter(
-      (w) => !directArabicTokens.includes(w),
-    );
-    if (arabicSynonymTokens.length > 0) {
-      for (const synonym of arabicSynonymTokens) {
-        if (normalizedVerse.includes(synonym)) {
-          matchedKeywords.push(synonym);
+      const arabicSynonymTokens = Array.from(matchedArabicWords).filter(
+        (w) => !directArabicTokens.includes(w),
+      );
+      if (arabicSynonymTokens.length > 0) {
+        for (const synonym of arabicSynonymTokens) {
+          if (normalizedVerse.includes(synonym)) {
+            matchedKeywords.push(synonym);
+          }
         }
       }
-    }
 
-    if (matchedKeywords.length === 0) continue;
+      if (matchedKeywords.length > 0) {
+        results.push({
+          ...verse,
+          matchType: 'semantic',
+          matchScore: matchedKeywords.length * 5,
+          matchedTokens: matchedKeywords,
+        });
+      }
+    }
+    return results;
+  }
+
+  for (const gid of matchedGids) {
+    const verse = quranData.get(gid);
+    if (!verse) continue;
+    if (options.suraId && verse.sura_id !== options.suraId) continue;
+    if (options.juzId && verse.juz_id !== options.juzId) continue;
+    if (options.suraName && verse.sura_name !== options.suraName) continue;
+
+    const matchedKeywords = Array.from(matchedArabicWords).filter((word) => {
+      const normalizedVerse = normalizeArabic(verse.standard);
+      return normalizedVerse.includes(word);
+    });
 
     if (matchedKeywords.length > 0) {
       results.push({

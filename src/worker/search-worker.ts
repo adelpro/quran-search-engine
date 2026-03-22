@@ -50,12 +50,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         wordMap = wm;
         semanticMap = semMap;
         phoneticMap = phonMap;
-        invertedIndex = buildInvertedIndex(
-          morphologyMap,
-          quranData,
-          semanticMap ?? undefined,
-          phoneticMap ?? undefined,
-        );
+        invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap ?? undefined);
 
         postTyped({
           type: 'INIT_DATA_RESULT',

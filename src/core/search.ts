@@ -243,6 +243,7 @@ export const search = <TVerse extends VerseInput>(
     options,
     semanticMap,
     operatorFreeQuery,
+    invertedIndex,
   );
 
   // 6. Boolean filtering (if boolean operators were present in query)

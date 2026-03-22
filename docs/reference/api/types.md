@@ -262,7 +262,6 @@ type InvertedIndex = {
   rootIndex: RootIndex;
   wordIndex: WordIndex;
   semanticIndex?: Map<string, Set<number>>;
-  phoneticIndex?: Map<string, Set<number>>;
 };
 ```
 

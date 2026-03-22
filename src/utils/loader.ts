@@ -233,13 +233,11 @@ export const buildInvertedIndex = (
   morphologyMap: Map<number, MorphologyAya>,
   quranData: Map<number, QuranText>,
   semanticMap?: Map<string, string[]>,
-  phoneticMap?: Map<string, string[]>,
 ): InvertedIndex => {
   const lemmaIndex = new Map<string, Set<number>>();
   const rootIndex = new Map<string, Set<number>>();
   const wordIndex = new Map<string, Set<number>>();
   const semanticIndex = semanticMap ? new Map<string, Set<number>>() : undefined;
-  const phoneticIndex = phoneticMap ? new Map<string, Set<number>>() : undefined;
 
   for (const morph of morphologyMap.values()) {
     const gid = morph.gid;
@@ -302,25 +300,7 @@ export const buildInvertedIndex = (
     }
   }
 
-  // Build phoneticIndex similarly
-  if (phoneticMap && phoneticIndex) {
-    for (const [key, words] of phoneticMap.entries()) {
-      const gids = new Set<number>();
-      for (const word of words) {
-        const matches = wordIndex.get(word) || wordIndex.get(normalizeArabic(word));
-        if (matches) {
-          for (const gid of matches) {
-            gids.add(gid);
-          }
-        }
-      }
-      if (gids.size > 0) {
-        phoneticIndex.set(key, gids);
-      }
-    }
-  }
-
-  return { lemmaIndex, rootIndex, wordIndex, semanticIndex, phoneticIndex };
+  return { lemmaIndex, rootIndex, wordIndex, semanticIndex };
 };
 
 export const loadSemanticData = async (path?: string): Promise<Map<string, string[]>> => {

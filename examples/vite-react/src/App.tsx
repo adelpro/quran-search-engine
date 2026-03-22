@@ -46,6 +46,7 @@ function App() {
     lemmaCount: number;
     rootCount: number;
     wordCount: number;
+    semanticCount: number;
   } | null>(null);
   const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +113,7 @@ function App() {
             setPhoneticMap(phonetic);
 
             const buildStart = performance.now();
-            const index = buildInvertedIndex(morphology, data, semantic, phonetic);
+            const index = buildInvertedIndex(morphology, data, semantic);
             const buildMs = performance.now() - buildStart;
 
             if (!cancelled) {
@@ -121,6 +122,7 @@ function App() {
                 lemmaCount: index.lemmaIndex.size,
                 rootCount: index.rootIndex.size,
                 wordCount: index.wordIndex.size,
+                semanticCount: index.semanticIndex?.size ?? 0,
               });
               setIndexBuildTime(buildMs);
             }
@@ -137,13 +139,14 @@ function App() {
 
           if (!cancelled) {
             const buildStart = performance.now();
-            const index = buildInvertedIndex(morphology, data, semantic, phonetic);
+            const index = buildInvertedIndex(morphology, data, semantic);
             const buildMs = performance.now() - buildStart;
 
             setIndexStats({
               lemmaCount: index.lemmaIndex.size,
               rootCount: index.rootIndex.size,
               wordCount: index.wordIndex.size,
+              semanticCount: index.semanticIndex?.size ?? 0,
             });
             setIndexBuildTime(buildMs);
           }
@@ -262,10 +265,15 @@ function App() {
               className="index-stats"
               title={`Inverted index built in ${indexBuildTime?.toFixed(1)}ms`}
             >
-              <strong>{indexStats.lemmaCount.toLocaleString()}</strong> lemmas ·{' '}
-              <strong>{indexStats.rootCount.toLocaleString()}</strong> roots ·{' '}
-              <strong>{indexStats.wordCount.toLocaleString()}</strong> words
-              {indexBuildTime !== null && <span> ({indexBuildTime.toFixed(1)}ms)</span>}
+              <span>
+                <strong>{indexStats.lemmaCount.toLocaleString()}</strong> lemmas ·{' '}
+                <strong>{indexStats.rootCount.toLocaleString()}</strong> roots ·{' '}
+                <strong>{indexStats.wordCount.toLocaleString()}</strong> words
+              </span>
+              <span>
+                <strong>{indexStats.semanticCount.toLocaleString()}</strong> semantic
+              </span>
+              {indexBuildTime !== null && <span>Index: {indexBuildTime.toFixed(1)}ms</span>}
             </span>
           )}
         </div>
