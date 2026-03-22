@@ -5,6 +5,7 @@ import {
   loadWordMap,
   loadSemanticData,
   loadPhoneticData,
+  buildInvertedIndex,
   search,
   LRUCache,
   createSearchWorker,
@@ -12,6 +13,7 @@ import {
   type QuranText,
   type MorphologyAya,
   type WordMap,
+  type InvertedIndex,
   type SearchResponse,
   type SearchWorkerClient,
 } from 'quran-search-engine';
@@ -39,6 +41,13 @@ function App() {
   const [wordMap, setWordMap] = useState<WordMap | null>(null);
   const [semanticMap, setSemanticMap] = useState<Map<string, string[]> | null>(null);
   const [phoneticMap, setPhoneticMap] = useState<Map<string, string[]> | null>(null);
+  const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
+  const [indexStats, setIndexStats] = useState<{
+    lemmaCount: number;
+    rootCount: number;
+    wordCount: number;
+  } | null>(null);
+  const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [usingWorker, setUsingWorker] = useState<boolean | null>(null);
@@ -101,6 +110,42 @@ function App() {
             setWordMap(dictionary);
             setSemanticMap(semantic);
             setPhoneticMap(phonetic);
+
+            const buildStart = performance.now();
+            const index = buildInvertedIndex(morphology, data, semantic, phonetic);
+            const buildMs = performance.now() - buildStart;
+
+            if (!cancelled) {
+              setInvertedIndex(index);
+              setIndexStats({
+                lemmaCount: index.lemmaIndex.size,
+                rootCount: index.rootIndex.size,
+                wordCount: index.wordIndex.size,
+              });
+              setIndexBuildTime(buildMs);
+            }
+          }
+        } else {
+          // When using worker, still build index for stats display
+          const [data, morphology, , semantic, phonetic] = await Promise.all([
+            loadQuranData(),
+            loadMorphology(),
+            loadWordMap(),
+            loadSemanticData(),
+            loadPhoneticData(),
+          ]);
+
+          if (!cancelled) {
+            const buildStart = performance.now();
+            const index = buildInvertedIndex(morphology, data, semantic, phonetic);
+            const buildMs = performance.now() - buildStart;
+
+            setIndexStats({
+              lemmaCount: index.lemmaIndex.size,
+              rootCount: index.rootIndex.size,
+              wordCount: index.wordIndex.size,
+            });
+            setIndexBuildTime(buildMs);
           }
         }
       } catch (error) {
@@ -144,7 +189,8 @@ function App() {
       morphologyMap &&
       wordMap &&
       semanticMap &&
-      phoneticMap
+      phoneticMap &&
+      invertedIndex
     ) {
       setSearching(true);
       setUsingWorker(false);
@@ -156,6 +202,7 @@ function App() {
           wordMap,
           semanticMap,
           phoneticMap,
+          invertedIndex,
         },
         options,
         { page: currentPage, limit: PAGE_SIZE },
@@ -178,6 +225,7 @@ function App() {
     wordMap,
     semanticMap,
     phoneticMap,
+    invertedIndex,
     loading,
   ]);
 
@@ -201,13 +249,26 @@ function App() {
         <h1>
           Quran Search Engine <small style={{ fontSize: '0.8rem', opacity: 0.6 }}>Demo</small>
         </h1>
-        {usingWorker !== null && (
-          <span
-            className={`worker-badge ${usingWorker ? 'worker-badge--active' : 'worker-badge--fallback'}`}
-          >
-            {usingWorker ? '⚡ Worker' : '🔄 Main Thread'}
-          </span>
-        )}
+        <div className="badges-container">
+          {usingWorker !== null && (
+            <span
+              className={`worker-badge ${usingWorker ? 'worker-badge--active' : 'worker-badge--fallback'}`}
+            >
+              {usingWorker ? 'Running on Web Worker' : 'Running on Main Thread'}
+            </span>
+          )}
+          {indexStats && (
+            <span
+              className="index-stats"
+              title={`Inverted index built in ${indexBuildTime?.toFixed(1)}ms`}
+            >
+              <strong>{indexStats.lemmaCount.toLocaleString()}</strong> lemmas ·{' '}
+              <strong>{indexStats.rootCount.toLocaleString()}</strong> roots ·{' '}
+              <strong>{indexStats.wordCount.toLocaleString()}</strong> words
+              {indexBuildTime !== null && <span> ({indexBuildTime.toFixed(1)}ms)</span>}
+            </span>
+          )}
+        </div>
       </header>
 
       <div className="search-input-group">

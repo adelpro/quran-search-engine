@@ -11,33 +11,61 @@
 
 .search-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 2rem;
+  text-align: center;
 }
 
 .search-header h1 {
-  color: #2c3e50;
-  margin-bottom: 0;
-  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.75rem;
+}
+
+.badges-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .worker-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  font-size: inherit;
+  font-weight: 500;
+}
+
+.worker-badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.worker-badge--active::before {
+  background-color: #10b981;
+}
+
+.worker-badge--fallback::before {
+  background-color: #f59e0b;
+}
+
+.index-stats {
+  font-size: inherit;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.index-stats strong {
+  color: #6366f1;
   font-weight: 600;
-}
-
-.worker-badge--active {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-.worker-badge--fallback {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
 }
 
 .search-input-group {
