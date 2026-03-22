@@ -43,16 +43,27 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
 
   const matchedArabicWords = new Set<string>();
   const matchedEnglishWords: string[] = [];
+  const directArabicTokens: string[] = [];
 
-  const arabicMatches = semanticMap.get(query);
-  if (arabicMatches) {
-    arabicMatches.forEach((w) => matchedArabicWords.add(w));
+  if (query) {
+    const normalizedQuery = normalizeArabic(query);
+    if (normalizedQuery) {
+      matchedArabicWords.add(normalizedQuery);
+    }
   }
 
   if (originalQuery) {
     const tokens = originalQuery.split(/\s+/);
     for (const token of tokens) {
-      if (isArabic(token)) continue;
+      if (isArabic(token)) {
+        const normalizedArabic = normalizeArabic(token);
+        if (normalizedArabic) {
+          directArabicTokens.push(normalizedArabic);
+          matchedArabicWords.add(normalizedArabic);
+        }
+        continue;
+      }
+
       const cleanToken = token
         .toLowerCase()
         .trim()
@@ -68,7 +79,6 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
   if (matchedArabicWords.size === 0) return [];
 
   const results: ScoredVerse<TVerse>[] = [];
-  const arabicWordsArray = Array.from(matchedArabicWords);
 
   for (const verse of quranData.values()) {
     if (options.suraId && verse.sura_id !== options.suraId) continue;
@@ -78,10 +88,29 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
     const normalizedVerse = normalizeArabic(verse.standard);
     const matchedKeywords: string[] = [];
 
-    for (const keyword of arabicWordsArray) {
-      if (normalizedVerse.includes(keyword)) {
-        matchedKeywords.push(keyword);
+    if (directArabicTokens.length > 0) {
+      for (const keyword of directArabicTokens) {
+        if (normalizedVerse.includes(keyword)) {
+          matchedKeywords.push(keyword);
+        }
       }
+      if (matchedKeywords.length === 0) continue;
+    }
+
+    if (matchedEnglishWords.length > 0) {
+      const semanticMatches: string[] = [];
+      for (const engWord of matchedEnglishWords) {
+        const arabicSynonyms = semanticMap.get(engWord);
+        if (arabicSynonyms) {
+          for (const synonym of arabicSynonyms) {
+            if (normalizedVerse.includes(synonym)) {
+              semanticMatches.push(synonym);
+            }
+          }
+        }
+      }
+      if (semanticMatches.length === 0) continue;
+      matchedKeywords.push(...semanticMatches);
     }
 
     if (matchedKeywords.length > 0) {

@@ -3,6 +3,8 @@ import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
+  loadSemanticData,
+  loadPhoneticData,
   search,
   LRUCache,
   createSearchWorker,
@@ -18,13 +20,24 @@ import { useDebounce } from './useDebounce';
 import { VerseItem } from './components/VerseItem';
 import './App.css';
 
-// Module-level cache — persists across React re-renders (fallback only)
 const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
+let workerModule: { default: string } | null = null;
+let workerInitPromise: Promise<void> | null = null;
+
+async function loadWorkerModule() {
+  if (!workerModule) {
+    workerModule = await import('quran-search-engine/worker?worker');
+  }
+  return workerModule;
+}
+
 function App() {
-  const [quranData, setQuranData] = useState<QuranText[]>([]);
+  const [quranData, setQuranData] = useState<Map<number, QuranText> | null>(null);
   const [morphologyMap, setMorphologyMap] = useState<Map<number, MorphologyAya> | null>(null);
   const [wordMap, setWordMap] = useState<WordMap | null>(null);
+  const [semanticMap, setSemanticMap] = useState<Map<string, string[]> | null>(null);
+  const [phoneticMap, setPhoneticMap] = useState<Map<string, string[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
 
@@ -39,6 +52,7 @@ function App() {
     lemma: true,
     root: true,
     fuzzy: true,
+    isRegex: false,
     semantic: true,
     suraId: undefined as number | undefined,
     juzId: undefined as number | undefined,
@@ -47,7 +61,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  // 1. Initial Data Loading + Worker init
   useEffect(() => {
     let cancelled = false;
 
@@ -55,10 +68,16 @@ function App() {
       try {
         if (supportsWorkers()) {
           try {
-            const client = createSearchWorker({
-              workerUrl: new URL('quran-search-engine/worker', import.meta.url),
-            });
-            await client.initData();
+            if (!workerInitPromise) {
+              workerInitPromise = (async () => {
+                const mod = await loadWorkerModule();
+                const workerUrl = new URL(mod.default, import.meta.url);
+                const client = createSearchWorker({ workerUrl });
+                await client.initData();
+                return client;
+              })();
+            }
+            const client = await workerInitPromise;
             if (!cancelled) workerClient.current = client;
           } catch (err) {
             console.warn('Web Worker init failed, falling back to main thread:', err);
@@ -66,15 +85,19 @@ function App() {
         }
 
         if (!workerClient.current) {
-          const [data, morphology, dictionary] = await Promise.all([
+          const [data, morphology, dictionary, semantic, phonetic] = await Promise.all([
             loadQuranData(),
             loadMorphology(),
             loadWordMap(),
+            loadSemanticData(),
+            loadPhoneticData(),
           ]);
           if (!cancelled) {
             setQuranData(data);
             setMorphologyMap(morphology);
             setWordMap(dictionary);
+            setSemanticMap(semantic);
+            setPhoneticMap(phonetic);
           }
         }
       } catch (error) {
@@ -111,12 +134,23 @@ function App() {
         .finally(() => {
           if (!cancelled) setSearching(false);
         });
-    } else if (quranData.length > 0 && morphologyMap && wordMap) {
+    } else if (
+      quranData &&
+      quranData.size > 0 &&
+      morphologyMap &&
+      wordMap &&
+      semanticMap &&
+      phoneticMap
+    ) {
       const response = search(
         debouncedQuery,
-        quranData,
-        morphologyMap,
-        wordMap,
+        {
+          quranData,
+          morphologyMap,
+          wordMap,
+          semanticMap,
+          phoneticMap,
+        },
         options,
         { page: currentPage, limit: PAGE_SIZE },
         undefined,
@@ -128,7 +162,17 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, options, currentPage, quranData, morphologyMap, wordMap, loading]);
+  }, [
+    debouncedQuery,
+    options,
+    currentPage,
+    quranData,
+    morphologyMap,
+    wordMap,
+    semanticMap,
+    phoneticMap,
+    loading,
+  ]);
 
   // Reset page when query or options change
   useEffect(() => {
@@ -200,6 +244,14 @@ function App() {
             onChange={(e) => setOptions({ ...options, semantic: e.target.checked })}
           />
           Semantic Search
+        </label>
+        <label className="option-item">
+          <input
+            type="checkbox"
+            checked={options.isRegex}
+            onChange={(e) => setOptions({ ...options, isRegex: e.target.checked })}
+          />
+          Regex Search
         </label>
         <label className="option-item">
           Sura ID:
@@ -285,6 +337,16 @@ function App() {
                 <span className="indicator indicator-semantic"></span>
                 <span className="stat-label">Semantic:</span>
                 <span className="stat-value">{searchResponse.counts.semantic}</span>
+              </span>
+              <span className="stat-item">
+                <span className="indicator indicator-semantic"></span>
+                <span className="stat-label">Range:</span>
+                <span className="stat-value">{searchResponse.counts.range}</span>
+              </span>
+              <span className="stat-item">
+                <span className="indicator indicator-semantic"></span>
+                <span className="stat-label">Regex:</span>
+                <span className="stat-value">{searchResponse.counts.regex}</span>
               </span>
             </div>
           </div>

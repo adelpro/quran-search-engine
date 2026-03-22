@@ -198,7 +198,11 @@ export const search = <TVerse extends VerseInput>(
   const arabicOnly = translatedQuery.replace(/[^\u0621-\u064A\s]/g, '').trim();
   const cleanQuery = normalizeArabic(arabicOnly);
 
-  if (!cleanQuery) {
+  const hasEnglishWords = operatorFreeQuery
+    .split(/\s+/)
+    .some((token) => !isArabic(token) && token.trim().length > 0);
+
+  if (!cleanQuery && !(options.semantic && hasEnglishWords)) {
     return {
       results: [],
       counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0, regex: 0 },

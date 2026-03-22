@@ -52,7 +52,7 @@ export function VerseItem({ verse }: VerseItemProps) {
     <div className="verse-card">
       <div className="verse-card-header">
         <span>
-          {verse.sura_name} ({verse.sura_id}:{verse.aya_id})
+          {verse.sura_name} ({verse.sura_id}:{verse.aya_id_display})
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span
