@@ -10,14 +10,34 @@
 }
 
 .search-header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
 .search-header h1 {
   color: #2c3e50;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-weight: 800;
+}
+
+.worker-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.worker-badge--active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.worker-badge--fallback {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
 }
 
 .search-input-group {

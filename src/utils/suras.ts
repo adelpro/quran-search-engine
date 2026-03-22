@@ -41,5 +41,3 @@ export const SURAS = (() => {
 
   return Array.from(surasMap.values()).sort((a, b) => a.id - b.id);
 })();
-
-console.log(`Number of suras extracted: ${SURAS.length}`);

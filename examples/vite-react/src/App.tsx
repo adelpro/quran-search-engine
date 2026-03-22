@@ -41,6 +41,7 @@ function App() {
   const [phoneticMap, setPhoneticMap] = useState<Map<string, string[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
+  const [usingWorker, setUsingWorker] = useState<boolean | null>(null);
 
   const workerClient = useRef<SearchWorkerClient | null>(null);
 
@@ -78,7 +79,9 @@ function App() {
               })();
             }
             const client = await workerInitPromise;
-            if (!cancelled) workerClient.current = client;
+            if (!cancelled) {
+              workerClient.current = client;
+            }
           } catch (err) {
             console.warn('Web Worker init failed, falling back to main thread:', err);
           }
@@ -125,6 +128,7 @@ function App() {
 
     if (workerClient.current) {
       setSearching(true);
+      setUsingWorker(true);
       workerClient.current
         .runSearch(debouncedQuery, options, { page: currentPage, limit: PAGE_SIZE })
         .then((res) => {
@@ -142,6 +146,8 @@ function App() {
       semanticMap &&
       phoneticMap
     ) {
+      setSearching(true);
+      setUsingWorker(false);
       const response = search(
         debouncedQuery,
         {
@@ -157,6 +163,7 @@ function App() {
         searchCache,
       );
       setSearchResponse(response);
+      setSearching(false);
     }
 
     return () => {
@@ -194,6 +201,13 @@ function App() {
         <h1>
           Quran Search Engine <small style={{ fontSize: '0.8rem', opacity: 0.6 }}>Demo</small>
         </h1>
+        {usingWorker !== null && (
+          <span
+            className={`worker-badge ${usingWorker ? 'worker-badge--active' : 'worker-badge--fallback'}`}
+          >
+            {usingWorker ? '⚡ Worker' : '🔄 Main Thread'}
+          </span>
+        )}
       </header>
 
       <div className="search-input-group">
