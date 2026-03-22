@@ -60,6 +60,10 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
         if (normalizedArabic) {
           directArabicTokens.push(normalizedArabic);
           matchedArabicWords.add(normalizedArabic);
+          const arabicSynonyms = semanticMap.get(normalizedArabic);
+          if (arabicSynonyms) {
+            arabicSynonyms.forEach((w) => matchedArabicWords.add(w));
+          }
         }
         continue;
       }
@@ -94,24 +98,33 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
           matchedKeywords.push(keyword);
         }
       }
-      if (matchedKeywords.length === 0) continue;
     }
 
     if (matchedEnglishWords.length > 0) {
-      const semanticMatches: string[] = [];
       for (const engWord of matchedEnglishWords) {
         const arabicSynonyms = semanticMap.get(engWord);
         if (arabicSynonyms) {
           for (const synonym of arabicSynonyms) {
             if (normalizedVerse.includes(synonym)) {
-              semanticMatches.push(synonym);
+              matchedKeywords.push(synonym);
             }
           }
         }
       }
-      if (semanticMatches.length === 0) continue;
-      matchedKeywords.push(...semanticMatches);
     }
+
+    const arabicSynonymTokens = Array.from(matchedArabicWords).filter(
+      (w) => !directArabicTokens.includes(w),
+    );
+    if (arabicSynonymTokens.length > 0) {
+      for (const synonym of arabicSynonymTokens) {
+        if (normalizedVerse.includes(synonym)) {
+          matchedKeywords.push(synonym);
+        }
+      }
+    }
+
+    if (matchedKeywords.length === 0) continue;
 
     if (matchedKeywords.length > 0) {
       results.push({

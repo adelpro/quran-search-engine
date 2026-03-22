@@ -22,14 +22,15 @@ import './App.css';
 
 const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
-let workerModule: { default: string } | null = null;
-let workerInitPromise: Promise<void> | null = null;
+let workerUrl: string | null = null;
+let workerInitPromise: Promise<SearchWorkerClient> | null = null;
 
-async function loadWorkerModule() {
-  if (!workerModule) {
-    workerModule = await import('quran-search-engine/worker?worker');
+async function loadWorkerUrl() {
+  if (!workerUrl) {
+    const mod = await import('quran-search-engine/worker?url');
+    workerUrl = mod.default;
   }
-  return workerModule;
+  return workerUrl;
 }
 
 function App() {
@@ -70,9 +71,8 @@ function App() {
           try {
             if (!workerInitPromise) {
               workerInitPromise = (async () => {
-                const mod = await loadWorkerModule();
-                const workerUrl = new URL(mod.default, import.meta.url);
-                const client = createSearchWorker({ workerUrl });
+                const url = await loadWorkerUrl();
+                const client = createSearchWorker({ workerUrl: url });
                 await client.initData();
                 return client;
               })();

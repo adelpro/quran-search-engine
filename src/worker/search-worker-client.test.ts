@@ -4,7 +4,7 @@ import {
   createSearchWorker,
   type FallbackDependencies,
 } from './search-worker-client';
-import { WorkerNotSupportedError, WorkerNotInitializedError, WorkerFactoryError } from '../errors';
+import { WorkerNotInitializedError, WorkerFactoryError } from '../errors';
 import type { QuranText, MorphologyAya, SearchResponse } from '../types';
 
 // ── supportsWorkers ────────────────────────────────────────────

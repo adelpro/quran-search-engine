@@ -7,17 +7,18 @@ import {
   WorkerNotInitializedError,
   WorkerFactoryError,
 } from './worker-error';
+import { ErrorCode } from './error-codes';
 
 describe('WorkerError', () => {
   it('should have correct code and type', () => {
-    const error = new WorkerError('WORKER_TEST' as any, 'Test message');
-    expect(error.code).toBe('WORKER_TEST');
+    const error = new WorkerError(ErrorCode.WORKER_NOT_SUPPORTED, 'Test message');
+    expect(error.code).toBe(ErrorCode.WORKER_NOT_SUPPORTED);
     expect(error.type).toBe('WorkerError');
     expect(error.message).toBe('Test message');
   });
 
   it('should be instance of Error', () => {
-    const error = new WorkerError('WORKER_TEST' as any, 'Test');
+    const error = new WorkerError(ErrorCode.WORKER_NOT_SUPPORTED, 'Test');
     expect(error).toBeInstanceOf(Error);
   });
 });
