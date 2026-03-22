@@ -73,14 +73,11 @@ import { search } from 'quran-search-engine';
 const start = performance.now();
 const result = search(
   'نار -جهنم',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, invertedIndex },
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined, // preComputedFuseIndex
+  undefined, // fuseIndex
   cache, // optional LRU cache
-  invertedIndex,
 );
 const elapsed = performance.now() - start;
 
@@ -168,14 +165,11 @@ async function main() {
       const start = performance.now();
       const res = search(
         q,
-        quranData,
-        morphologyMap,
-        wordMap,
+        { quranData, morphologyMap, wordMap, invertedIndex },
         { lemma: true, root: true },
         { page: 1, limit: 20 },
         fuseIndex,
         cache,
-        invertedIndex,
       );
       total += performance.now() - start;
       totalResults = res.pagination.totalResults;
@@ -195,7 +189,7 @@ npx tsx scripts/benchmark.ts
 
 ## LRU Cache Usage
 
-The library is **stateless**. Every `search()` call runs the full pipeline unless you pass a cache. Use the built-in `LRUCache` and pass it as the **8th parameter** to `search()`.
+The library is **stateless**. Every `search()` call runs the full pipeline unless you pass a cache. Use the built-in `LRUCache` and pass it as the **6th parameter** to `search()`.
 
 ### Why Cache?
 
@@ -215,14 +209,11 @@ const cache = new LRUCache<string, SearchResponse>(500);
 
 const result = search(
   'الله الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap },
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined, // preComputedFuseIndex
-  cache, // 8th param — cache key is built internally from { query, options, pagination }
-  invertedIndex,
+  undefined, // fuseIndex
+  cache, // 6th param — cache key is built internally from { query, options, pagination }
 );
 ```
 
@@ -264,17 +255,14 @@ const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
 // Option 2: Load pre-built (recommended for production)
 const invertedIndex = await loadInvertedIndex();
 
-// Pass as 9th param to search()
+// Pass via context object
 const result = search(
   query,
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, invertedIndex },
   options,
   pagination,
-  preComputedFuseIndex,
+  fuseIndex,
   cache,
-  invertedIndex, // 9th param
 );
 ```
 
@@ -282,7 +270,7 @@ const result = search(
 
 ## Pre-built Fuse Index
 
-When `fuzzy` is enabled (default), the engine builds a Fuse.js index per call. Pass a **pre-built** index as the **7th parameter** to reuse it.
+When `fuzzy` is enabled (default), the engine builds a Fuse.js index per call. Pass a **pre-built** index as the **5th parameter** to reuse it.
 
 ```typescript
 import { createArabicFuseSearch, search } from 'quran-search-engine';
@@ -293,14 +281,11 @@ const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
 // Reuse across searches
 const result = search(
   query,
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap },
   options,
   pagination,
-  fuseIndex, // 7th param — skips per-call index rebuild
+  fuseIndex, // 5th param — skips per-call index rebuild
   cache,
-  invertedIndex,
 );
 ```
 
@@ -362,14 +347,9 @@ self.onmessage = async (e: MessageEvent) => {
     const { query, options, pagination } = payload;
     const response: SearchResponse = search(
       query,
-      quranData,
-      morphologyMap,
-      wordMap,
+      { quranData, morphologyMap, wordMap, invertedIndex },
       options ?? { lemma: true, root: true },
       pagination ?? { page: 1, limit: 20 },
-      undefined,
-      undefined,
-      invertedIndex,
     );
     self.postMessage({ type: 'results', payload: response, id });
   }

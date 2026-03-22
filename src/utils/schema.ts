@@ -293,8 +293,6 @@ export function validateWordMapData(data: unknown, limit = 50): ValidationResult
  * Each entry must have:
  * - `english` (string[]) – English terms for the concept.
  * - `arabic` (string[]) – Arabic terms for the concept.
- * - `category` (string) – Thematic category label.
- * - `notes` (string) – Explanatory notes.
  *
  * @param data  - The data to validate (expected: array of semantic objects).
  * @param limit - Maximum number of per-item errors to collect (default 50).
@@ -330,7 +328,6 @@ export function validateSemanticData(data: unknown, limit = 50): ValidationResul
       continue;
     }
 
-    // english: string[]
     if (!Array.isArray(entry.english)) {
       pushIf(
         errors,
@@ -343,7 +340,6 @@ export function validateSemanticData(data: unknown, limit = 50): ValidationResul
       pushIf(errors, true, `${p}.english`, 'All items in "english" must be strings.', limit);
     }
 
-    // arabic: string[]
     if (!Array.isArray(entry.arabic)) {
       pushIf(
         errors,
@@ -355,24 +351,6 @@ export function validateSemanticData(data: unknown, limit = 50): ValidationResul
     } else if (entry.arabic.some((t: unknown) => !isString(t))) {
       pushIf(errors, true, `${p}.arabic`, 'All items in "arabic" must be strings.', limit);
     }
-
-    // category: string
-    pushIf(
-      errors,
-      !isString(entry.category),
-      `${p}.category`,
-      'Required string field "category" is missing or not a string.',
-      limit,
-    );
-
-    // notes: string
-    pushIf(
-      errors,
-      !isString(entry.notes),
-      `${p}.notes`,
-      'Required string field "notes" is missing or not a string.',
-      limit,
-    );
   }
 
   return { valid: errors.length === 0, errors };

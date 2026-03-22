@@ -381,14 +381,15 @@ const response = search(
 
 The search engine processes queries through a series of architectural layers, each handling a specific type of search logic. This layered approach allows for efficient short-circuiting and specialized processing:
 
-1.  **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
-2.  **Boolean layer** — Complex logic (`AND`, `OR`, `NOT`, `()`) handled via an AST-based parser when `isBoolean: true`.
-3.  **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
-4.  **Simple layer** — Exact token matching in normalized Arabic text.
-5.  **Linguistic layer** — Lemma and root matching via morphology data.
-6.  **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
-7.  **Semantic layer** — Concept expansion (when `semantic: true`).
-8.  **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
+1. **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
+2. **Boolean layer** — Complex logic (`AND`, `OR`, `NOT`, `()`) handled via an AST-based parser when `isBoolean: true`.
+3. **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
+4. **Simple layer** — Exact token matching in normalized Arabic text.
+5. **Linguistic layer** — Lemma and root matching via morphology data.
+6. **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
+7. **Semantic layer** — Concept expansion (when `semantic: true`).
+8. **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
+
 #### Regex Search
 
 `search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
@@ -1208,14 +1209,11 @@ const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
 // All optimizations active
 const result = search(
   query,
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, invertedIndex },
   { lemma: true, root: true, fuzzy: true },
   { page: 1, limit: 20 },
-  fuseIndex, // 7th — skip Fuse rebuild
-  cache, // 8th — instant cache hit
-  invertedIndex, // 9th — O(1) lemma/root lookups
+  fuseIndex, // skip Fuse rebuild
+  cache, // instant cache hit
 );
 ```
 
@@ -1229,12 +1227,10 @@ import { search, createArabicFuseSearch } from 'quran-search-engine';
 // 1. Create the index once (e.g., in useMemo or at app startup)
 const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
 
-// 2. Pass it to search as the 7th argument
+// 2. Pass it to search
 const results = search(
   query,
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap },
   options,
   pagination,
   fuseIndex, // ← pre-computed index

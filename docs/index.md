@@ -41,6 +41,7 @@ This library provides a deterministic and highly customizable search experience 
 ### API Reference
 
 - [Core API (`search`, `load...`, `normalize...`)](./reference/api/core.md)
+- [Type Definitions](./reference/api/types.md)
 - [Tokenizer & Matching Types](./reference/api/tokenizer.md)
 - [Inverted Index & Data Strategy](./reference/api/inverted-index.md)
 

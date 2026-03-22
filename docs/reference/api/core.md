@@ -201,18 +201,18 @@ const normalized = normalizeArabic('بِسْمِ ٱللَّهِ'); // Returns: '
 
 ## Searching
 
-### `search(query, quranData, morphologyMap, wordMap, options?, pagination?)`
+### `search(query, context, options?, pagination?, fuseIndex?, cache?)`
 
 **Description:** The main entry point for querying the engine. Combines Exact, Lemma, Root, and Fuzzy matching dynamically based on the provided tokens.
 
 **Parameters:**
 
 - `query` (string): The search query (can be multi-word).
-- `quranData` (`QuranText[]` or `VerseInput[]`): The dataset array. Must contain `gid` and `standard` text fields (along with `uthmani` ideally).
-- `morphologyMap` (`Map<number, MorphologyAya>`): Map of verse morphology data to allow root/lemma fallback.
-- `wordMap` (`WordMap`): Root word dictionary.
+- `context` (`SearchContext`): Object containing `quranData`, `morphologyMap`, `wordMap`, and optionally `invertedIndex`, `semanticMap`, `phoneticMap`.
 - `options` (`SearchOptions`, optional): Toggles enabling linguistic matching features.
 - `pagination` (`PaginationOptions`, optional): Search result paging bounds.
+- `fuseIndex` (`Fuse<TVerse>`, optional): Pre-built Fuse index for performance.
+- `cache` (`LRUCache`, optional): LRU cache for result caching.
 
 **Returns:** `SearchResponse`
 
@@ -221,9 +221,7 @@ import { search } from 'quran-search-engine';
 
 const response = search(
   'الله الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap },
   { lemma: true, root: true },
   { page: 1, limit: 10 },
 );
