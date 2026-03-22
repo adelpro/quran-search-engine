@@ -51,6 +51,36 @@ const response2 = search('الله.*الرحمن', quranData, morphologyMap, wor
     - **OR**: Union of results. Either term can match.
     - **NOT**: Exclusion of results. The term must not match.
     - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
+
+#### Boolean Search Helper Functions
+
+The library exposes two utility functions for working with boolean queries:
+
+##### `hasBooleanOperators(query)`
+
+Checks if a query string contains boolean operators (`+`, `-`, `|`).
+
+```typescript
+import { hasBooleanOperators } from 'quran-search-engine';
+
+hasBooleanOperators('+الله -الرحمن'); // Returns: true
+hasBooleanOperators('الله الرحمن');    // Returns: false
+```
+
+##### `clearBooleanOperators(query)`
+
+Removes all boolean operators from a query and normalizes whitespace. Useful for creating a clean fallback query when boolean mode isn't enabled.
+
+```typescript
+import { clearBooleanOperators } from 'quran-search-engine';
+
+clearBooleanOperators('+الله | الرحمن -الجحيم');
+// Returns: 'الله الرحمن الجحيم'
+
+clearBooleanOperators('محمد | رسول');
+// Returns: 'محمد رسول'
+```
+
 - **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return `matchType: semantic` metadata gracefully.
 
 ## String Checking For Arbitrary Filters

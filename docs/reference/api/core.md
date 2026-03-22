@@ -42,28 +42,128 @@ import { loadWordMap, type WordMap } from 'quran-search-engine';
 const wordMap: WordMap = await loadWordMap();
 ```
 
-### `loadInvertedIndex()`
+### `loadSemanticData()`
 
-**Description:** Loads the pre-compiled `InvertedIndex` containing Lemma, Root, and Word inverted Indices for drastically faster operations bypassing Map building.
+**Description:** Loads the semantic mapping data for concept-based search. Maps normalized concepts to arrays of verse GIDs containing semantically related words.
 
-**Returns:** `Promise<InvertedIndex>`
+**Returns:** `Promise<Map<string, string[]>>`
 
 ```typescript
-import { loadInvertedIndex, type InvertedIndex } from 'quran-search-engine';
+import { loadSemanticData } from 'quran-search-engine';
 
-const indices: InvertedIndex = await loadInvertedIndex();
+const semanticMap = await loadSemanticData();
+```
+
+### `loadPhoneticData()`
+
+**Description:** Loads the phonetic dictionary for Latin-to-Arabic transliteration search. Maps phonetic spellings (e.g., "Bismillah") to their Arabic equivalents.
+
+**Returns:** `Promise<Map<string, string[]>>`
+
+```typescript
+import { loadPhoneticData } from 'quran-search-engine';
+
+const phoneticMap = await loadPhoneticData();
 ```
 
 ### Data Validation
 
-**Description:** To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native Zod validators are exposed for internal schemas. Operations include `validateQuranData`, `validateMorphologyData`, `validateWordMapData` and `validateSemanticData`.
+To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native validators are exposed for internal schemas.
+
+#### Validation Functions
+
+| Function | Description |
+|----------|-------------|
+| `validateQuranData(data)` | Validates verse data against `VerseInput` schema |
+| `validateMorphologyData(data)` | Validates morphology array structure |
+| `validateWordMapData(data)` | Validates word map dictionary |
+| `validateSemanticData(data)` | Validates semantic mapping data |
+
+**Returns:** `ValidationResult` containing `valid` boolean and `errors` array.
 
 ```typescript
-import { validateQuranData } from 'quran-search-engine';
+import { validateQuranData, formatSchemaErrors } from 'quran-search-engine';
 
 const validationResult = validateQuranData(customQuranArray);
-if (!validationResult.success) {
-  console.error(validationResult.errors);
+if (!validationResult.valid) {
+  console.error(formatSchemaErrors(validationResult));
+}
+```
+
+#### Validation Types
+
+```typescript
+type SchemaError = {
+  /** Dot-path to the offending field, e.g. "verses[0].gid" */
+  path: string;
+  /** Human-readable explanation */
+  message: string;
+};
+
+type ValidationResult = {
+  valid: boolean;
+  errors: SchemaError[];
+};
+```
+
+#### `formatSchemaErrors(result)`
+
+**Description:** Formats a `ValidationResult` into a human-readable string for logging or display.
+
+```typescript
+import { formatSchemaErrors } from 'quran-search-engine';
+
+const result = validateQuranData(data);
+console.log(formatSchemaErrors(result));
+// Output:
+//   1. [verses[0].gid] Expected number, received string
+//   2. [verses[1].standard] Required field missing
+```
+
+---
+
+## Constants
+
+### `SURAS`
+
+**Description:** A pre-built Map containing all 114 Surahs of the Quran with metadata including names, verse counts, and page ranges.
+
+**Returns:** `Map<number, Sura>`
+
+```typescript
+import { SURAS } from 'quran-search-engine';
+
+const alBaqarah = SURAS.get(2);
+console.log(alBaqarah);
+// {
+//   id: 2,
+//   sura_name: 'البقرة',
+//   sura_name_en: 'Al-Baqarah',
+//   sura_name_romanization: 'Al-Baqarah',
+//   total_verses: 286,
+//   juz_ids: [1, 2, 3],
+//   page_start: 1,
+//   page_end: 141
+// }
+
+// Iterate all surahs
+SURAS.forEach((sura) => {
+  console.log(`${sura.id}: ${sura.sura_name_en} (${sura.total_verses} verses)`);
+});
+```
+
+### `Sura` Type
+
+```typescript
+interface Sura {
+  id: number;
+  sura_name: string;
+  sura_name_en: string;
+  sura_name_romanization: string;
+  total_verses: number;
+  juz_ids: number[];
+  page_start: number;
+  page_end?: number;
 }
 ```
 

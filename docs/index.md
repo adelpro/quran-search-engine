@@ -21,29 +21,32 @@ This library provides a deterministic and highly customizable search experience 
 
 ### Getting Started
 
-- [Project Description & Getting Started](./getting-started.md)
-- [Installation Guide](./installation.md)
-- [Quick Start](./quick-start.md)
+- [Project Description & Getting Started](./guides/getting-started.md)
+- [Installation Guide](./guides/installation.md)
+- [Quick Start](./guides/quick-start.md)
 
-### Usage & Core Concepts
+### Guides
 
-- [Search Syntax & Scoring](./search-syntax.md)
-- [Advanced Configuration](./configuration.md)
-- [Architecture & Design Decisions](./architecture.md)
-- [Performance Aspects](./performance.md)
+- [Search Syntax & Scoring](./guides/search-syntax.md)
+- [Advanced Configuration](./guides/configuration.md)
+- [Examples & Integrations](./guides/examples.md)
+- [English-Arabic Search](./guides/english-arabic-search.md)
 
-### Examples & Integrations
+### Reference
 
-- [Usage Examples](./examples.md)
+- [Architecture & Design Decisions](./reference/architecture.md)
+- [Performance Aspects](./reference/performance.md)
+- [Phonetic Inverted Index Generation](./reference/phonetic-inverted-index-generation.md)
 
 ### API Reference
 
-- [Core API (`search`, `load...`, `normalize...`)](./api/core.md)
-- [Tokenizer & Matching Types](./api/tokenizer.md)
-- [Inverted Index & Data Strategy](./api/inverted-index.md)
+- [Core API (`search`, `load...`, `normalize...`)](./reference/api/core.md)
+- [Tokenizer & Matching Types](./reference/api/tokenizer.md)
+- [Inverted Index & Data Strategy](./reference/api/inverted-index.md)
 
-### Contributing
+### Migration & Contributing
 
+- [Migration Guide](./migration-guide.md)
 - [Contribution Guide](../CONTRIBUTING.md)
 
 ---
