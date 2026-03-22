@@ -14,6 +14,7 @@
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
+- **Boolean Search**: logic operators (`AND`, `OR`, `NOT`) and grouping `(...)` to create complex queries
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
@@ -128,23 +129,20 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadMorphology(),
   loadWordMap(),
 ]);
-// Example output:
-// quranData.length => 6236
-// morphologyMap.size => 6236
-// Object.keys(wordMap).length => (depends on dataset)
 
-const response: SearchResponse = search('الله الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true,
-  semantic: true,
-});
+const response: SearchResponse = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap },
+  {
+    lemma: true,
+    root: true,
+    semantic: true,
+  },
+);
 
 response.results.forEach((v) => {
   console.log(v.sura_id, v.aya_id, v.matchType, v.matchScore);
 });
-// Example output:
-// 1 1 exact 6
-// 1 3 lemma 4
 ```
 
 With caching (recommended for apps with repeated searches):
@@ -159,15 +157,15 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadWordMap(),
 ]);
 
+const context = { quranData, morphologyMap, wordMap };
+
 // Create a cache that holds the last 50 search results
 const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
 
 // First call: computes and caches the result
 const result1 = search(
   'الله',
-  quranData,
-  morphologyMap,
-  wordMap,
+  context,
   { lemma: true, root: true },
   { page: 1, limit: 20 },
   undefined,
@@ -177,9 +175,7 @@ const result1 = search(
 // Second call with same params: returns cached result instantly (same reference)
 const result2 = search(
   'الله',
-  quranData,
-  morphologyMap,
-  wordMap,
+  context,
   { lemma: true, root: true },
   { page: 1, limit: 20 },
   undefined,
@@ -200,15 +196,17 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadWordMap(),
 ]);
 
-const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true,
-  semantic: true,
-});
+const response = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap },
+  {
+    lemma: true,
+    root: true,
+    semantic: true,
+  },
+);
 
 console.log(response.results[0]);
-// Example output (shape):
-// { gid: 1, matchType: 'exact', matchScore: 6, matchedTokens: ['...'], ... }
 ```
 
 > [!IMPORTANT]
@@ -289,17 +287,12 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 // Build once — O(n) one-time cost
 const invertedIndex: InvertedIndex = buildInvertedIndex(morphologyMap, quranData);
 
-// Pass to every search call — O(1) lemma/root lookups
+// Pass to every search call via context — O(1) lemma/root lookups
 const result = search(
   'الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, invertedIndex },
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined, // preComputedFuseIndex
-  undefined, // cache
-  invertedIndex,
 );
 ```
 
@@ -333,16 +326,10 @@ const out = removeTashkeel('بِسْمِ ٱللَّهِ');
 
 Use case: preparing user input for searching (unifies alef variants, removes tashkeel, etc).
 
-```ts
+````ts
 import { normalizeArabic } from 'quran-search-engine';
 
-const out = normalizeArabic('بِسْمِ ٱللَّهِ');
-// out => 'بسم الله'
-```
-
-### Search
-
-#### `search(query, quranData, morphologyMap, wordMap, options?, pagination?, preComputedFuseIndex?, cache?, invertedIndex?)`
+const#### `search(query, context, options?, pagination?, fuseIndex?, cache?)`
 
 Main entry point. Combines:
 
@@ -350,44 +337,37 @@ Main entry point. Combines:
 - Lemma/root matching (when enabled and available)
 - Fuzzy fallback (Fuse) per token
 - Semantic concept expansion (when `options.semantic = true`)
-- Range lookups (`2:255`, `1:1-7`, `1:`)
+- Range lookups (`2:255`, `1:1-7`, `2:`)
 - Regex pattern matching (when `options.isRegex = true`)
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
-| Argument               | Type                           | Description                                                                    |
-| ---------------------- | ------------------------------ | ------------------------------------------------------------------------------ |
-| `query`                | `string`                       | Search query (Arabic text or range like `2:255`)                               |
-| `quranData`            | `TVerse[]`                     | Loaded verse array                                                             |
-| `morphologyMap`        | `Map<number, MorphologyAya>`   | Loaded morphology map                                                          |
-| `wordMap`              | `WordMap`                      | Loaded word map                                                                |
-| `options`              | `AdvancedSearchOptions`        | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
-| `pagination`           | `PaginationOptions`            | Page and limit (default: `{ page: 1, limit: 20 }`)                             |
-| `preComputedFuseIndex` | `Fuse<TVerse>` \| `undefined`  | Pre-built Fuse index — skips rebuild on every call                             |
-| `cache`                | `LRUCache` \| `undefined`      | LRU cache — returns cached result for identical calls                          |
-| `invertedIndex`        | `InvertedIndex` \| `undefined` | Pre-built inverted index — O(1) lemma/root lookups                             |
+| Argument     | Type                    | Description                                                                    |
+| ------------ | ----------------------- | ------------------------------------------------------------------------------ |
+| `query`      | `string`                | Search query (Arabic text or range like `2:255`)                               |
+| `context`    | `SearchContext`         | Object containing `quranData`, `morphologyMap`, `wordMap`, etc.                |
+| `options`    | `AdvancedSearchOptions` | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
+| `pagination` | `PaginationOptions`     | Page and limit (default: `{ page: 1, limit: 20 }`)                             |
+| `fuseIndex`  | `Fuse<TVerse>`          | Pre-built Fuse index — skips rebuild on every call                             |
+| `cache`      | `LRUCache`              | LRU cache — returns cached result for identical calls                          |
 
-Set `options.fuzzy = false` to disable fuzzy fallback.
-**Optimization**: Pass a `preComputedFuseIndex` (from `createArabicFuseSearch`) as the 7th argument to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
+**Optimization**: Include a `fuseIndex` (from `createArabicFuseSearch`) or an `invertedIndex` within the `context` to skip recalculations. Pass an `LRUCache` instance to cache results.
+nt to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
 
 ```ts
 import { search } from 'quran-search-engine';
 
 const response = search(
   'الله الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, semanticMap },
   { lemma: true, root: true, semantic: true }, // options
-
-  { page: 1, limit: 10 }, // pagination
-  undefined, // preComputedFuseIndex (optional)
+  { page: 1, limit: 10 } // pagination
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
 // response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, semantic: 0, total: 42 }
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
-```
+````
 
 | Match type | Score per hit        |
 | ---------- | -------------------- |
@@ -399,6 +379,16 @@ const response = search(
 | Range      | 1 (direct lookup)    |
 | Regex      | 1                    |
 
+The search engine processes queries through a series of architectural layers, each handling a specific type of search logic. This layered approach allows for efficient short-circuiting and specialized processing:
+
+1.  **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
+2.  **Boolean layer** — Complex logic (`AND`, `OR`, `NOT`, `()`) handled via an AST-based parser when `isBoolean: true`.
+3.  **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
+4.  **Simple layer** — Exact token matching in normalized Arabic text.
+5.  **Linguistic layer** — Lemma and root matching via morphology data.
+6.  **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
+7.  **Semantic layer** — Concept expansion (when `semantic: true`).
+8.  **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
 #### Regex Search
 
 `search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
@@ -409,20 +399,53 @@ Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and can be c
 import { search } from 'quran-search-engine';
 
 // Find verses ending with "ون"
-const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
-  lemma: false,
-  root: false,
-  isRegex: true,
-});
-// response.results[0].matchType => 'regex'
+const response = search(
+  '^.*ون$',
+  { quranData, morphologyMap, wordMap },
+  {
+    lemma: false,
+    root: false,
+    isRegex: true,
+  },
+);
 
 // Combine with sura filtering
-const filtered = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: false,
-  root: false,
-  isRegex: true,
-  suraId: 1, // only search in Al-Fatihah
-});
+const filtered = search(
+  'الله.*الرحمن',
+  { quranData, morphologyMap, wordMap },
+  {
+    lemma: false,
+    root: false,
+    isRegex: true,
+    suraId: 1, // only search in Al-Fatihah
+  },
+);
+```
+
+#### Boolean Search
+
+`search` supports complex boolean logic when `{ isBoolean: true }` is enabled. This allows combining multiple terms with `AND`, `OR`, `NOT` operators and grouping them with parentheses.
+
+- **Operators**: `AND` (intersection), `OR` (union), `NOT` (exclusion).
+- **Grouping**: Use `(` and `)` to control operator precedence.
+- **Implicit AND**: Terms separated by spaces without operators are treated as `AND`.
+
+```ts
+import { search } from 'quran-search-engine';
+
+// Find verses containing "الله" AND ("الرحمن" OR "الرحيم")
+const response = search(
+  'الله AND (الرحمن OR الرحيم)',
+  { quranData, morphologyMap, wordMap },
+  { isBoolean: true }
+);
+
+// Find verses containing "الله" but NOT "الرحمن"
+const response2 = search(
+  'الله NOT الرحمن',
+  { quranData, morphologyMap, wordMap },
+  { isBoolean: true }
+);
 ```
 
 #### Range search
@@ -441,18 +464,13 @@ Range queries require verses to have `sura_id` and `aya_id` fields (present in t
 import { search } from 'quran-search-engine';
 
 // Single verse
-const verse = search('2:255', quranData, morphologyMap, wordMap);
-// verse.results[0] => Ayat Al-Kursi
-// verse.results[0].matchType => 'range'
+const verse = search('2:255', { quranData, morphologyMap, wordMap });
 
 // Verse range
-const range = search('1:1-7', quranData, morphologyMap, wordMap);
-// range.results => all 7 verses of Al-Fatihah
+const range = search('1:1-7', { quranData, morphologyMap, wordMap });
 
 // Entire sura
-const sura = search('1:', quranData, morphologyMap, wordMap);
-// sura.results => all verses of Al-Fatihah
-// sura.counts => { simple: 0, lemma: 0, root: 0, fuzzy: 0, semantic: 0, range: 7, total: 7 }
+const sura = search('1:', { quranData, morphologyMap, wordMap });
 ```
 
 #### Semantic Search
@@ -463,9 +481,13 @@ const sura = search('1:', quranData, morphologyMap, wordMap);
 - **English Concepts**: Searching for "Paradise" will find verses containing "جنة", "فردوس", "عدن", etc. (Note: Ensure the query cleaning logic allows English characters if you enable this).
 
 ```ts
-const response = search('Paradise', quranData, morphologyMap, wordMap, {
-  semantic: true,
-});
+const response = search(
+  'Paradise',
+  { quranData, morphologyMap, wordMap, semanticMap },
+  {
+    semantic: true,
+  },
+);
 // response.results => verses containing words related to Paradise
 ```
 
@@ -477,7 +499,7 @@ const response = search('Paradise', quranData, morphologyMap, wordMap, {
 - **Fuzzy Phonetic Fallback**: The engine handles common transliteration typos (e.g., "bismii" instead of "bismi") using a strict fuzzy matching fallback (Fuse.js).
 
 ```ts
-const response = search('Bismillah', quranData, morphologyMap, wordMap);
+const response = search('Bismillah', { quranData, morphologyMap, wordMap, phoneticMap });
 // response.results[0] => gid: 1 (Basmalah)
 ```
 
@@ -555,10 +577,14 @@ const myQuranData: MyVerse[] = [
 const morphologyMap = new Map<number, MorphologyAya>();
 const wordMap: WordMap = {};
 
-const response = search('الله الرحمن', myQuranData, morphologyMap, wordMap, {
-  lemma: false,
-  root: false,
-});
+const response = search(
+  'الله الرحمن',
+  { quranData: myQuranData, morphologyMap, wordMap },
+  {
+    lemma: false,
+    root: false,
+  },
+);
 // Example output:
 // response.results[0] => { gid: 1, sura: 1, aya: 1, matchType: 'exact', matchScore: 6, ... }
 ```
@@ -655,7 +681,7 @@ try {
 
 // Search validation errors
 try {
-  const results = search(query, quranData, morphologyMap, wordMap, options, {
+  const results = search(query, { quranData, morphologyMap, wordMap }, options, {
     page: 1,
     limit: 10,
   });
@@ -676,7 +702,7 @@ All errors include type-safe error codes:
 import { search, ErrorCode } from 'quran-search-engine';
 
 try {
-  const results = search(query, data, morphology, wordMap);
+  const results = search(query, { quranData, morphologyMap, wordMap });
 } catch (error) {
   if (error.code === ErrorCode.DATA_FILE_NOT_FOUND) {
     // Handle missing file
@@ -740,10 +766,14 @@ For complete error handling documentation, architecture details, and best practi
 Example:
 
 ```ts
-const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true,
-});
+const response = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap },
+  {
+    lemma: true,
+    root: true,
+  },
+);
 // Example output:
 // response.results => all returned verses match BOTH tokens (AND logic)
 ```
@@ -755,6 +785,9 @@ const response = search('الله الرحمن', quranData, morphologyMap, wordM
 ### Why use it?
 
 - **Instant repeat lookups** — paginating through pages 2, 3, … of the same query won't re-run the search pipeline.
+- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse targets efficiently without iterating.
+- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser. This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like `(الله OR رب) AND (الرحمن NOT الرحيم)`.
+- **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return `matchType: semantic` metadata gracefully.
 - **Configurable capacity** — set the max number of cached results to control memory.
 - **Zero setup** — create the cache once, pass it to every `search()` call.
 
@@ -790,9 +823,7 @@ const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
 function handleSearch(query: string, page: number) {
   return search(
     query,
-    quranData,
-    morphologyMap,
-    wordMap,
+    { quranData, morphologyMap, wordMap },
     { lemma: true, root: true },
     { page, limit: 20 },
     undefined, // 7th — preComputedFuseIndex (optional)
@@ -910,6 +941,11 @@ export type SearchOptions = {
   root: boolean;
   fuzzy?: boolean;
   semantic?: boolean;
+  isRegex?: boolean;
+  isBoolean?: boolean;
+  suraId?: number;
+  juz_id?: number;
+  sura_name?: string;
 };
 ```
 

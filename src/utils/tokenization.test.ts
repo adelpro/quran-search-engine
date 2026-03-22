@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getPositiveTokens } from './tokenization';
-import type { QuranText, MorphologyAya, WordMap } from '../types';
+import type { QuranText, MorphologyAya } from '../types';
 
 // Mock data
 const mockVerse: QuranText = {
@@ -29,12 +29,13 @@ const mockMorphologyMap = new Map<number, MorphologyAya>([
   ],
 ]);
 
-const mockWordMap: WordMap = {
+const mockWordMap = {
   الله: { lemma: 'الله', root: 'ا ل ه' },
   الرحمن: { lemma: 'الرحمن', root: 'ر ح م' },
   الرحيم: { lemma: 'الرحيم', root: 'ر ح م' },
   بسم: { lemma: 'بسم', root: 'ب س م' },
 };
+const mockWordMapMap = new Map(Object.entries(mockWordMap));
 
 describe('getPositiveTokens', () => {
   it('should find text matches', () => {
@@ -71,7 +72,7 @@ describe('getPositiveTokens', () => {
       'ا ل ه',
       'الله',
       mockMorphologyMap,
-      mockWordMap,
+      mockWordMapMap,
     );
 
     expect(tokens).toContain('الله');

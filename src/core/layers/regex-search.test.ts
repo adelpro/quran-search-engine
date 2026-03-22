@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { validateRegex, performRegexSearch } from './regex-search';
 import { search } from '../search';
 import { InvalidRegexError } from '../../errors';
-import type { QuranText, WordMap, MorphologyAya, ScoredVerse } from '../../types';
+import type { QuranText, MorphologyAya, ScoredVerse } from '../../types';
 
 // ── shared mock data ──────────────────────────────────────────────────────────
 
@@ -71,11 +71,14 @@ const mockMorphologyMap = new Map<number, MorphologyAya>([
   [3, { gid: 3, lemmas: ['الرحمن', 'الرحيم'], roots: ['ر ح م', 'ر ح م'] }],
 ]);
 
-const mockWordMap: WordMap = {
+const mockWordMap: Record<string, { lemma: string; root: string }> = {
   الله: { lemma: 'الله', root: 'ا ل ه' },
   الرحمن: { lemma: 'الرحمن', root: 'ر ح م' },
   الحمد: { lemma: 'الحمد', root: 'ح م د' },
 };
+
+const mockQuranDataMap = new Map((mockQuranData as QuranText[]).map((v) => [v.gid, v]));
+const mockWordMapMap = new Map(Object.entries(mockWordMap));
 
 // ── validateRegex ─────────────────────────────────────────────────────────────
 
@@ -151,11 +154,15 @@ describe('performRegexSearch', () => {
 
 describe('search() with isRegex: true', () => {
   it('returns regex-tagged results for a suffix pattern', () => {
-    const result = search('يم$', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: true,
-      root: true,
-      isRegex: true,
-    });
+    const result = search(
+      'يم$',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      {
+        lemma: true,
+        root: true,
+        isRegex: true,
+      },
+    );
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results.every((r: ScoredVerse<QuranText>) => r.matchType === 'regex')).toBe(true);
     expect(result.counts.regex).toBe(result.counts.total);
@@ -164,11 +171,15 @@ describe('search() with isRegex: true', () => {
   });
 
   it('counts total correctly', () => {
-    const result = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: false,
-      root: false,
-      isRegex: true,
-    });
+    const result = search(
+      'الرحمن',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      {
+        lemma: false,
+        root: false,
+        isRegex: true,
+      },
+    );
     expect(result.counts.total).toBe(result.counts.regex);
     expect(result.pagination.totalResults).toBe(result.counts.total);
   });
@@ -176,9 +187,7 @@ describe('search() with isRegex: true', () => {
   it('paginates regex results', () => {
     const result = search(
       'ا',
-      mockQuranData,
-      mockMorphologyMap,
-      mockWordMap,
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
       {
         lemma: false,
         root: false,
@@ -193,42 +202,58 @@ describe('search() with isRegex: true', () => {
 
   it('throws InvalidRegexError for an invalid pattern passed through search()', () => {
     expect(() =>
-      search('[', mockQuranData, mockMorphologyMap, mockWordMap, {
-        lemma: false,
-        root: false,
-        isRegex: true,
-      }),
+      search(
+        '[',
+        { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+        {
+          lemma: false,
+          root: false,
+          isRegex: true,
+        },
+      ),
     ).toThrow(InvalidRegexError);
   });
 
   it('throws InvalidRegexError for a ReDoS pattern passed through search()', () => {
     expect(() =>
-      search('(ا+)+', mockQuranData, mockMorphologyMap, mockWordMap, {
-        lemma: false,
-        root: false,
-        isRegex: true,
-      }),
+      search(
+        '(ا+)+',
+        { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+        {
+          lemma: false,
+          root: false,
+          isRegex: true,
+        },
+      ),
     ).toThrow(InvalidRegexError);
   });
 
   it('respects suraId filter alongside regex', () => {
     // All mock verses belong to sura_id 1 — filtering by suraId=2 should yield 0
-    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: false,
-      root: false,
-      isRegex: true,
-      suraId: 2,
-    });
+    const result = search(
+      'الله',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      {
+        lemma: false,
+        root: false,
+        isRegex: true,
+        suraId: 2,
+      },
+    );
     expect(result.results).toHaveLength(0);
     expect(result.counts.total).toBe(0);
   });
 
   it('returns all matches when isRegex is false (normal search unaffected)', () => {
-    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: true,
-      root: true,
-      isRegex: false,
-    });
+    const result = search(
+      'الله',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      {
+        lemma: true,
+        root: true,
+        isRegex: false,
+      },
+    );
     // Should use the normal pipeline, not the regex branch
     expect(result.results.every((r: ScoredVerse<QuranText>) => r.matchType !== 'regex')).toBe(true);
   });

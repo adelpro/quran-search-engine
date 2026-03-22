@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  loadQuranData,
-  loadMorphology,
-  loadWordMap,
-  buildInvertedIndex,
-  loadInvertedIndex,
-} from './loader';
+import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from './loader';
 import type { QuranText, MorphologyAya } from '../types';
 import fs from 'fs';
 
@@ -51,11 +45,11 @@ describe('Loader Functions', () => {
   it('should load Quran data', async () => {
     const data = await loadQuranData();
 
-    expect(Array.isArray(data)).toBe(true);
-    expect(data.length).toBeGreaterThan(0);
+    expect(data).toBeInstanceOf(Map);
+    expect(data.size).toBeGreaterThan(0);
 
     // Check structure of first item
-    const firstItem = data[0];
+    const firstItem = data.values().next().value;
     expect(firstItem).toHaveProperty('gid');
     expect(firstItem).toHaveProperty('uthmani');
     expect(firstItem).toHaveProperty('standard');
@@ -120,15 +114,15 @@ describe('Loader Functions', () => {
   it('should load word map data', async () => {
     const wordMap = await loadWordMap();
 
-    expect(typeof wordMap).toBe('object');
+    expect(wordMap).toBeInstanceOf(Map);
     expect(wordMap).not.toBeNull();
 
     // Check if it has expected structure
-    const keys = Object.keys(wordMap);
+    const keys = Array.from(wordMap.keys());
     expect(keys.length).toBeGreaterThan(0);
 
     // Check structure of first word entry
-    const firstWord = wordMap[keys[0]];
+    const firstWord = wordMap.get(keys[0]);
     expect(firstWord).toHaveProperty('lemma');
     expect(firstWord).toHaveProperty('root');
   });
@@ -143,7 +137,7 @@ describe('Loader Functions', () => {
       await fs.promises.rename(originalPath, tempPath);
 
       const wordMap = await loadWordMap();
-      expect(typeof wordMap).toBe('object');
+      expect(wordMap).toBeInstanceOf(Map);
     } catch (error: unknown) {
       expect(error).toBeInstanceOf(Error);
       if (error instanceof Error) {
@@ -162,9 +156,9 @@ describe('Loader Functions', () => {
       loadWordMap(),
     ]);
 
-    expect(Array.isArray(quranData)).toBe(true);
+    expect(quranData).toBeInstanceOf(Map);
     expect(morphology).toBeInstanceOf(Map);
-    expect(typeof wordMap).toBe('object');
+    expect(wordMap).toBeInstanceOf(Map);
   });
 });
 
@@ -175,6 +169,8 @@ describe('buildInvertedIndex', () => {
     { gid: 2, standard: 'الحمد لله رب العالمين', uthmani: 'test' } as QuranText,
     { gid: 3, standard: 'الرحمن الرحيم', uthmani: 'test' } as QuranText,
   ];
+
+  const mockQuranDataMap = new Map((mockQuranData as QuranText[]).map((v) => [v.gid, v]));
 
   const mockMorphologyMap = new Map<number, MorphologyAya>([
     [
@@ -216,7 +212,7 @@ describe('buildInvertedIndex', () => {
   });
 
   it('should map normalized lemmas to correct GIDs', () => {
-    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranDataMap);
 
     // "الرحمن" appears in gid 1 and gid 3
     const rahmanGids = index.lemmaIndex.get('الرحمن');
@@ -226,7 +222,7 @@ describe('buildInvertedIndex', () => {
   });
 
   it('should map normalized roots to correct GIDs', () => {
-    const index = buildInvertedIndex(mockMorphologyMap, mockQuranData);
+    const index = buildInvertedIndex(mockMorphologyMap, mockQuranDataMap);
 
     // Root "ر ح م" appears in gid 1 and gid 3
     const rahmRoot = index.rootIndex.get('ر ح م');
@@ -237,42 +233,10 @@ describe('buildInvertedIndex', () => {
 
   it('should handle empty morphology map', () => {
     const emptyMap = new Map<number, MorphologyAya>();
-    const index = buildInvertedIndex(emptyMap, mockQuranData);
+    const index = buildInvertedIndex(emptyMap, mockQuranDataMap);
 
     expect(index.lemmaIndex.size).toBe(0);
     expect(index.rootIndex.size).toBe(0);
     expect(index.wordIndex.size).toBeGreaterThan(0);
-  });
-});
-
-describe('loadInvertedIndex', () => {
-  it('should load pre-built indices from JSON files', async () => {
-    const index = await loadInvertedIndex();
-
-    expect(index.lemmaIndex).toBeInstanceOf(Map);
-    expect(index.rootIndex).toBeInstanceOf(Map);
-    expect(index.lemmaIndex.size).toBeGreaterThan(0);
-    expect(index.rootIndex.size).toBeGreaterThan(0);
-  });
-
-  it('should have Set<number> values matching buildInvertedIndex output', async () => {
-    const [loaded, morphologyMap, quranData] = await Promise.all([
-      loadInvertedIndex(),
-      loadMorphology(),
-      loadQuranData(),
-    ]);
-    const built = buildInvertedIndex(morphologyMap, quranData);
-
-    // Same number of entries
-    expect(loaded.lemmaIndex.size).toBe(built.lemmaIndex.size);
-    expect(loaded.rootIndex.size).toBe(built.rootIndex.size);
-    expect(loaded.wordIndex.size).toBe(built.wordIndex.size);
-
-    // Spot-check a few lemma entries match
-    for (const [key, builtSet] of Array.from(built.lemmaIndex.entries()).slice(0, 5)) {
-      const loadedSet = loaded.lemmaIndex.get(key);
-      expect(loadedSet).toBeDefined();
-      expect(loadedSet!.size).toBe(builtSet.size);
-    }
   });
 });

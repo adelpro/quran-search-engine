@@ -59,7 +59,7 @@ export const getPositiveTokens = (
     for (const word of words) {
       const cleanWord = word.replace(/[^\u0621-\u064A]/g, '');
       const normalizedWord = normalizeArabic(cleanWord);
-      const entry = wordMap[normalizedWord];
+      const entry = wordMap.get(normalizedWord);
 
       if (entry) {
         if (mode === 'lemma' && targetLemma && entry.lemma) {

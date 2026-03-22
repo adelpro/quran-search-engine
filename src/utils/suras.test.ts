@@ -1,8 +1,7 @@
-// src/data/metadata.test.ts
 import { describe, it, expect } from 'vitest';
-import { SURAS } from './metadata';
+import { SURAS } from './suras';
 import type { VerseInput } from '../types';
-import quranData from './quran.json';
+import quranData from '../data/quran.json';
 
 describe('SURAS metadata', () => {
   it('should have exactly 114 suras', () => {

@@ -37,11 +37,21 @@ export type MorphologyAya = {
   roots: string[];
 };
 
-export type WordMap = {
-  [key: string]: {
+export type WordMap = Map<
+  string,
+  {
     lemma?: string;
     root?: string;
-  };
+  }
+>;
+
+export type SearchContext<TVerse extends VerseInput = QuranText> = {
+  quranData: Map<number, TVerse>;
+  morphologyMap: Map<number, MorphologyAya>;
+  wordMap: WordMap;
+  invertedIndex?: InvertedIndex;
+  semanticMap?: Map<string, string[]>;
+  phoneticMap?: Map<string, string[]>;
 };
 
 export type MatchType =
@@ -157,6 +167,8 @@ export type InvertedIndex = {
   lemmaIndex: LemmaIndex;
   rootIndex: RootIndex;
   wordIndex: WordIndex;
+  semanticIndex?: Map<string, Set<number>>;
+  phoneticIndex?: Map<string, Set<number>>;
 };
 
 /** Boolean query object for booleanSearch() **/

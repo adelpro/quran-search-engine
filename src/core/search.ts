@@ -2,7 +2,7 @@ import Fuse from 'fuse.js';
 import { LRUCache } from '../utils/lru-cache';
 import { normalizeArabic, isArabic } from '../utils/normalization';
 import { parseRangeQuery, filterVersesByRange } from '../utils/range-parser';
-import { phoneticMap, getPhoneticFuse } from '../utils/phonetic';
+import { getPhoneticFuse } from '../utils/phonetic';
 import { InvalidPaginationError, MissingDependenciesError } from '../errors';
 
 import { validateRegex, performRegexSearch } from './layers/regex-search';
@@ -13,17 +13,15 @@ import { performSemanticSearch } from './layers/semantic-search';
 import { computeScore } from '../utils/scoring';
 
 import type {
-  WordMap,
-  MorphologyAya,
   AdvancedSearchOptions,
   SearchResponse,
   SearchCounts,
   PaginationOptions,
   VerseInput,
   ScoredVerse,
-  InvertedIndex,
   VerseWithFuseMatches,
   BooleanQuery,
+  SearchContext,
 } from '../types';
 import {
   clearBooleanOperators,
@@ -51,17 +49,16 @@ import {
  */
 export const search = <TVerse extends VerseInput>(
   query: string,
-  quranData: TVerse[],
-  morphologyMap: Map<number, MorphologyAya>,
-  wordMap: WordMap,
+  context: SearchContext<TVerse>,
   options: AdvancedSearchOptions = { lemma: true, root: true },
   pagination: PaginationOptions = { page: 1, limit: 20 },
-  preComputedFuseIndex?: Fuse<TVerse>,
+  fuseIndex?: Fuse<TVerse>,
   cache?: LRUCache<string, SearchResponse<TVerse>>,
-  invertedIndex?: InvertedIndex,
 ): SearchResponse<TVerse> => {
+  const { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, phoneticMap } = context;
+
   // Validate required dependencies
-  if (!quranData || !Array.isArray(quranData) || quranData.length === 0) {
+  if (!quranData || !(quranData instanceof Map) || quranData.size === 0) {
     throw new MissingDependenciesError(['quranData']);
   }
   if (!morphologyMap) {
@@ -85,7 +82,8 @@ export const search = <TVerse extends VerseInput>(
   // 1. Range query shortcut
   const parsedRange = parseRangeQuery(query);
   if (parsedRange) {
-    const rangeMatches = filterVersesByRange(quranData, parsedRange);
+    const quranDataArray = Array.from(quranData.values());
+    const rangeMatches = filterVersesByRange(quranDataArray, parsedRange);
     const totalResults = rangeMatches.length;
     const totalPages = Math.ceil(totalResults / limit);
     const offset = (page - 1) * limit;
@@ -173,14 +171,14 @@ export const search = <TVerse extends VerseInput>(
       // let translation = translationMap.get(cleanToken);
       // if (translation) return translation;
 
-      let arabicPossibilities = phoneticMap.get(cleanToken);
+      let arabicPossibilities = phoneticMap?.get(cleanToken);
 
       // Fallback: Fuzzy phonetic match if exact match fails
       if (!arabicPossibilities && fuzzyEnabled) {
         const phoneticFuse = getPhoneticFuse();
         const fuzzyPhoneticMatches = phoneticFuse.search(cleanToken);
         if (fuzzyPhoneticMatches.length > 0 && (fuzzyPhoneticMatches[0].score ?? 1) < 0.3) {
-          arabicPossibilities = phoneticMap.get(fuzzyPhoneticMatches[0].item);
+          arabicPossibilities = phoneticMap?.get(fuzzyPhoneticMatches[0].item);
         }
       }
 
@@ -208,7 +206,7 @@ export const search = <TVerse extends VerseInput>(
   }
 
   const fuseInstance = fuzzyEnabled
-    ? preComputedFuseIndex || createArabicFuseSearch(quranData, ['standard', 'uthmani'])
+    ? fuseIndex || createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani'])
     : null;
 
   // 5. Executing Search Layers
@@ -229,7 +227,13 @@ export const search = <TVerse extends VerseInput>(
     invertedIndex?.rootIndex,
   );
 
-  const semanticMatches = performSemanticSearch(cleanQuery, quranData, options);
+  const semanticMatches = performSemanticSearch(
+    cleanQuery,
+    quranData,
+    options,
+    semanticMap,
+    operatorFreeQuery,
+  );
 
   // 6. Boolean filtering (if boolean operators were present in query)
   // First, combine all search results from different layers
@@ -244,7 +248,7 @@ export const search = <TVerse extends VerseInput>(
   // 7. Scored deduplication and ranking
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
-  const mapEntry = wordMap[cleanQuery];
+  const mapEntry = wordMap.get(cleanQuery);
 
   for (const verse of booleanMatches) {
     if (!gidSet.has(verse.gid)) {

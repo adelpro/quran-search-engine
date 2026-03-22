@@ -56,10 +56,7 @@ function App() {
         if (supportsWorkers()) {
           try {
             const client = createSearchWorker({
-              workerUrl: new URL(
-                'quran-search-engine/worker',
-                import.meta.url,
-              ),
+              workerUrl: new URL('quran-search-engine/worker', import.meta.url),
             });
             await client.initData();
             if (!cancelled) workerClient.current = client;

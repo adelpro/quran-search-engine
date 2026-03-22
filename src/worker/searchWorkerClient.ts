@@ -5,9 +5,7 @@ import type {
   PaginationOptions,
   SearchResponse,
   QuranText,
-  MorphologyAya,
-  WordMap,
-  InvertedIndex,
+  SearchContext,
 } from '../types';
 import type { WorkerRequest, WorkerResponse, SearchWorkerClient } from './types';
 
@@ -121,12 +119,7 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
 
 // ── Fallback client (runs search on main thread) ───────────────
 
-export interface FallbackDependencies {
-  quranData: QuranText[];
-  morphologyMap: Map<number, MorphologyAya>;
-  wordMap: WordMap;
-  invertedIndex?: InvertedIndex;
-}
+export type FallbackDependencies = SearchContext<QuranText>;
 
 function createFallbackClient(deps: FallbackDependencies): SearchWorkerClient {
   let ready = false;
@@ -148,14 +141,18 @@ function createFallbackClient(deps: FallbackDependencies): SearchWorkerClient {
       }
       return search(
         query,
-        deps.quranData,
-        deps.morphologyMap,
-        deps.wordMap,
+        {
+          quranData: deps.quranData,
+          morphologyMap: deps.morphologyMap,
+          wordMap: deps.wordMap,
+          invertedIndex: deps.invertedIndex,
+          semanticMap: deps.semanticMap,
+          phoneticMap: deps.phoneticMap,
+        },
         options,
         pagination,
         undefined,
         lruCache ?? undefined,
-        deps.invertedIndex,
       );
     },
 

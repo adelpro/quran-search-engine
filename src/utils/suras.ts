@@ -1,4 +1,4 @@
-import quranData from './quran.json';
+import quranData from '../data/quran.json';
 import { Sura, QuranText } from '../types';
 
 export const SURAS = (() => {
@@ -42,5 +42,4 @@ export const SURAS = (() => {
   return Array.from(surasMap.values()).sort((a, b) => a.id - b.id);
 })();
 
-// للتحقق من العدد (يجب أن يكون 114)
 console.log(`Number of suras extracted: ${SURAS.length}`);

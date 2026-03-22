@@ -28,7 +28,7 @@ import type {
  */
 export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
   query: string,
-  quranData: TVerse[],
+  quranData: Map<number, TVerse>,
   options: AdvancedSearchOptions,
   fuseInstance: Fuse<TVerse> | null,
   wordMap: WordMap,
@@ -43,7 +43,7 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
 
   // 1. Identify which verses match EACH token
   const tokenMatches = tokens.map((token) => {
-    const entry = wordMap[token];
+    const entry = wordMap.get(token);
     const matchingGids = new Set<number>();
 
     // Linguistic search if dictionary entry exists
@@ -53,16 +53,14 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
       if (options.lemma && targetLemma) {
         if (lemmaIndex) {
           // O(1) lookup via inverted index
-          const gids = lemmaIndex.get(targetLemma);
-          if (gids) {
-            for (const gid of gids) {
-              matchingGids.add(gid);
-            }
+          const gidsFromIndex = lemmaIndex.get(targetLemma);
+          if (gidsFromIndex) {
+            Array.from(gidsFromIndex).forEach((gid) => matchingGids.add(gid));
           }
         } else {
           // Fallback: linear scan (legacy path)
           const normalizedLemma = normalizeArabic(targetLemma);
-          for (const verse of quranData) {
+          for (const verse of quranData.values()) {
             const morph = morphologyMap.get(verse.gid);
             if (morph?.lemmas.some((lemma) => normalizeArabic(lemma).includes(normalizedLemma))) {
               matchingGids.add(verse.gid);
@@ -74,16 +72,14 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
       if (options.root && targetRoot) {
         if (rootIndex) {
           // O(1) lookup via inverted index
-          const gids = rootIndex.get(targetRoot);
-          if (gids) {
-            for (const gid of gids) {
-              matchingGids.add(gid);
-            }
+          const gidsFromIndex = rootIndex.get(targetRoot);
+          if (gidsFromIndex) {
+            Array.from(gidsFromIndex).forEach((gid) => matchingGids.add(gid));
           }
         } else {
           // Fallback: linear scan (legacy path)
           const normalizedRoot = normalizeArabic(targetRoot);
-          for (const verse of quranData) {
+          for (const verse of quranData.values()) {
             const morph = morphologyMap.get(verse.gid);
             if (morph?.roots.some((root) => normalizeArabic(root).includes(normalizedRoot))) {
               matchingGids.add(verse.gid);
@@ -138,12 +134,11 @@ export const performAdvancedLinguisticSearch = <TVerse extends VerseInput>(
 
   if (intersection.size === 0) return [];
 
-  // 3. Map back to QuranText objects
-  const gidToVerse = new Map(quranData.map((verse) => [verse.gid, verse]));
+  // 3. Map back to QuranText objects natively (O(1))
 
   const results: VerseWithFuseMatches<TVerse>[] = Array.from(intersection)
     .map((gid): VerseWithFuseMatches<TVerse> | null => {
-      const verse = gidToVerse.get(gid);
+      const verse = quranData.get(gid);
       if (!verse) return null;
 
       const allFuseMatches: FuseResultMatch[] = [];

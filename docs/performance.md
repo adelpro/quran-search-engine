@@ -79,7 +79,7 @@ const result = search(
   { lemma: true, root: true },
   { page: 1, limit: 20 },
   undefined, // preComputedFuseIndex
-  cache,     // optional LRU cache
+  cache, // optional LRU cache
   invertedIndex,
 );
 const elapsed = performance.now() - start;
@@ -89,11 +89,11 @@ console.log(`Search took ${elapsed.toFixed(2)}ms (${result.pagination.totalResul
 
 Approximate timings (hardware-dependent):
 
-| Configuration          | Typical Range | Notes                    |
-|------------------------|---------------|---------------------------|
-| Simple (lemma/root off)| 5–30 ms       | Linear scan               |
-| Lemma + Root           | 20–80 ms      | Faster with inverted index|
-| Full (incl. fuzzy)     | 100–500 ms    | Fuse.js rebuild per call  |
+| Configuration           | Typical Range | Notes                      |
+| ----------------------- | ------------- | -------------------------- |
+| Simple (lemma/root off) | 5–30 ms       | Linear scan                |
+| Lemma + Root            | 20–80 ms      | Faster with inverted index |
+| Full (incl. fuzzy)      | 100–500 ms    | Fuse.js rebuild per call   |
 
 ### Memory Footprint
 
@@ -220,8 +220,8 @@ const result = search(
   wordMap,
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined,  // preComputedFuseIndex
-  cache,      // 8th param — cache key is built internally from { query, options, pagination }
+  undefined, // preComputedFuseIndex
+  cache, // 8th param — cache key is built internally from { query, options, pagination }
   invertedIndex,
 );
 ```
@@ -248,19 +248,15 @@ flowchart LR
 
 ### Build vs Load
 
-| Method                 | Use Case                         | Startup Cost | Memory       |
-|------------------------|----------------------------------|--------------|--------------|
-| `buildInvertedIndex()` | You already have morphology/data | ~50–200 ms   | +5–15 MB     |
+| Method                 | Use Case                         | Startup Cost | Memory           |
+| ---------------------- | -------------------------------- | ------------ | ---------------- |
+| `buildInvertedIndex()` | You already have morphology/data | ~50–200 ms   | +5–15 MB         |
 | `loadInvertedIndex()`  | Production, pre-built index      | Lower        | Loaded from JSON |
 
 ### Usage
 
 ```typescript
-import {
-  buildInvertedIndex,
-  loadInvertedIndex,
-  search,
-} from 'quran-search-engine';
+import { buildInvertedIndex, loadInvertedIndex, search } from 'quran-search-engine';
 
 // Option 1: Build from loaded data
 const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
@@ -278,7 +274,7 @@ const result = search(
   pagination,
   preComputedFuseIndex,
   cache,
-  invertedIndex,  // 9th param
+  invertedIndex, // 9th param
 );
 ```
 
@@ -302,7 +298,7 @@ const result = search(
   wordMap,
   options,
   pagination,
-  fuseIndex,  // 7th param — skips per-call index rebuild
+  fuseIndex, // 7th param — skips per-call index rebuild
   cache,
   invertedIndex,
 );
@@ -383,10 +379,7 @@ self.onmessage = async (e: MessageEvent) => {
 ### Main Thread
 
 ```typescript
-const worker = new Worker(
-  new URL('./search.worker.ts', import.meta.url),
-  { type: 'module' },
-);
+const worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
 
 worker.postMessage({ type: 'init', id: 'init-1' });
 

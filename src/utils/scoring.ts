@@ -93,7 +93,7 @@ export const computeScore = <TVerse extends VerseInput>(
         if (uniqueRootMatches.size > 0) {
           score += 1;
           if (matchType !== 'exact' && matchType !== 'lemma') matchType = 'root';
-          matchedTokens.push(...uniqueRootMatches);
+          matchedTokens.push(...Array.from(uniqueRootMatches));
           uniqueRootMatches.forEach((t: string) => {
             if (!tokenTypes[t]) tokenTypes[t] = 'root';
           });

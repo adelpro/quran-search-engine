@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { search } from './search';
-import type { QuranText, WordMap, MorphologyAya } from '../types';
+import type { QuranText, MorphologyAya } from '../types';
 
 const mockQuranData: QuranText[] = [
   {
@@ -47,6 +47,8 @@ const mockQuranData: QuranText[] = [
   },
 ];
 
+const mockQuranDataMap = new Map((mockQuranData as QuranText[]).map((v) => [v.gid, v]));
+
 const mockMorphologyMap = new Map<number, MorphologyAya>([
   [
     1,
@@ -67,58 +69,103 @@ const mockMorphologyMap = new Map<number, MorphologyAya>([
   [3, { gid: 3, lemmas: ['الرحمن', 'الرحيم'], roots: ['ر ح م', 'ر ح م'] }],
 ]);
 
-const mockWordMap: WordMap = {
+const mockWordMap = {
   الله: { lemma: 'الله', root: 'ا ل ه' },
   الرحمن: { lemma: 'الرحمن', root: 'ر ح م' },
   الحمد: { lemma: 'الحمد', root: 'ح م د' },
 };
 
+const mockWordMapMap = new Map(Object.entries(mockWordMap));
+
+const mockPhoneticMap = new Map([
+  ['bismi', ['بسم']],
+  ['allahi', ['الله']],
+]);
+
 describe('Search Orchestrator (Integration)', () => {
   it('should find exact matches with Arabic query', () => {
-    const result = search('الله', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('الله', {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+    });
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].gid).toBe(1);
     expect(result.results[0].matchType).toBe('exact');
   });
 
   it('should find phonetic matches with Latin query', () => {
-    const result = search('bismi allahi', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('bismi allahi', {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+      phoneticMap: mockPhoneticMap,
+    });
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].gid).toBe(1);
   });
 
   it('should handle range queries (e.g. 1:1)', () => {
-    const result = search('1:1', mockQuranData, mockMorphologyMap, mockWordMap);
+    const result = search('1:1', {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+    });
     expect(result.results).toHaveLength(1);
     expect(result.results[0].gid).toBe(1);
     expect(result.results[0].matchType).toBe('range');
   });
 
   it('should perform semantic search when specified', () => {
-    const result = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: true,
-      root: true,
-      semantic: true,
-    });
+    const result = search(
+      'الرحمن',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      {
+        lemma: true,
+        root: true,
+        semantic: true,
+      },
+    );
     expect(result.results.length).toBeGreaterThan(0);
   });
 
   it('should support regex queries', () => {
-    const result = search('^الحمد', mockQuranData, mockMorphologyMap, mockWordMap, {
-      lemma: false,
-      root: false,
-      isRegex: true,
-    });
+    const result = search(
+      '^الحمد',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      {
+        lemma: false,
+        root: false,
+        isRegex: true,
+      },
+    );
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].gid).toBe(2);
   });
 
   it('should respect pagination options', () => {
     const limit = 1;
-    const result = search('الرحمن', mockQuranData, mockMorphologyMap, mockWordMap, undefined, {
-      page: 1,
-      limit,
-    });
+    const result = search(
+      'الرحمن',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      undefined,
+      {
+        page: 1,
+        limit,
+      },
+    );
     expect(result.results.length).toBeLessThanOrEqual(limit);
     expect(result.pagination.limit).toBe(limit);
   });

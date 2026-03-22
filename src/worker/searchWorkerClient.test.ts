@@ -4,7 +4,7 @@ import {
   createSearchWorker,
   type FallbackDependencies,
 } from './searchWorkerClient';
-import type { QuranText, MorphologyAya, WordMap, SearchResponse } from '../types';
+import type { QuranText, MorphologyAya, SearchResponse } from '../types';
 
 // ── supportsWorkers ────────────────────────────────────────────
 
@@ -44,10 +44,10 @@ describe('createSearchWorker – fallback mode', () => {
     [1, { gid: 1, lemmas: ['بسم'], roots: ['سمو'] }],
   ]);
 
-  const wm: WordMap = {};
+  const wm = new Map<string, { lemma?: string; root?: string }>();
 
   const deps: FallbackDependencies = {
-    quranData: [minimalVerse],
+    quranData: new Map([[1, minimalVerse]]),
     morphologyMap: morphMap,
     wordMap: wm,
   };

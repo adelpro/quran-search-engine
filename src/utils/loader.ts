@@ -98,15 +98,23 @@ export const loadWordMap = async (path?: string): Promise<WordMap> => {
     const wordMapModule = path
       ? await import(/* @vite-ignore */ path)
       : await import('../data/word-map.json');
-    const wordMap = (wordMapModule.default || wordMapModule) as WordMap;
+    const wordMapRaw = (wordMapModule.default || wordMapModule) as Record<
+      string,
+      { lemma?: string; root?: string }
+    >;
 
     // Validate schema
-    if (!wordMap || typeof wordMap !== 'object') {
+    if (!wordMapRaw || typeof wordMapRaw !== 'object') {
       throw new DataSchemaInvalidError(filePath, 'Expected an object for word map data');
     }
 
-    if (Object.keys(wordMap).length === 0) {
+    if (Object.keys(wordMapRaw).length === 0) {
       throw new DataSchemaInvalidError(filePath, 'Word map data is empty');
+    }
+
+    const wordMap = new Map<string, { lemma?: string; root?: string }>();
+    for (const [key, val] of Object.entries(wordMapRaw)) {
+      wordMap.set(key, val);
     }
 
     return wordMap;
@@ -146,7 +154,7 @@ export const loadWordMap = async (path?: string): Promise<WordMap> => {
  * @throws {DataParseError} When the file cannot be parsed as JSON
  * @throws {DataSchemaInvalidError} When the data structure is invalid
  */
-export const loadQuranData = async (path?: string): Promise<QuranText[]> => {
+export const loadQuranData = async (path?: string): Promise<Map<number, QuranText>> => {
   const filePath = path || '../data/quran.json';
 
   try {
@@ -175,7 +183,12 @@ export const loadQuranData = async (path?: string): Promise<QuranText[]> => {
       }
     }
 
-    return quranData;
+    const quranMap = new Map<number, QuranText>();
+    for (const verse of quranData) {
+      quranMap.set(verse.gid, verse);
+    }
+
+    return quranMap;
   } catch (error) {
     // Re-throw our custom errors
     if (
@@ -218,11 +231,15 @@ export const loadQuranData = async (path?: string): Promise<QuranText[]> => {
  */
 export const buildInvertedIndex = (
   morphologyMap: Map<number, MorphologyAya>,
-  quranData: QuranText[],
+  quranData: Map<number, QuranText>,
+  semanticMap?: Map<string, string[]>,
+  phoneticMap?: Map<string, string[]>,
 ): InvertedIndex => {
   const lemmaIndex = new Map<string, Set<number>>();
   const rootIndex = new Map<string, Set<number>>();
   const wordIndex = new Map<string, Set<number>>();
+  const semanticIndex = semanticMap ? new Map<string, Set<number>>() : undefined;
+  const phoneticIndex = phoneticMap ? new Map<string, Set<number>>() : undefined;
 
   for (const morph of morphologyMap.values()) {
     const gid = morph.gid;
@@ -252,7 +269,7 @@ export const buildInvertedIndex = (
   }
 
   // Index words from verse standard text (already tashkeel-free)
-  for (const verse of quranData) {
+  for (const verse of quranData.values()) {
     const normalized = normalizeArabic(verse.standard);
     const words = normalized.split(/\s+/);
     for (const word of words) {
@@ -267,48 +284,159 @@ export const buildInvertedIndex = (
     }
   }
 
-  return { lemmaIndex, rootIndex, wordIndex };
+  // Build semanticIndex based on the computed wordIndex
+  if (semanticMap && semanticIndex) {
+    for (const [key, words] of semanticMap.entries()) {
+      const gids = new Set<number>();
+      for (const word of words) {
+        const matches = wordIndex.get(word) || wordIndex.get(normalizeArabic(word));
+        if (matches) {
+          for (const gid of matches) {
+            gids.add(gid);
+          }
+        }
+      }
+      if (gids.size > 0) {
+        semanticIndex.set(key, gids);
+      }
+    }
+  }
+
+  // Build phoneticIndex similarly
+  if (phoneticMap && phoneticIndex) {
+    for (const [key, words] of phoneticMap.entries()) {
+      const gids = new Set<number>();
+      for (const word of words) {
+        const matches = wordIndex.get(word) || wordIndex.get(normalizeArabic(word));
+        if (matches) {
+          for (const gid of matches) {
+            gids.add(gid);
+          }
+        }
+      }
+      if (gids.size > 0) {
+        phoneticIndex.set(key, gids);
+      }
+    }
+  }
+
+  return { lemmaIndex, rootIndex, wordIndex, semanticIndex, phoneticIndex };
 };
 
-/**
- * Lazily loads the pre-built inverted index from static JSON files.
- * The JSON files contain plain objects ({ key: number[] }),
- * which are reconstructed into Map<string, Set<number>> structures.
- *
- * @returns A Promise that resolves to an InvertedIndex.
- */
-export const loadInvertedIndex = async (): Promise<InvertedIndex> => {
+export const loadSemanticData = async (path?: string): Promise<Map<string, string[]>> => {
+  const filePath = path || '../data/semantic.json';
+
   try {
-    const [lemmaModule, rootModule, wordModule] = await Promise.all([
-      import('../data/lemma-index.json'),
-      import('../data/root-index.json'),
-      import('../data/word-index.json'),
-    ]);
+    const semanticModule = path
+      ? await import(/* @vite-ignore */ path)
+      : await import('../data/semantic.json');
+    const semanticData = (semanticModule.default || semanticModule) as SemanticConcept[];
 
-    const lemmaRaw = (lemmaModule.default || lemmaModule) as Record<string, number[]>;
-    const rootRaw = (rootModule.default || rootModule) as Record<string, number[]>;
-    const wordRaw = (wordModule.default || wordModule) as Record<string, number[]>;
-    const lemmaIndex = new Map<string, Set<number>>();
-    for (const [key, gids] of Object.entries(lemmaRaw)) {
-      lemmaIndex.set(key, new Set(gids));
+    if (!Array.isArray(semanticData)) {
+      throw new DataSchemaInvalidError(filePath, 'Expected an array of semantic data');
     }
 
-    const rootIndex = new Map<string, Set<number>>();
-    for (const [key, gids] of Object.entries(rootRaw)) {
-      rootIndex.set(key, new Set(gids));
+    if (semanticData.length === 0) {
+      throw new DataSchemaInvalidError(filePath, 'Semantic data is empty');
     }
 
-    const wordIndex = new Map<string, Set<number>>();
-    for (const [key, gids] of Object.entries(wordRaw)) {
-      wordIndex.set(key, new Set(gids));
-    }
-
-    return { lemmaIndex, rootIndex, wordIndex };
+    return buildSemanticMap(semanticData);
   } catch (error) {
-    console.error('Failed to load inverted index:', error);
-    throw new Error(
-      'Could not load inverted index data. Ensure src/data/lemma-index.json, src/data/root-index.json, and src/data/word-index.json exist.',
-      { cause: error },
-    );
+    if (
+      error instanceof DataFileNotFoundError ||
+      error instanceof DataParseError ||
+      error instanceof DataSchemaInvalidError
+    ) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      if (
+        error.message.includes('Cannot find module') ||
+        error.message.includes('Failed to fetch')
+      ) {
+        throw new DataFileNotFoundError(filePath, error);
+      }
+      if (error.message.includes('JSON') || error.message.includes('parse')) {
+        throw new DataParseError(filePath, error);
+      }
+    }
+
+    throw new DataParseError(filePath, error);
+  }
+};
+
+interface SemanticConcept {
+  english: string[];
+  arabic: string[];
+  category?: string;
+  notes?: string;
+}
+
+const buildSemanticMap = (semanticData: SemanticConcept[]): Map<string, string[]> => {
+  const map = new Map<string, string[]>();
+  for (const concept of semanticData) {
+    for (const word of concept.arabic) {
+      const cleanWord = normalizeArabic(word);
+      if (cleanWord) {
+        map.set(cleanWord, concept.arabic);
+      }
+    }
+    for (const engWord of concept.english) {
+      const cleanWord = engWord.replace(/[^a-zA-Z\s]/g, '').trim();
+      map.set(cleanWord.toLowerCase(), concept.arabic);
+    }
+  }
+  return map;
+};
+
+type PhoneticDictionary = Record<string, string[]>;
+
+export const loadPhoneticData = async (path?: string): Promise<Map<string, string[]>> => {
+  const filePath = path || '../data/phonetic.json';
+
+  try {
+    const phoneticModule = path
+      ? await import(/* @vite-ignore */ path)
+      : await import('../data/phonetic.json');
+    const phoneticData = (phoneticModule.default || phoneticModule) as PhoneticDictionary;
+
+    if (!phoneticData || typeof phoneticData !== 'object') {
+      throw new DataSchemaInvalidError(filePath, 'Expected an object for phonetic data');
+    }
+
+    if (Object.keys(phoneticData).length === 0) {
+      throw new DataSchemaInvalidError(filePath, 'Phonetic data is empty');
+    }
+
+    const map = new Map<string, string[]>();
+    for (const [phonetic, arabicWords] of Object.entries(phoneticData)) {
+      const cleanLatinWord = phonetic.toLowerCase().trim();
+      map.set(cleanLatinWord, arabicWords);
+    }
+
+    return map;
+  } catch (error) {
+    if (
+      error instanceof DataFileNotFoundError ||
+      error instanceof DataParseError ||
+      error instanceof DataSchemaInvalidError
+    ) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      if (
+        error.message.includes('Cannot find module') ||
+        error.message.includes('Failed to fetch')
+      ) {
+        throw new DataFileNotFoundError(filePath, error);
+      }
+      if (error.message.includes('JSON') || error.message.includes('parse')) {
+        throw new DataParseError(filePath, error);
+      }
+    }
+
+    throw new DataParseError(filePath, error);
   }
 };

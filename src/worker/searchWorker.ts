@@ -8,7 +8,7 @@ import type { WorkerRequest, InitDataResponse, SearchResultResponse, ErrorRespon
 
 // ── Worker-scoped state ────────────────────────────────────────
 
-let quranData: QuranText[] | null = null;
+let quranData: Map<number, QuranText> | null = null;
 let morphologyMap: Map<number, MorphologyAya> | null = null;
 let wordMap: WordMap | null = null;
 let invertedIndex: InvertedIndex | null = null;
@@ -70,14 +70,16 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       try {
         const result = search(
           msg.query,
-          quranData,
-          morphologyMap,
-          wordMap,
+          {
+            quranData,
+            morphologyMap,
+            wordMap,
+            invertedIndex: invertedIndex ?? undefined,
+          },
           msg.options,
           msg.pagination,
           undefined,
           cache,
-          invertedIndex ?? undefined,
         );
 
         postTyped({

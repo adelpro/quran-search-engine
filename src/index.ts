@@ -5,7 +5,8 @@ export {
   loadQuranData,
   loadWordMap,
   buildInvertedIndex,
-  loadInvertedIndex,
+  loadSemanticData,
+  loadPhoneticData,
 } from './utils/loader';
 export { normalizeArabic, removeTashkeel, isArabic } from './utils/normalization';
 
@@ -35,3 +36,5 @@ export {
   type FallbackDependencies,
   type SearchWorkerClient,
 } from './worker';
+
+export { SURAS } from './utils/suras';

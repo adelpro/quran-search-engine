@@ -16,14 +16,16 @@ import type { VerseInput, WordIndex } from '../../types';
  * @returns An array of filtered verses
  */
 export const filterVerses = <TVerse extends VerseInput>(
-  data: TVerse[],
+  data: TVerse[] | Map<number, TVerse>,
   suraId?: number,
   juzId?: number,
   suraName?: string,
 ): TVerse[] => {
+  const iterable = data instanceof Map ? Array.from(data.values()) : data;
+
   // 1. Priority: suraId — return results even if empty (filter was explicitly requested)
   if (typeof suraId === 'number' && suraId > 0) {
-    const results = data.filter((v) => v['sura_id'] === suraId);
+    const results = iterable.filter((v) => v['sura_id'] === suraId);
     return results;
   }
 
@@ -31,7 +33,7 @@ export const filterVerses = <TVerse extends VerseInput>(
   if (suraName) {
     const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
     if (normalizedQuery) {
-      return data.filter((verse) => {
+      return iterable.filter((verse) => {
         const normalizedSuraName = verse['sura_name']
           ? normalizeArabic(verse['sura_name'] as string)
           : '';
@@ -48,12 +50,12 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 3. Priority: juzId
   if (juzId !== undefined) {
-    const results = data.filter((v) => v['juz_id'] === juzId);
+    const results = iterable.filter((v) => v['juz_id'] === juzId);
     return results;
   }
 
   // 4. Fallback: Return original data (no filter was provided)
-  return data;
+  return iterable;
 };
 
 /**
@@ -70,7 +72,7 @@ export const filterVerses = <TVerse extends VerseInput>(
  * const results = simpleSearch(verses, "الحمد لله", "standard", myWordIndex);
  */
 export const simpleSearch = <T extends Record<string, unknown>>(
-  items: T[],
+  items: T[] | Map<number, T>,
   query: string,
   searchField: keyof T,
   wordIndex?: WordIndex,
@@ -93,7 +95,7 @@ export const simpleSearch = <T extends Record<string, unknown>>(
       } else {
         // TODO: Replace manual intersection with Set.prototype.intersection();
         // when target is bumped to ES2025
-        for (const gid of matchingGids) {
+        for (const gid of Array.from(matchingGids)) {
           if (!gids.has(gid)) matchingGids.delete(gid);
         }
         if (matchingGids.size === 0) return [];
@@ -101,11 +103,23 @@ export const simpleSearch = <T extends Record<string, unknown>>(
     }
 
     if (!matchingGids || matchingGids.size === 0) return [];
+
+    if (items instanceof Map) {
+      const results: T[] = [];
+      for (const gid of matchingGids) {
+        const item = items.get(gid);
+        if (item) results.push(item);
+      }
+      return results;
+    }
+
     return items.filter((item) => matchingGids!.has(item['gid'] as number));
   }
 
+  const iterable = items instanceof Map ? Array.from(items.values()) : items;
+
   // Fallback: linear scan
-  return items.filter((item) => {
+  return iterable.filter((item) => {
     const fieldValue = normalizeArabic(String(item[searchField] || ''));
     // AND logic: All tokens must be present
     return queryTokens.every((token) => fieldValue.includes(token));
@@ -124,7 +138,7 @@ export const simpleSearch = <T extends Record<string, unknown>>(
  * const results = simpleSearchOr(verses, "الحمد لله", "standard", myWordIndex);
  */
 export const simpleSearchOr = <T extends Record<string, unknown>>(
-  items: T[],
+  items: T[] | Map<number, T>,
   query: string,
   searchField: keyof T,
   wordIndex?: WordIndex,
@@ -149,11 +163,23 @@ export const simpleSearchOr = <T extends Record<string, unknown>>(
 
     // After loop, check if we found any matches
     if (matchingGids.size === 0) return [];
+
+    if (items instanceof Map) {
+      const results: T[] = [];
+      for (const gid of matchingGids) {
+        const item = items.get(gid);
+        if (item) results.push(item);
+      }
+      return results;
+    }
+
     return items.filter((item) => matchingGids.has(item['gid'] as number));
   }
 
+  const iterable = items instanceof Map ? Array.from(items.values()) : items;
+
   // Fallback: linear scan with OR logic
-  return items.filter((item) => {
+  return iterable.filter((item) => {
     const fieldValue = normalizeArabic(String(item[searchField] || ''));
     // Or logic: At least one tokens must be present
     return queryTokens.some((token) => fieldValue.includes(token));
