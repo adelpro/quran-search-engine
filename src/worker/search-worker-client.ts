@@ -1,5 +1,14 @@
+/// <reference lib="webworker" />
+
 import { search } from '../core/search';
 import { LRUCache } from '../utils/lru-cache';
+import {
+  WorkerNotSupportedError,
+  WorkerInitializationError,
+  WorkerTerminatedError,
+  WorkerNotInitializedError,
+  WorkerFactoryError,
+} from '../errors';
 import type {
   AdvancedSearchOptions,
   PaginationOptions,
@@ -27,10 +36,15 @@ function generateRequestId(): string {
 function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
   const WorkerCtor = globalThis.Worker;
   if (!WorkerCtor) {
-    throw new Error('Web Workers are not supported in this environment.');
+    throw new WorkerNotSupportedError();
   }
 
-  const worker = new WorkerCtor(workerUrl, { type: 'module' });
+  let worker: Worker;
+  try {
+    worker = new WorkerCtor(workerUrl, { type: 'module' });
+  } catch (err) {
+    throw new WorkerInitializationError(err instanceof Error ? err.message : String(err));
+  }
 
   type PendingResolve = (value: void | SearchResponse<QuranText>) => void;
   const pending = new Map<string, { resolve: PendingResolve; reject: (reason: unknown) => void }>();
@@ -70,7 +84,7 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
 
   worker.onerror = (event) => {
     for (const [, entry] of pending) {
-      entry.reject(new Error(event.message || 'Worker error'));
+      entry.reject(new WorkerInitializationError(event.message || 'Worker error'));
     }
     pending.clear();
   };
@@ -110,7 +124,7 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
       post({ type: 'DISPOSE' });
       worker.terminate();
       for (const [, entry] of pending) {
-        entry.reject(new Error('Worker terminated'));
+        entry.reject(new WorkerTerminatedError());
       }
       pending.clear();
     },
@@ -137,7 +151,7 @@ function createFallbackClient(deps: FallbackDependencies): SearchWorkerClient {
       pagination: PaginationOptions,
     ): Promise<SearchResponse> {
       if (!ready) {
-        throw new Error('Fallback client not initialized. Call initData first.');
+        throw new WorkerNotInitializedError();
       }
       return search(
         query,
@@ -173,7 +187,7 @@ export type CreateSearchWorkerOptions = {
    *
    * Most bundlers support:
    * ```ts
-   * new URL('./searchWorker.ts', import.meta.url)
+   * new URL('./search-worker.ts', import.meta.url)
    * ```
    */
   workerUrl?: URL | string;
@@ -191,7 +205,7 @@ export type CreateSearchWorkerOptions = {
  *
  * ```ts
  * const client = createSearchWorker({
- *   workerUrl: new URL('./searchWorker.js', import.meta.url),
+ *   workerUrl: new URL('./search-worker.js', import.meta.url),
  *   fallbackDeps: { quranData, morphologyMap, wordMap },
  * });
  * await client.initData();
@@ -211,7 +225,5 @@ export function createSearchWorker(opts: CreateSearchWorkerOptions = {}): Search
     return createFallbackClient(opts.fallbackDeps);
   }
 
-  throw new Error(
-    'Cannot create search worker: Web Workers not supported and no fallbackDeps provided.',
-  );
+  throw new WorkerFactoryError('Web Workers not supported and no fallbackDeps provided.');
 }

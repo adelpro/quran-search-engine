@@ -3,7 +3,8 @@ import {
   supportsWorkers,
   createSearchWorker,
   type FallbackDependencies,
-} from './searchWorkerClient';
+} from './search-worker-client';
+import { WorkerNotSupportedError, WorkerNotInitializedError, WorkerFactoryError } from '../errors';
 import type { QuranText, MorphologyAya, SearchResponse } from '../types';
 
 // ── supportsWorkers ────────────────────────────────────────────
@@ -61,7 +62,7 @@ describe('createSearchWorker – fallback mode', () => {
   });
 
   it('throws when Workers unavailable and no fallbackDeps', () => {
-    expect(() => createSearchWorker({})).toThrow('Cannot create search worker');
+    expect(() => createSearchWorker({})).toThrow(WorkerFactoryError);
   });
 
   it('creates a fallback client when Workers are unavailable', () => {
@@ -76,7 +77,7 @@ describe('createSearchWorker – fallback mode', () => {
     const client = createSearchWorker({ fallbackDeps: deps });
     await expect(
       client.runSearch('test', { lemma: true, root: true }, { page: 1, limit: 10 }),
-    ).rejects.toThrow('not initialized');
+    ).rejects.toThrow(WorkerNotInitializedError);
   });
 
   it('fallback client performs search after initData', async () => {
@@ -222,5 +223,15 @@ describe('createSearchWorker – worker mode', () => {
     vi.stubGlobal('Worker', ErrorWorker);
     const client = createSearchWorker({ workerUrl: 'fake://worker.js' });
     await expect(client.initData()).rejects.toThrow('Something went wrong');
+  });
+
+  it('throws WorkerFactoryError when Worker is undefined and fallbackDeps not provided', () => {
+    vi.stubGlobal('Worker', undefined);
+    expect(() => createSearchWorker({ workerUrl: 'fake://worker.js' })).toThrow(WorkerFactoryError);
+  });
+
+  it('throws WorkerFactoryError when fallbackDeps not provided and Workers unavailable', () => {
+    vi.stubGlobal('Worker', undefined);
+    expect(() => createSearchWorker({})).toThrow(WorkerFactoryError);
   });
 });

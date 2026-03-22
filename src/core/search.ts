@@ -3,7 +3,7 @@ import { LRUCache } from '../utils/lru-cache';
 import { normalizeArabic, isArabic } from '../utils/normalization';
 import { parseRangeQuery, filterVersesByRange } from '../utils/range-parser';
 import { getPhoneticFuse } from '../utils/phonetic';
-import { InvalidPaginationError, MissingDependenciesError } from '../errors';
+import { InvalidPaginationError, MissingDependenciesError, InvalidQueryError } from '../errors';
 
 import { validateRegex, performRegexSearch } from './layers/regex-search';
 import { filterVerses, simpleSearch, simpleSearchOr } from './layers/simple-search';
@@ -77,6 +77,12 @@ export const search = <TVerse extends VerseInput>(
   }
   if (limit < 1 || !Number.isInteger(limit)) {
     throw new InvalidPaginationError(page, limit);
+  }
+
+  // Validate query is not empty after normalization
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    throw new InvalidQueryError(query, 'Query cannot be empty');
   }
 
   // 1. Range query shortcut

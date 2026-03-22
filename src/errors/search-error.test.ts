@@ -4,7 +4,7 @@ import {
   InvalidQueryError,
   MissingDependenciesError,
   SearchOperationFailedError,
-} from './search.error';
+} from './search-error';
 import { ErrorCode, ErrorType } from './error-codes';
 
 describe('SearchError', () => {

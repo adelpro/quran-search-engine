@@ -298,95 +298,96 @@ const result = search(
 ```mermaid
 flowchart TB
   subgraph Main Thread
-    UI[UI] --> |postMessage| W
-    W --> |onmessage| UI
+    UI[UI] --> |runSearch| C[SearchWorkerClient]
+    C --> |onmessage| UI
   end
   subgraph Worker
-    W[search.worker]
-    W --> |load once| D[quranData, morphology, wordMap]
+    C --> |postMessage| W[search-worker]
+    W --> |load once| D[quranData, morphology, wordMap, semanticMap, phoneticMap]
     D --> S[search]
     S --> R[results]
   end
 ```
 
-### Worker Pattern
+### Using `createSearchWorker` (Recommended)
 
-Load data **inside** the worker (avoid transferring large datasets via `postMessage`):
+The library provides a `createSearchWorker` factory that handles Worker communication automatically:
 
 ```typescript
-// search.worker.ts
 import {
+  createSearchWorker,
   loadQuranData,
   loadMorphology,
   loadWordMap,
-  loadInvertedIndex,
-  search,
+  loadSemanticData,
+  loadPhoneticData,
 } from 'quran-search-engine';
-import type { SearchResponse, SearchOptions, PaginationOptions } from 'quran-search-engine';
 
-let quranData: Awaited<ReturnType<typeof loadQuranData>>;
-let morphologyMap: Awaited<ReturnType<typeof loadMorphology>>;
-let wordMap: Awaited<ReturnType<typeof loadWordMap>>;
-let invertedIndex: Awaited<ReturnType<typeof loadInvertedIndex>>;
+// Create the worker client
+const workerClient = createSearchWorker({
+  workerUrl: new URL('./search-worker.js', import.meta.url),
+});
 
-self.onmessage = async (e: MessageEvent) => {
-  const { type, payload, id } = e.data;
+// Initialize (loads data inside the worker)
+await workerClient.initData();
 
-  if (type === 'init') {
-    [quranData, morphologyMap, wordMap, invertedIndex] = await Promise.all([
-      loadQuranData(),
-      loadMorphology(),
-      loadWordMap(),
-      loadInvertedIndex(),
-    ]);
-    self.postMessage({ type: 'ready', id });
-    return;
-  }
+// Run searches
+const result = await workerClient.runSearch(
+  'الله',
+  { lemma: true, root: true },
+  { page: 1, limit: 20 }
+);
 
-  if (type === 'search') {
-    const { query, options, pagination } = payload;
-    const response: SearchResponse = search(
-      query,
-      { quranData, morphologyMap, wordMap, invertedIndex },
-      options ?? { lemma: true, root: true },
-      pagination ?? { page: 1, limit: 20 },
-    );
-    self.postMessage({ type: 'results', payload: response, id });
-  }
-};
+// Cleanup
+workerClient.terminate();
 ```
 
-### Main Thread
+### Fallback Mode
+
+When Web Workers aren't supported, provide fallback dependencies:
 
 ```typescript
-const worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
+import {
+  createSearchWorker,
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadPhoneticData,
+  buildInvertedIndex,
+} from 'quran-search-engine';
 
-worker.postMessage({ type: 'init', id: 'init-1' });
+// Load data on main thread
+const [quranData, morphologyMap, wordMap, semanticMap, phoneticMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadSemanticData().catch(() => null),
+  loadPhoneticData().catch(() => null),
+]);
 
-worker.onmessage = (e) => {
-  const { type, payload, id } = e.data;
-  if (type === 'ready') console.log('Search engine ready');
-  if (type === 'results') {
-    // Update UI with payload (SearchResponse)
-  }
-};
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap ?? undefined,
+  phoneticMap ?? undefined
+);
 
-worker.postMessage({
-  type: 'search',
-  id: 'search-1',
-  payload: {
-    query: 'الله',
-    options: { lemma: true, root: true },
-    pagination: { page: 1, limit: 20 },
-  },
+// Create fallback client
+const workerClient = createSearchWorker({
+  fallbackDeps: { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, phoneticMap }
 });
+
+await workerClient.initData();
+const result = await workerClient.runSearch('الله', { lemma: true }, { page: 1, limit: 20 });
 ```
 
 ### Caveats
 
-- Load data inside the worker; avoid cloning large datasets with `postMessage`
-- Use `new URL('./worker.ts', import.meta.url)` for Vite/Webpack 5+/Next.js
+- The worker loads all data internally via `initData()`; avoid passing large datasets via `postMessage`
+- Use `new URL('./search-worker.js', import.meta.url)` for Vite/Webpack 5+/Next.js bundling
 - Each worker holds its own data copy; multiple workers increase memory use
+- Provide `fallbackDeps` when Workers may not be available (e.g., SSR environments)
 
 ---
 

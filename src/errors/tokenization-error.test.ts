@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TokenizationError, MissingMorphologyError, InvalidModeError } from './tokenization.error';
+import { TokenizationError, MissingMorphologyError, InvalidModeError } from './tokenization-error';
 import { ErrorCode, ErrorType } from './error-codes';
 
 describe('TokenizationError', () => {

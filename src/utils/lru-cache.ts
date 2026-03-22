@@ -1,14 +1,14 @@
-/**
- * Generic LRU (Least Recently Used) cache with configurable capacity.
- * Uses a Map internally for O(1) get/set/eviction.
- */
+import { InvalidOptionsError } from '../errors';
+
 export class LRUCache<K, V> {
   private cache: Map<K, V>;
   private readonly capacity: number;
 
   constructor(capacity: number) {
     if (!Number.isInteger(capacity) || capacity < 1) {
-      throw new Error('LRUCache capacity must be a positive integer');
+      throw new InvalidOptionsError(
+        `LRUCache capacity must be a positive integer, got: ${capacity}`,
+      );
     }
     this.capacity = capacity;
     this.cache = new Map();

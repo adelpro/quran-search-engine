@@ -1,6 +1,13 @@
 /* global self, postMessage */
 
-import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from '../utils/loader';
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadPhoneticData,
+  buildInvertedIndex,
+} from '../utils/loader';
 import { search } from '../core/search';
 import { LRUCache } from '../utils/lru-cache';
 import type { QuranText, MorphologyAya, WordMap, SearchResponse, InvertedIndex } from '../types';
@@ -11,6 +18,8 @@ import type { WorkerRequest, InitDataResponse, SearchResultResponse, ErrorRespon
 let quranData: Map<number, QuranText> | null = null;
 let morphologyMap: Map<number, MorphologyAya> | null = null;
 let wordMap: WordMap | null = null;
+let semanticMap: Map<string, string[]> | null = null;
+let phoneticMap: Map<string, string[]> | null = null;
 let invertedIndex: InvertedIndex | null = null;
 const cache = new LRUCache<string, SearchResponse<QuranText>>(100);
 
@@ -28,16 +37,25 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   switch (msg.type) {
     case 'INIT_DATA': {
       try {
-        const [qd, morph, wm] = await Promise.all([
+        const [qd, morph, wm, semMap, phonMap] = await Promise.all([
           loadQuranData(),
           loadMorphology(),
           loadWordMap(),
+          loadSemanticData().catch(() => null),
+          loadPhoneticData().catch(() => null),
         ]);
 
         quranData = qd;
         morphologyMap = morph;
         wordMap = wm;
-        invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+        semanticMap = semMap;
+        phoneticMap = phonMap;
+        invertedIndex = buildInvertedIndex(
+          morphologyMap,
+          quranData,
+          semanticMap ?? undefined,
+          phoneticMap ?? undefined,
+        );
 
         postTyped({
           type: 'INIT_DATA_RESULT',
@@ -75,6 +93,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
             morphologyMap,
             wordMap,
             invertedIndex: invertedIndex ?? undefined,
+            semanticMap: semanticMap ?? undefined,
+            phoneticMap: phoneticMap ?? undefined,
           },
           msg.options,
           msg.pagination,
@@ -103,6 +123,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       quranData = null;
       morphologyMap = null;
       wordMap = null;
+      semanticMap = null;
+      phoneticMap = null;
       invertedIndex = null;
       self.close();
       break;

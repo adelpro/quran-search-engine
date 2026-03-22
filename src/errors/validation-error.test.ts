@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ValidationError, InvalidPaginationError, InvalidOptionsError } from './validation.error';
+import { ValidationError, InvalidPaginationError, InvalidOptionsError } from './validation-error';
 import { ErrorCode, ErrorType } from './error-codes';
 
 describe('ValidationError', () => {

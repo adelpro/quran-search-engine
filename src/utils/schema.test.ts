@@ -208,11 +208,11 @@ describe('validateSemanticData', () => {
     expect(result.errors[0].path).toBe('semantic[0].arabic');
   });
 
-  it('reports missing category field', () => {
-    const data = [{ english: ['God'], arabic: ['الله'], notes: 'note' }];
+  it('reports missing english field', () => {
+    const data = [{ arabic: ['الله'], category: 'Theology' }];
     const result = validateSemanticData(data);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.path === 'semantic[0].category')).toBe(true);
+    expect(result.errors.some((e) => e.path === 'semantic[0].english')).toBe(true);
   });
 
   it('reports non-string items in english array', () => {

@@ -349,6 +349,12 @@ type ErrorShape = {
 | `TokenizationError` | Tokenization | Tokenization failed |
 | `MissingMorphologyError` | Tokenization | Morphology data required |
 | `InvalidModeError` | Tokenization | Invalid tokenization mode |
+| `WorkerError` | Worker | Base class for worker errors |
+| `WorkerNotSupportedError` | Worker | Web Workers not supported |
+| `WorkerInitializationError` | Worker | Worker creation failed |
+| `WorkerTerminatedError` | Worker | Worker terminated unexpectedly |
+| `WorkerNotInitializedError` | Worker | Worker not initialized |
+| `WorkerFactoryError` | Worker | Factory cannot create client |
 
 ---
 
@@ -382,26 +388,27 @@ Options for creating a search worker.
 
 ```typescript
 type CreateSearchWorkerOptions = {
-  /** URL to the worker script */
-  workerScriptUrl?: string;
-  /** Timeout for operations in ms */
-  timeout?: number;
-  /** Called when search completes */
-  onResult?: (result: SearchResponse) => void;
-  /** Called on errors */
-  onError?: (error: Error) => void;
+  /** URL to the worker script (use `new URL('./search-worker.js', import.meta.url)`) */
+  workerUrl?: URL | string;
+  /** Dependencies for main-thread fallback when Workers aren't supported */
+  fallbackDeps?: FallbackDependencies;
 };
 ```
 
 ### `FallbackDependencies`
 
-Dependencies for fallback mode when workers aren't supported.
+Dependencies for fallback mode when workers aren't supported. Uses `SearchContext` type.
 
 ```typescript
+type FallbackDependencies = SearchContext<QuranText>;
+// Which expands to:
 type FallbackDependencies = {
-  quranData: QuranText[];
+  quranData: Map<number, QuranText>;
   morphologyMap: Map<number, MorphologyAya>;
   wordMap: WordMap;
+  invertedIndex?: InvertedIndex;
+  semanticMap?: Map<string, string[]>;
+  phoneticMap?: Map<string, string[]>;
 };
 ```
 

@@ -3,7 +3,7 @@ export {
   supportsWorkers,
   type CreateSearchWorkerOptions,
   type FallbackDependencies,
-} from './searchWorkerClient';
+} from './search-worker-client';
 export type {
   SearchWorkerClient,
   WorkerRequest,

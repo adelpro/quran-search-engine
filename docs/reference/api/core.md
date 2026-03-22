@@ -122,6 +122,275 @@ console.log(formatSchemaErrors(result));
 
 ---
 
+## Error Handling
+
+The library provides a hierarchical error system for granular error handling. All errors extend `BaseError` and include `code`, `type`, and `message` properties.
+
+### Data Loading Errors
+
+#### `DataLoadError`
+
+Base class for all data loading errors.
+
+```typescript
+import { DataLoadError } from 'quran-search-engine';
+
+try {
+  // load data...
+} catch (e) {
+  if (e instanceof DataLoadError) {
+    console.log(e.filePath); // The file that failed to load
+    console.log(e.cause);   // The underlying error
+  }
+}
+```
+
+#### `DataFileNotFoundError`
+
+Thrown when a required data file cannot be found.
+
+```typescript
+import { DataFileNotFoundError } from 'quran-search-engine';
+
+try {
+  // load data...
+} catch (e) {
+  if (e instanceof DataFileNotFoundError) {
+    console.log(e.filePath); // Path to missing file
+  }
+}
+```
+
+#### `DataParseError`
+
+Thrown when a data file exists but cannot be parsed.
+
+```typescript
+import { DataParseError } from 'quran-search-engine';
+```
+
+#### `DataSchemaInvalidError`
+
+Thrown when parsed data doesn't match the expected schema structure.
+
+```typescript
+import { DataSchemaInvalidError } from 'quran-search-engine';
+
+try {
+  // load data...
+} catch (e) {
+  if (e instanceof DataSchemaInvalidError) {
+    // e.message includes details about the schema violation
+  }
+}
+```
+
+### Search Errors
+
+#### `InvalidQueryError`
+
+Thrown when the search query is invalid or empty.
+
+```typescript
+import { InvalidQueryError } from 'quran-search-engine';
+
+try {
+  search('', context); // Throws InvalidQueryError
+} catch (e) {
+  if (e instanceof InvalidQueryError) {
+    console.log(e.query); // The invalid query string
+  }
+}
+```
+
+#### `MissingDependenciesError`
+
+Thrown when required data (quranData, morphologyMap, wordMap) is not loaded.
+
+```typescript
+import { MissingDependenciesError } from 'quran-search-engine';
+
+try {
+  search('test', { quranData: undefined }); // Throws MissingDependenciesError
+} catch (e) {
+  if (e instanceof MissingDependenciesError) {
+    console.log(e.missingDependencies); // ['quranData']
+  }
+}
+```
+
+#### `InvalidRegexError`
+
+Thrown when a regex pattern is invalid or unsafe (ReDoS risk).
+
+```typescript
+import { InvalidRegexError } from 'quran-search-engine';
+
+try {
+  search('pattern', context, { isRegex: true });
+} catch (e) {
+  if (e instanceof InvalidRegexError) {
+    console.log(e.pattern); // The problematic pattern
+    console.log(e.reason);  // Why it was rejected
+  }
+}
+```
+
+### Validation Errors
+
+#### `InvalidPaginationError`
+
+Thrown when pagination parameters are invalid.
+
+```typescript
+import { InvalidPaginationError } from 'quran-search-engine';
+
+try {
+  search('test', context, {}, { page: -1 }); // Throws InvalidPaginationError
+} catch (e) {
+  if (e instanceof InvalidPaginationError) {
+    console.log(e.page);  // The invalid page number
+    console.log(e.limit); // The invalid limit
+  }
+}
+```
+
+#### `InvalidOptionsError`
+
+Thrown when search options contain invalid values.
+
+```typescript
+import { InvalidOptionsError } from 'quran-search-engine';
+
+try {
+  new LRUCache(-5); // Throws InvalidOptionsError
+} catch (e) {
+  if (e instanceof InvalidOptionsError) {
+    console.log(e.reason); // Explanation of the issue
+  }
+}
+```
+
+### Tokenization Errors
+
+#### `MissingMorphologyError`
+
+Thrown when morphology data is missing for a specific verse.
+
+```typescript
+import { MissingMorphologyError } from 'quran-search-engine';
+```
+
+#### `InvalidModeError`
+
+Thrown when an invalid tokenization mode is provided.
+
+```typescript
+import { InvalidModeError } from 'quran-search-engine';
+
+try {
+  tokenize('text', 'invalidMode'); // Throws InvalidModeError
+} catch (e) {
+  if (e instanceof InvalidModeError) {
+    console.log(e.mode); // The invalid mode string
+  }
+}
+```
+
+### Worker Errors
+
+#### `WorkerNotSupportedError`
+
+Thrown when Web Workers are not available in the environment.
+
+```typescript
+import { WorkerNotSupportedError } from 'quran-search-engine';
+
+try {
+  createSearchWorker({ workerUrl: '/worker.js' });
+} catch (e) {
+  if (e instanceof WorkerNotSupportedError) {
+    // Browser doesn't support Workers
+  }
+}
+```
+
+#### `WorkerInitializationError`
+
+Thrown when worker creation fails (e.g., CSP restriction, invalid URL).
+
+```typescript
+import { WorkerInitializationError } from 'quran-search-engine';
+
+try {
+  createSearchWorker({ workerUrl: '/invalid/path.js' });
+} catch (e) {
+  if (e instanceof WorkerInitializationError) {
+    console.log(e.message); // Details about the failure
+  }
+}
+```
+
+#### `WorkerTerminatedError`
+
+Thrown when an active worker is unexpectedly terminated.
+
+```typescript
+import { WorkerTerminatedError } from 'quran-search-engine';
+```
+
+#### `WorkerNotInitializedError`
+
+Thrown when calling `runSearch()` before `initData()`.
+
+```typescript
+import { WorkerNotInitializedError } from 'quran-search-engine';
+
+const client = createSearchWorker({ fallbackDeps });
+await client.runSearch('test'); // Throws WorkerNotInitializedError
+```
+
+#### `WorkerFactoryError`
+
+Thrown when `createSearchWorker()` cannot create a client.
+
+```typescript
+import { WorkerFactoryError } from 'quran-search-engine';
+
+try {
+  createSearchWorker({}); // Workers unavailable, no fallback provided
+} catch (e) {
+  if (e instanceof WorkerFactoryError) {
+    console.log(e.message);
+  }
+}
+```
+
+### Error Code Reference
+
+Each error class has a unique error code:
+
+| Error Code | Thrown By |
+|------------|-----------|
+| `DATA_FILE_NOT_FOUND` | `DataFileNotFoundError` |
+| `DATA_PARSE_ERROR` | `DataParseError` |
+| `DATA_SCHEMA_INVALID` | `DataSchemaInvalidError` |
+| `SEARCH_INVALID_QUERY` | `InvalidQueryError` |
+| `SEARCH_MISSING_DEPENDENCIES` | `MissingDependenciesError` |
+| `SEARCH_OPERATION_FAILED` | `SearchOperationFailedError` |
+| `SEARCH_INVALID_REGEX` | `InvalidRegexError` |
+| `VALIDATION_INVALID_PAGINATION` | `InvalidPaginationError` |
+| `VALIDATION_INVALID_OPTIONS` | `InvalidOptionsError` |
+| `TOKENIZATION_MISSING_MORPHOLOGY` | `MissingMorphologyError` |
+| `TOKENIZATION_INVALID_MODE` | `InvalidModeError` |
+| `WORKER_NOT_SUPPORTED` | `WorkerNotSupportedError` |
+| `WORKER_INITIALIZATION_FAILED` | `WorkerInitializationError` |
+| `WORKER_TERMINATED` | `WorkerTerminatedError` |
+| `WORKER_NOT_INITIALIZED` | `WorkerNotInitializedError` |
+| `WORKER_FACTORY_ERROR` | `WorkerFactoryError` |
+
+---
+
 ## Constants
 
 ### `SURAS`
@@ -195,6 +464,90 @@ const plain = removeTashkeel('بِسْمِ ٱللَّهِ'); // Returns: 'بسم
 import { normalizeArabic } from 'quran-search-engine';
 
 const normalized = normalizeArabic('بِسْمِ ٱللَّهِ'); // Returns: 'بسم الله'
+```
+
+### `isArabic(text: string)`
+
+**Description:** Detects whether a string contains Arabic script. Useful for conditional UI rendering or routing between Arabic and non-Arabic search pipelines.
+
+**Returns:** `boolean`
+
+```typescript
+import { isArabic } from 'quran-search-engine';
+
+isArabic('الله');           // true
+isArabic('بِسْمِ ٱللَّهِ');  // true
+isArabic('Peace');          // false
+isArabic('123');            // false
+```
+
+### `LRUCache<K, V>`
+
+**Description:** Generic Least Recently Used cache with configurable capacity. Used to cache search results and avoid redundant computation. Pass as the `cache` parameter to `search()`.
+
+**Constructor:** `new LRUCache(capacity: number)`
+
+| Method | Description |
+|--------|-------------|
+| `get(key)` | Retrieve value, marks key as recently used |
+| `set(key, value)` | Store value, evicts least recently used if at capacity |
+| `has(key)` | Check if key exists |
+| `delete(key)` | Remove entry |
+| `clear()` | Clear all entries |
+| `size` | Number of entries |
+
+```typescript
+import { search, LRUCache } from 'quran-search-engine';
+
+const cache = new LRUCache<string, SearchResponse>(100);
+
+const result = search(
+  'الله',
+  { quranData, morphologyMap, wordMap },
+  { lemma: true },
+  { page: 1, limit: 10 },
+  undefined,
+  cache, // 6th parameter — results are cached
+);
+```
+
+### `createArabicFuseSearch(collection, keys, options?)`
+
+**Description:** Creates a pre-configured Fuse.js search instance optimized for Arabic text. This is useful when you need to reuse the same Fuse index across multiple searches without rebuilding it each time. Pass as the `fuseIndex` parameter to `search()`.
+
+**Parameters:**
+
+- `collection` (array): The data array to search through (e.g., verses).
+- `keys` (string[]): The object properties to index for searching.
+- `options` (`FuseOptions`, optional): Override any Fuse.js default settings.
+
+**Returns:** A configured `Fuse<T>` instance ready for searching.
+
+**Configuration defaults:**
+
+- `threshold: 0.5` — Moderate typo tolerance while keeping results relevant
+- `distance: 100` — Allows matches anywhere in text without position penalty
+- `minMatchCharLength: 3` — Ignores common short Arabic particles (من, ال, في)
+- `ignoreLocation: true` — Matches can appear anywhere in the text
+- `useExtendedSearch: true` — Enables extended search syntax
+
+```typescript
+import { createArabicFuseSearch, search } from 'quran-search-engine';
+
+// Create a reusable Fuse index
+const fuseIndex = createArabicFuseSearch(verses, ['standard', 'translation']);
+
+// Use the pre-built index for faster searches
+const result = search(
+  'الله',
+  { quranData, morphologyMap, wordMap },
+  { lemma: true, root: true },
+  { page: 1, limit: 10 },
+  fuseIndex, // 5th parameter — use pre-built index
+);
+
+// Search directly with the Fuse instance
+const fuseResults = fuseIndex.search('الرحمن');
 ```
 
 ---

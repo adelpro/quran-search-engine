@@ -17,7 +17,10 @@ export default defineConfig([
     ],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        Worker: 'readonly',
+      },
     },
   },
 ]);

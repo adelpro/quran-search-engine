@@ -3,6 +3,7 @@ import { LRUCache } from '../../utils/lru-cache';
 import { buildInvertedIndex } from '../../utils/loader';
 import type { QuranText, MorphologyAya, SearchResponse } from '../../types';
 import { search } from '../search';
+import { InvalidQueryError } from '../../errors';
 
 // Mock data for testing (same as search.test.ts)
 const mockQuranData: QuranText[] = [
@@ -311,23 +312,24 @@ describe('search - Combined operators', () => {
 });
 
 describe('search - Edge cases', () => {
-  it('should handle empty query', () => {
-    const result = search('', {
-      quranData: mockQuranDataMap,
-      morphologyMap: mockMorphologyMap,
-      wordMap: mockWordMapMap,
-    });
-    expect(result.results).toHaveLength(0);
-    expect(result.counts.total).toBe(0);
+  it('should throw InvalidQueryError for empty query', () => {
+    expect(() =>
+      search('', {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      }),
+    ).toThrow(InvalidQueryError);
   });
 
-  it('should handle whitespace-only query', () => {
-    const result = search('   ', {
-      quranData: mockQuranDataMap,
-      morphologyMap: mockMorphologyMap,
-      wordMap: mockWordMapMap,
-    });
-    expect(result.results).toHaveLength(0);
+  it('should throw InvalidQueryError for whitespace-only query', () => {
+    expect(() =>
+      search('   ', {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      }),
+    ).toThrow(InvalidQueryError);
   });
 
   it('should handle query with only operators: + - |', () => {

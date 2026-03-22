@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BaseError } from './base.error';
+import { BaseError } from './base-error';
 import { ErrorCode, ErrorType } from './error-codes';
 
 describe('BaseError', () => {
