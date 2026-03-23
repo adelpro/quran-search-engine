@@ -72,12 +72,12 @@ To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, 
 
 #### Validation Functions
 
-| Function | Description |
-|----------|-------------|
-| `validateQuranData(data)` | Validates verse data against `VerseInput` schema |
-| `validateMorphologyData(data)` | Validates morphology array structure |
-| `validateWordMapData(data)` | Validates word map dictionary |
-| `validateSemanticData(data)` | Validates semantic mapping data |
+| Function                       | Description                                      |
+| ------------------------------ | ------------------------------------------------ |
+| `validateQuranData(data)`      | Validates verse data against `VerseInput` schema |
+| `validateMorphologyData(data)` | Validates morphology array structure             |
+| `validateWordMapData(data)`    | Validates word map dictionary                    |
+| `validateSemanticData(data)`   | Validates semantic mapping data                  |
 
 **Returns:** `ValidationResult` containing `valid` boolean and `errors` array.
 
@@ -140,7 +140,7 @@ try {
 } catch (e) {
   if (e instanceof DataLoadError) {
     console.log(e.filePath); // The file that failed to load
-    console.log(e.cause);   // The underlying error
+    console.log(e.cause); // The underlying error
   }
 }
 ```
@@ -231,7 +231,7 @@ try {
 } catch (e) {
   if (e instanceof InvalidRegexError) {
     console.log(e.pattern); // The problematic pattern
-    console.log(e.reason);  // Why it was rejected
+    console.log(e.reason); // Why it was rejected
   }
 }
 ```
@@ -249,7 +249,7 @@ try {
   search('test', context, {}, { page: -1 }); // Throws InvalidPaginationError
 } catch (e) {
   if (e instanceof InvalidPaginationError) {
-    console.log(e.page);  // The invalid page number
+    console.log(e.page); // The invalid page number
     console.log(e.limit); // The invalid limit
   }
 }
@@ -370,24 +370,24 @@ try {
 
 Each error class has a unique error code:
 
-| Error Code | Thrown By |
-|------------|-----------|
-| `DATA_FILE_NOT_FOUND` | `DataFileNotFoundError` |
-| `DATA_PARSE_ERROR` | `DataParseError` |
-| `DATA_SCHEMA_INVALID` | `DataSchemaInvalidError` |
-| `SEARCH_INVALID_QUERY` | `InvalidQueryError` |
-| `SEARCH_MISSING_DEPENDENCIES` | `MissingDependenciesError` |
-| `SEARCH_OPERATION_FAILED` | `SearchOperationFailedError` |
-| `SEARCH_INVALID_REGEX` | `InvalidRegexError` |
-| `VALIDATION_INVALID_PAGINATION` | `InvalidPaginationError` |
-| `VALIDATION_INVALID_OPTIONS` | `InvalidOptionsError` |
-| `TOKENIZATION_MISSING_MORPHOLOGY` | `MissingMorphologyError` |
-| `TOKENIZATION_INVALID_MODE` | `InvalidModeError` |
-| `WORKER_NOT_SUPPORTED` | `WorkerNotSupportedError` |
-| `WORKER_INITIALIZATION_FAILED` | `WorkerInitializationError` |
-| `WORKER_TERMINATED` | `WorkerTerminatedError` |
-| `WORKER_NOT_INITIALIZED` | `WorkerNotInitializedError` |
-| `WORKER_FACTORY_ERROR` | `WorkerFactoryError` |
+| Error Code                        | Thrown By                    |
+| --------------------------------- | ---------------------------- |
+| `DATA_FILE_NOT_FOUND`             | `DataFileNotFoundError`      |
+| `DATA_PARSE_ERROR`                | `DataParseError`             |
+| `DATA_SCHEMA_INVALID`             | `DataSchemaInvalidError`     |
+| `SEARCH_INVALID_QUERY`            | `InvalidQueryError`          |
+| `SEARCH_MISSING_DEPENDENCIES`     | `MissingDependenciesError`   |
+| `SEARCH_OPERATION_FAILED`         | `SearchOperationFailedError` |
+| `SEARCH_INVALID_REGEX`            | `InvalidRegexError`          |
+| `VALIDATION_INVALID_PAGINATION`   | `InvalidPaginationError`     |
+| `VALIDATION_INVALID_OPTIONS`      | `InvalidOptionsError`        |
+| `TOKENIZATION_MISSING_MORPHOLOGY` | `MissingMorphologyError`     |
+| `TOKENIZATION_INVALID_MODE`       | `InvalidModeError`           |
+| `WORKER_NOT_SUPPORTED`            | `WorkerNotSupportedError`    |
+| `WORKER_INITIALIZATION_FAILED`    | `WorkerInitializationError`  |
+| `WORKER_TERMINATED`               | `WorkerTerminatedError`      |
+| `WORKER_NOT_INITIALIZED`          | `WorkerNotInitializedError`  |
+| `WORKER_FACTORY_ERROR`            | `WorkerFactoryError`         |
 
 ---
 
@@ -475,10 +475,10 @@ const normalized = normalizeArabic('بِسْمِ ٱللَّهِ'); // Returns: '
 ```typescript
 import { isArabic } from 'quran-search-engine';
 
-isArabic('الله');           // true
-isArabic('بِسْمِ ٱللَّهِ');  // true
-isArabic('Peace');          // false
-isArabic('123');            // false
+isArabic('الله'); // true
+isArabic('بِسْمِ ٱللَّهِ'); // true
+isArabic('Peace'); // false
+isArabic('123'); // false
 ```
 
 ### `LRUCache<K, V>`
@@ -487,14 +487,14 @@ isArabic('123');            // false
 
 **Constructor:** `new LRUCache(capacity: number)`
 
-| Method | Description |
-|--------|-------------|
-| `get(key)` | Retrieve value, marks key as recently used |
+| Method            | Description                                            |
+| ----------------- | ------------------------------------------------------ |
+| `get(key)`        | Retrieve value, marks key as recently used             |
 | `set(key, value)` | Store value, evicts least recently used if at capacity |
-| `has(key)` | Check if key exists |
-| `delete(key)` | Remove entry |
-| `clear()` | Clear all entries |
-| `size` | Number of entries |
+| `has(key)`        | Check if key exists                                    |
+| `delete(key)`     | Remove entry                                           |
+| `clear()`         | Clear all entries                                      |
+| `size`            | Number of entries                                      |
 
 ```typescript
 import { search, LRUCache } from 'quran-search-engine';

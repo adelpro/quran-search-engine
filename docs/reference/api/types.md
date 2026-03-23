@@ -72,10 +72,10 @@ Maps normalized tokens to their lemma and root forms.
 
 ```typescript
 type WordMap = Map<
-  string,           // normalized token
+  string, // normalized token
   {
     lemma?: string; // canonical lemma form
-    root?: string;   // root form
+    root?: string; // root form
   }
 >;
 ```
@@ -115,14 +115,14 @@ The type of match found for a search result.
 
 ```typescript
 type MatchType =
-  | 'exact'    // Direct text match
-  | 'lemma'    // Match via lemma (derived form)
-  | 'root'     // Match via root (linguistic root)
-  | 'fuzzy'    // Approximate/fuzzy match
-  | 'range'    // Range query match
+  | 'exact' // Direct text match
+  | 'lemma' // Match via lemma (derived form)
+  | 'root' // Match via root (linguistic root)
+  | 'fuzzy' // Approximate/fuzzy match
+  | 'range' // Range query match
   | 'semantic' // Semantic/concept match
-  | 'regex'    // Regular expression match
-  | 'none';    // No match
+  | 'regex' // Regular expression match
+  | 'none'; // No match
 ```
 
 ### `ScoredVerse<TVerse>`
@@ -150,14 +150,14 @@ Breakdown of match counts by type.
 
 ```typescript
 type SearchCounts = {
-  simple: number;   // Exact matches
-  lemma: number;    // Lemma matches
-  root: number;     // Root matches
-  fuzzy: number;    // Fuzzy matches
-  range: number;    // Range matches
+  simple: number; // Exact matches
+  lemma: number; // Lemma matches
+  root: number; // Root matches
+  fuzzy: number; // Fuzzy matches
+  range: number; // Range matches
   semantic: number; // Semantic matches
-  regex: number;     // Regex matches
-  total: number;    // Total matches
+  regex: number; // Regex matches
+  total: number; // Total matches
 };
 ```
 
@@ -247,9 +247,9 @@ type ParsedRange = {
 Inverted index structures for fast lookups.
 
 ```typescript
-type LemmaIndex = Map<string, Set<number>>;  // lemma → verse GIDs
-type RootIndex  = Map<string, Set<number>>;  // root → verse GIDs
-type WordIndex  = Map<string, Set<number>>;    // word → verse GIDs
+type LemmaIndex = Map<string, Set<number>>; // lemma → verse GIDs
+type RootIndex = Map<string, Set<number>>; // root → verse GIDs
+type WordIndex = Map<string, Set<number>>; // word → verse GIDs
 ```
 
 ### `InvertedIndex`
@@ -330,30 +330,30 @@ type ErrorShape = {
 
 ### Error Classes
 
-| Class | Type | Description |
-|-------|------|-------------|
-| `BaseError` | Base | Abstract base error class |
-| `DataLoadError` | Data | Base class for data loading errors |
-| `DataFileNotFoundError` | Data | Data file not found |
-| `DataParseError` | Data | Failed to parse data file |
-| `DataSchemaInvalidError` | Data | Data doesn't match expected schema |
-| `SearchError` | Search | Base class for search errors |
-| `InvalidQueryError` | Search | Invalid search query |
-| `MissingDependenciesError` | Search | Required data not loaded |
-| `SearchOperationFailedError` | Search | Search operation failed |
-| `InvalidRegexError` | Search | Invalid regex pattern |
-| `ValidationError` | Validation | Validation failed |
-| `InvalidPaginationError` | Validation | Invalid pagination parameters |
-| `InvalidOptionsError` | Validation | Invalid search options |
-| `TokenizationError` | Tokenization | Tokenization failed |
-| `MissingMorphologyError` | Tokenization | Morphology data required |
-| `InvalidModeError` | Tokenization | Invalid tokenization mode |
-| `WorkerError` | Worker | Base class for worker errors |
-| `WorkerNotSupportedError` | Worker | Web Workers not supported |
-| `WorkerInitializationError` | Worker | Worker creation failed |
-| `WorkerTerminatedError` | Worker | Worker terminated unexpectedly |
-| `WorkerNotInitializedError` | Worker | Worker not initialized |
-| `WorkerFactoryError` | Worker | Factory cannot create client |
+| Class                        | Type         | Description                        |
+| ---------------------------- | ------------ | ---------------------------------- |
+| `BaseError`                  | Base         | Abstract base error class          |
+| `DataLoadError`              | Data         | Base class for data loading errors |
+| `DataFileNotFoundError`      | Data         | Data file not found                |
+| `DataParseError`             | Data         | Failed to parse data file          |
+| `DataSchemaInvalidError`     | Data         | Data doesn't match expected schema |
+| `SearchError`                | Search       | Base class for search errors       |
+| `InvalidQueryError`          | Search       | Invalid search query               |
+| `MissingDependenciesError`   | Search       | Required data not loaded           |
+| `SearchOperationFailedError` | Search       | Search operation failed            |
+| `InvalidRegexError`          | Search       | Invalid regex pattern              |
+| `ValidationError`            | Validation   | Validation failed                  |
+| `InvalidPaginationError`     | Validation   | Invalid pagination parameters      |
+| `InvalidOptionsError`        | Validation   | Invalid search options             |
+| `TokenizationError`          | Tokenization | Tokenization failed                |
+| `MissingMorphologyError`     | Tokenization | Morphology data required           |
+| `InvalidModeError`           | Tokenization | Invalid tokenization mode          |
+| `WorkerError`                | Worker       | Base class for worker errors       |
+| `WorkerNotSupportedError`    | Worker       | Web Workers not supported          |
+| `WorkerInitializationError`  | Worker       | Worker creation failed             |
+| `WorkerTerminatedError`      | Worker       | Worker terminated unexpectedly     |
+| `WorkerNotInitializedError`  | Worker       | Worker not initialized             |
+| `WorkerFactoryError`         | Worker       | Factory cannot create client       |
 
 ---
 
@@ -365,9 +365,9 @@ Request messages sent to the worker.
 
 ```typescript
 type WorkerRequest =
-  | InitDataRequest    // { type: 'INIT_DATA', requestId }
-  | RunSearchRequest    // { type: 'RUN_SEARCH', requestId, query, options, pagination }
-  | DisposeRequest;     // { type: 'DISPOSE' }
+  | InitDataRequest // { type: 'INIT_DATA', requestId }
+  | RunSearchRequest // { type: 'RUN_SEARCH', requestId, query, options, pagination }
+  | DisposeRequest; // { type: 'DISPOSE' }
 ```
 
 ### `WorkerResponse<TVerse>`
@@ -376,9 +376,9 @@ Response messages received from the worker.
 
 ```typescript
 type WorkerResponse<TVerse extends VerseInput = VerseInput> =
-  | InitDataResponse       // { type: 'INIT_DATA_RESULT', requestId, success, error? }
-  | SearchResultResponse   // { type: 'SEARCH_RESULT', requestId, data, timingMs }
-  | ErrorResponse;          // { type: 'ERROR', requestId, error }
+  | InitDataResponse // { type: 'INIT_DATA_RESULT', requestId, success, error? }
+  | SearchResultResponse // { type: 'SEARCH_RESULT', requestId, data, timingMs }
+  | ErrorResponse; // { type: 'ERROR', requestId, error }
 ```
 
 ### `CreateSearchWorkerOptions`

@@ -438,14 +438,14 @@ import { search } from 'quran-search-engine';
 const response = search(
   'الله AND (الرحمن OR الرحيم)',
   { quranData, morphologyMap, wordMap },
-  { isBoolean: true }
+  { isBoolean: true },
 );
 
 // Find verses containing "الله" but NOT "الرحمن"
 const response2 = search(
   'الله NOT الرحمن',
   { quranData, morphologyMap, wordMap },
-  { isBoolean: true }
+  { isBoolean: true },
 );
 ```
 

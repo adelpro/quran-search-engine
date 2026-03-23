@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-23
+
+### ⚠️ BREAKING CHANGES
+
+This release contains breaking changes. Please review the [Migration Guide](./docs/migration-guide.md) before upgrading.
+
+### Added
+
+- **WorkerError class**: New `WorkerError` for web worker error handling with structured error codes
+- **Worker status**: Worker status badge in the Vite React example UI
+- **Inverted index stats**: Display inverted index statistics in the Vite React example
+
+### Changed
+
+- **Semantic search optimization**: Improved semantic search logic for better performance and accuracy
+- **Arrays → Maps**: Replaced array-based lookups with Map data structures for O(1) access time
+- **Worker loading**: Simplified worker initialization with improved loading mechanism
+- **File naming convention**: Migrated to kebab-case naming (e.g., `base.error.ts` → `base-error.ts`)
+- **Examples updated**: All example applications (Vite React, Vanilla TypeScript, Node.js) have been updated to reflect API changes
+
+### Removed
+
+- **Phonetic search index**: Phonetic index functionality has been removed
+- **English-to-Arabic index**: `english-to-arabic-builder.ts` script and related data removed
+- **Data files removed**:
+  - `lemma-index.json`
+  - `root-index.json`
+  - `word-index.json`
+  - `quran-english-arabic-roots.json`
+  - `colored-english-wbw-translation.json`
+  - `word-level-transliteration/` directory and scripts
+
+### Documentation
+
+- Restructured documentation into `guides/` and `reference/` directories
+- Added comprehensive migration guide
+- Updated API reference documentation with new type definitions
+
 ## [0.2.0] - 2026-03-07
 
 ### Added

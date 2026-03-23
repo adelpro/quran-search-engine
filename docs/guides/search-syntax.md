@@ -47,10 +47,10 @@ const response2 = search('الله.*الرحمن', quranData, morphologyMap, wor
 
 - **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse targets efficiently without iterating.
 - **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser. This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like `(الله OR رب) AND (الرحمن NOT الرحيم)`.
-    - **AND**: Intersection of results. Both terms must match.
-    - **OR**: Union of results. Either term can match.
-    - **NOT**: Exclusion of results. The term must not match.
-    - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
+  - **AND**: Intersection of results. Both terms must match.
+  - **OR**: Union of results. Either term can match.
+  - **NOT**: Exclusion of results. The term must not match.
+  - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
 
 #### Boolean Search Helper Functions
 
@@ -64,7 +64,7 @@ Checks if a query string contains boolean operators (`+`, `-`, `|`).
 import { hasBooleanOperators } from 'quran-search-engine';
 
 hasBooleanOperators('+الله -الرحمن'); // Returns: true
-hasBooleanOperators('الله الرحمن');    // Returns: false
+hasBooleanOperators('الله الرحمن'); // Returns: false
 ```
 
 ##### `clearBooleanOperators(query)`

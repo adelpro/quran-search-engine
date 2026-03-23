@@ -335,7 +335,7 @@ await workerClient.initData();
 const result = await workerClient.runSearch(
   'الله',
   { lemma: true, root: true },
-  { page: 1, limit: 20 }
+  { page: 1, limit: 20 },
 );
 
 // Cleanup
@@ -370,12 +370,12 @@ const invertedIndex = buildInvertedIndex(
   morphologyMap,
   quranData,
   semanticMap ?? undefined,
-  phoneticMap ?? undefined
+  phoneticMap ?? undefined,
 );
 
 // Create fallback client
 const workerClient = createSearchWorker({
-  fallbackDeps: { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, phoneticMap }
+  fallbackDeps: { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, phoneticMap },
 });
 
 await workerClient.initData();

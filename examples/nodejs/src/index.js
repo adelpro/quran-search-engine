@@ -2,7 +2,9 @@ import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
-  loadInvertedIndex,
+  loadSemanticData,
+  loadPhoneticData,
+  buildInvertedIndex,
   search,
   LRUCache,
 } from 'quran-search-engine';
@@ -11,22 +13,35 @@ async function main() {
   console.log('🚀 Loading Quran Search Engine data...\n');
 
   try {
-    // Load all required data
-    const [quranData, morphologyMap, wordMap] = await Promise.all([
+    const [quranData, morphologyMap, wordMap, semanticMap, phoneticMap] = await Promise.all([
       loadQuranData(),
       loadMorphology(),
       loadWordMap(),
+      loadSemanticData(),
+      loadPhoneticData(),
     ]);
 
-    console.log(`✅ Loaded ${quranData.length} verses`);
+    console.log(`✅ Loaded ${quranData.size} verses`);
     console.log(`✅ Loaded morphology data for ${morphologyMap.size} verses`);
-    console.log(`✅ Loaded word map with ${Object.keys(wordMap).length} entries\n`);
+    console.log(`✅ Loaded word map with ${Object.keys(wordMap).length} entries`);
+    console.log(`✅ Loaded semantic data with ${semanticMap.size} entries`);
+    console.log(`✅ Loaded phonetic data with ${phoneticMap.size} entries\n`);
 
-    // Create a shared LRU cache for all searches (capacity: 50 results)
+    const buildStart = performance.now();
+    const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
+    const buildMs = (performance.now() - buildStart).toFixed(2);
+
+    console.log(`✅ Built inverted index in ${buildMs}ms`);
+    console.log(`   - Lemma entries: ${invertedIndex.lemmaIndex.size.toLocaleString()}`);
+    console.log(`   - Root entries:  ${invertedIndex.rootIndex.size.toLocaleString()}`);
+    console.log(`   - Word entries:  ${invertedIndex.wordIndex.size.toLocaleString()}`);
+    console.log(
+      `   - Semantic entries: ${invertedIndex.semanticIndex?.size.toLocaleString() ?? 0}\n`,
+    );
+
     const cache = new LRUCache(50);
     console.log(`🗄️  Created LRU cache with capacity: 50\n`);
 
-    // Example searches
     const examples = [
       { query: 'الله', description: 'Search for "Allah"' },
       { query: 'رحم', description: 'Search for root "رحم" (mercy)' },
@@ -42,13 +57,19 @@ async function main() {
 
       const results = search(
         example.query,
-        quranData,
-        morphologyMap,
-        wordMap,
+        {
+          quranData,
+          morphologyMap,
+          wordMap,
+          semanticMap,
+          phoneticMap,
+          invertedIndex,
+        },
         {
           lemma: true,
           root: true,
           fuzzy: true,
+          isRegex: false,
           semantic: example.semantic || false,
           suraId: example.suraId,
           juzId: example.juzId,
@@ -57,8 +78,8 @@ async function main() {
           page: 1,
           limit: 5,
         },
-        undefined, // preComputedFuseIndex
-        cache, // Pass cache to every search call
+        undefined,
+        cache,
       );
 
       console.log(`📊 Found ${results.pagination.totalResults} matches`);
@@ -67,8 +88,9 @@ async function main() {
       console.log(`   - Root: ${results.counts.root}`);
       console.log(`   - Fuzzy: ${results.counts.fuzzy}`);
       console.log(`   - Semantic: ${results.counts.semantic}`);
+      console.log(`   - Range: ${results.counts.range}`);
+      console.log(`   - Regex: ${results.counts.regex}`);
 
-      // Display top results
       results.results.forEach((verse, index) => {
         console.log(`   ${index + 1}. ${verse.sura_name} (${verse.sura_id}:${verse.aya_id})`);
         console.log(`      Match: ${verse.matchType} (Score: ${verse.matchScore})`);
@@ -79,69 +101,82 @@ async function main() {
       console.log();
     }
 
-    // ═══════════════════════════════════════════════════
-    // LRU Cache Demo: shows cache hits vs fresh searches
-    // ═══════════════════════════════════════════════════
     console.log('═'.repeat(50));
     console.log('🗄️  LRU CACHE DEMO');
     console.log('═'.repeat(50));
 
-    // First search — cache MISS (computed fresh)
     const t1 = performance.now();
     const first = search(
       'الله',
-      quranData,
-      morphologyMap,
-      wordMap,
+      {
+        quranData,
+        morphologyMap,
+        wordMap,
+        semanticMap,
+        phoneticMap,
+        invertedIndex,
+      },
       { lemma: true, root: true },
       { page: 1, limit: 20 },
-      undefined, // preComputedFuseIndex
+      undefined,
       cache,
     );
     const d1 = (performance.now() - t1).toFixed(2);
 
-    // Same query again — cache HIT (instant)
     const t2 = performance.now();
     const second = search(
       'الله',
-      quranData,
-      morphologyMap,
-      wordMap,
+      {
+        quranData,
+        morphologyMap,
+        wordMap,
+        semanticMap,
+        phoneticMap,
+        invertedIndex,
+      },
       { lemma: true, root: true },
       { page: 1, limit: 20 },
-      undefined, // preComputedFuseIndex
+      undefined,
       cache,
     );
     const d2 = (performance.now() - t2).toFixed(2);
 
     console.log(`\n   First  search: ${d1}ms (computed)`);
     console.log(`   Second search: ${d2}ms (cached)`);
-    console.log(`   Same reference? ${first === second}`); // true = cache hit
+    console.log(`   Same reference? ${first === second}`);
     console.log(`   Cache entries:  ${cache.size}`);
 
-    // Different page — separate cache entry
     const page2 = search(
       'الله',
-      quranData,
-      morphologyMap,
-      wordMap,
+      {
+        quranData,
+        morphologyMap,
+        wordMap,
+        semanticMap,
+        phoneticMap,
+        invertedIndex,
+      },
       { lemma: true, root: true },
       { page: 2, limit: 20 },
-      undefined, // preComputedFuseIndex
+      undefined,
       cache,
     );
-    console.log(`\n   Page 2 is different object? ${first !== page2}`); // true
+    console.log(`\n   Page 2 is different object? ${first !== page2}`);
     console.log(`   Cache entries after page 2: ${cache.size}`);
 
-    // Different options — separate cache entry
     const noRoot = search(
       'الله',
-      quranData,
-      morphologyMap,
-      wordMap,
+      {
+        quranData,
+        morphologyMap,
+        wordMap,
+        semanticMap,
+        phoneticMap,
+        invertedIndex,
+      },
       { lemma: true, root: false },
       { page: 1, limit: 20 },
-      undefined, // preComputedFuseIndex
+      undefined,
       cache,
     );
     console.log(`   Cache entries after diff options: ${cache.size}`);
@@ -149,45 +184,38 @@ async function main() {
     console.log('\n\u2550'.repeat(50));
     console.log();
 
-    // ═══════════════════════════════════════════════════
-    // Inverted Index Demo: O(1) lemma/root lookups
-    // ═══════════════════════════════════════════════════
     console.log('═'.repeat(50));
-    console.log('🗂️  INVERTED INDEX DEMO');
+    console.log('🔍 REGEX SEARCH DEMO');
     console.log('═'.repeat(50));
 
-    // Build the inverted index once from loaded data
-    const tBuild = performance.now();
-    const invertedIndex = await loadInvertedIndex();
-    const dBuild = (performance.now() - tBuild).toFixed(2);
-
-    console.log(`\n   Loaded inverted index in ${dBuild}ms`);
-    console.log(`   Lemma entries: ${invertedIndex.lemmaIndex.size}`);
-    console.log(`   Root entries:  ${invertedIndex.rootIndex.size}`);
-    console.log(`   Word entries:  ${invertedIndex.wordIndex.size}`);
-
-    // Search using the inverted index for O(1) lemma/root lookups
-    const results = search(
-      'الله الرحمن',
-      quranData,
-      morphologyMap,
-      wordMap,
-      { lemma: true, root: true },
-      undefined, // pagination
-      undefined, // preComputedFuseIndex
-      undefined, // cache
-      invertedIndex, // ← O(1) lemma/root lookups
+    const regexResults = search(
+      '^ال',
+      {
+        quranData,
+        morphologyMap,
+        wordMap,
+        semanticMap,
+        phoneticMap,
+        invertedIndex,
+      },
+      { lemma: false, root: false, fuzzy: false, isRegex: true, semantic: false },
+      { page: 1, limit: 5 },
+      undefined,
+      cache,
     );
 
-    console.log(`\n   Found ${results.counts.total} matches for 'الله الرحمن'`);
-    console.log(`   - Exact: ${results.counts.simple}`);
-    console.log(`   - Lemma: ${results.counts.lemma}`);
-    console.log(`   - Root:  ${results.counts.root}`);
+    console.log(`\n   Search: "^ال" (starts with "ال")`);
+    console.log(`   Found ${regexResults.pagination.totalResults} matches`);
+    console.log(`   Regex matches: ${regexResults.counts.regex}`);
 
-    console.log('═'.repeat(50));
+    regexResults.results.forEach((verse, index) => {
+      console.log(`   ${index + 1}. ${verse.sura_name} (${verse.sura_id}:${verse.aya_id})`);
+      console.log(`      ${verse.uthmani}`);
+    });
+
+    console.log('\n\u2550'.repeat(50));
     console.log();
 
-    // Interactive search if arguments provided
     const queryArg = process.argv[2];
     if (queryArg) {
       console.log(`🔍 Custom search: "${queryArg}"`);
@@ -195,16 +223,28 @@ async function main() {
 
       const customResults = search(
         queryArg,
-        quranData,
-        morphologyMap,
-        wordMap,
-        { lemma: true, root: true, fuzzy: true },
+        {
+          quranData,
+          morphologyMap,
+          wordMap,
+          semanticMap,
+          phoneticMap,
+          invertedIndex,
+        },
+        { lemma: true, root: true, fuzzy: true, isRegex: false, semantic: true },
         { page: 1, limit: 10 },
         undefined,
         cache,
       );
 
       console.log(`📊 Found ${customResults.pagination.totalResults} matches\n`);
+      console.log(`   - Exact: ${customResults.counts.simple}`);
+      console.log(`   - Lemma: ${customResults.counts.lemma}`);
+      console.log(`   - Root: ${customResults.counts.root}`);
+      console.log(`   - Fuzzy: ${customResults.counts.fuzzy}`);
+      console.log(`   - Semantic: ${customResults.counts.semantic}`);
+      console.log(`   - Range: ${customResults.counts.range}`);
+      console.log(`   - Regex: ${customResults.counts.regex}\n`);
 
       customResults.results.forEach((verse, index) => {
         console.log(`${index + 1}. ${verse.sura_name} (${verse.sura_id}:${verse.aya_id})`);

@@ -6,11 +6,15 @@ import {
   loadMorphology,
   loadQuranData,
   loadWordMap,
+  loadSemanticData,
+  loadPhoneticData,
+  buildInvertedIndex,
   search,
   LRUCache,
   createSearchWorker,
   supportsWorkers,
   type AdvancedSearchOptions,
+  type InvertedIndex,
   type MatchType,
   type MorphologyAya,
   type QuranText,
@@ -32,6 +36,27 @@ type HighlightPart = { text: string; matchType: MatchType | null };
       <header class="header">
         <h1 class="title">Quran Search Engine</h1>
         <p class="subtitle">Angular example (workspace dependency)</p>
+        <div class="badges-container">
+          <span
+            *ngIf="usingWorker !== null"
+            class="worker-badge"
+            [class.worker-badge--active]="usingWorker"
+            [class.worker-badge--fallback]="!usingWorker"
+          >
+            {{ usingWorker ? 'Running on Web Worker' : 'Running on Main Thread' }}
+          </span>
+          <span
+            *ngIf="indexStats"
+            class="index-stats"
+            title="Index built in {{ indexBuildTime?.toFixed(1) }}ms"
+          >
+            <strong>{{ indexStats.lemmaCount.toLocaleString() }}</strong> lemmas ·
+            <strong>{{ indexStats.rootCount.toLocaleString() }}</strong> roots ·
+            <strong>{{ indexStats.wordCount.toLocaleString() }}</strong> words ·
+            <strong>{{ indexStats.semanticCount.toLocaleString() }}</strong> semantic · Index:
+            {{ indexBuildTime?.toFixed(1) }}ms
+          </span>
+        </div>
       </header>
 
       <section class="panel" aria-label="Search controls">
@@ -73,6 +98,14 @@ type HighlightPart = { text: string; matchType: MatchType | null };
           <label class="check">
             <input type="checkbox" [(ngModel)]="options.fuzzy" (ngModelChange)="runSearch(true)" />
             Fuzzy
+          </label>
+          <label class="check">
+            <input
+              type="checkbox"
+              [(ngModel)]="options.isRegex"
+              (ngModelChange)="runSearch(true)"
+            />
+            Regex
           </label>
           <label class="check">
             <input
@@ -134,7 +167,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                 <strong>{{ response.counts.lemma }}</strong> • Root:
                 <strong>{{ response.counts.root }}</strong> • Fuzzy:
                 <strong>{{ response.counts.fuzzy }}</strong> • Semantic:
-                <strong>{{ response.counts.semantic }}</strong>
+                <strong>{{ response.counts.semantic }}</strong> • Range:
+                <strong>{{ response.counts.range }}</strong> • Regex:
+                <strong>{{ response.counts.regex }}</strong>
               </div>
               <div class="pager" aria-label="Pagination controls">
                 <button
@@ -201,6 +236,33 @@ type HighlightPart = { text: string; matchType: MatchType | null };
       }
       .subtitle {
         margin: 6px 0 0;
+        color: #9fb0c0;
+      }
+      .badges-container {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .worker-badge {
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid;
+      }
+      .worker-badge--active {
+        background: rgba(40, 167, 69, 0.2);
+        border-color: rgba(40, 167, 69, 0.5);
+        color: #5dd879;
+      }
+      .worker-badge--fallback {
+        background: rgba(255, 193, 7, 0.2);
+        border-color: rgba(255, 193, 7, 0.5);
+        color: #ffc107;
+      }
+      .index-stats {
+        font-size: 12px;
         color: #9fb0c0;
       }
       .panel {
@@ -354,10 +416,20 @@ export class AppComponent implements OnInit, OnDestroy {
   page = 1;
   limit = 20;
 
+  usingWorker: boolean | null = null;
+  indexStats: {
+    lemmaCount: number;
+    rootCount: number;
+    wordCount: number;
+    semanticCount: number;
+  } | null = null;
+  indexBuildTime: number | null = null;
+
   options: {
     lemma: boolean;
     root: boolean;
     fuzzy: boolean;
+    isRegex: boolean;
     semantic: boolean;
     suraId?: number;
     juzId?: number;
@@ -366,14 +438,18 @@ export class AppComponent implements OnInit, OnDestroy {
     lemma: true,
     root: true,
     fuzzy: true,
+    isRegex: false,
     semantic: true,
   };
 
   response: SearchResponse<QuranText> | null = null;
 
-  private quranData: QuranText[] | null = null;
+  private quranData: Map<number, QuranText> | null = null;
   private morphologyMap: Map<number, MorphologyAya> | null = null;
   private wordMap: WordMap | null = null;
+  private semanticMap: Map<string, string[]> | null = null;
+  private phoneticMap: Map<string, string[]> | null = null;
+  private invertedIndex: InvertedIndex | null = null;
   private uthmaniHighlightPartsByGid = new Map<number, readonly HighlightPart[]>();
 
   private debounceHandle: number | null = null;
@@ -392,21 +468,59 @@ export class AppComponent implements OnInit, OnDestroy {
           });
           await client.initData();
           this.workerClient = client;
+          this.usingWorker = true;
         } catch (err) {
           console.warn('Web Worker init failed, falling back to main thread:', err);
+          this.usingWorker = false;
         }
+      } else {
+        this.usingWorker = false;
       }
 
       if (!this.workerClient) {
-        const [quranData, morphologyMap, wordMap] = await Promise.all([
+        const [data, morphology, dictionary, semantic, phonetic] = await Promise.all([
           loadQuranData(),
           loadMorphology(),
           loadWordMap(),
+          loadSemanticData(),
+          loadPhoneticData(),
         ]);
 
-        this.quranData = quranData;
-        this.morphologyMap = morphologyMap;
-        this.wordMap = wordMap;
+        this.quranData = data;
+        this.morphologyMap = morphology;
+        this.wordMap = dictionary;
+        this.semanticMap = semantic;
+        this.phoneticMap = phonetic;
+
+        const buildStart = performance.now();
+        this.invertedIndex = buildInvertedIndex(morphology, data, semantic);
+        this.indexBuildTime = performance.now() - buildStart;
+
+        this.indexStats = {
+          lemmaCount: this.invertedIndex.lemmaIndex.size,
+          rootCount: this.invertedIndex.rootIndex.size,
+          wordCount: this.invertedIndex.wordIndex.size,
+          semanticCount: this.invertedIndex.semanticIndex?.size ?? 0,
+        };
+      } else {
+        const [data, morphology, , semantic, phonetic] = await Promise.all([
+          loadQuranData(),
+          loadMorphology(),
+          loadWordMap(),
+          loadSemanticData(),
+          loadPhoneticData(),
+        ]);
+
+        const buildStart = performance.now();
+        const index = buildInvertedIndex(morphology, data, semantic);
+        this.indexBuildTime = performance.now() - buildStart;
+
+        this.indexStats = {
+          lemmaCount: index.lemmaIndex.size,
+          rootCount: index.rootIndex.size,
+          wordCount: index.wordIndex.size,
+          semanticCount: index.semanticIndex?.size ?? 0,
+        };
       }
 
       this.loadState = 'ready';
@@ -447,6 +561,7 @@ export class AppComponent implements OnInit, OnDestroy {
       lemma: this.options.lemma,
       root: this.options.root,
       fuzzy: this.options.fuzzy,
+      isRegex: this.options.isRegex,
       suraId: this.options.suraId,
       juzId: this.options.juzId,
       suraName: this.options.suraName,
@@ -464,13 +579,26 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.quranData || !this.morphologyMap || !this.wordMap) return;
+    if (
+      !this.quranData ||
+      !this.morphologyMap ||
+      !this.wordMap ||
+      !this.semanticMap ||
+      !this.phoneticMap ||
+      !this.invertedIndex
+    )
+      return;
 
     this.response = search(
       trimmed,
-      this.quranData,
-      this.morphologyMap,
-      this.wordMap,
+      {
+        quranData: this.quranData,
+        morphologyMap: this.morphologyMap,
+        wordMap: this.wordMap,
+        semanticMap: this.semanticMap,
+        phoneticMap: this.phoneticMap,
+        invertedIndex: this.invertedIndex,
+      },
       searchOptions,
       { page: this.page, limit: this.limit },
       undefined,
