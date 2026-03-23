@@ -1,7 +1,6 @@
 {
   "name": "quran-search-engine",
   "version": "0.3.1-athar-rc.1",
-  "private": true,
   "description": "A powerful, stateless, and pure TypeScript search engine for the Quran.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
