@@ -1055,6 +1055,14 @@ Several example applications are available in the `examples/` directory:
 - **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
 - **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
 
+### Production Examples
+
+These are real-world applications built with `quran-search-engine`:
+
+- **[Open-Mushaf Native](https://github.com/adelpro/open-mushaf-native)**: A modern Quran Mushaf application built with Expo and React Native. Features offline Quran reading, gesture-based page navigation, and dynamic Tafseer popups with optimized image caching.
+
+- **[quran-search-engine-example](https://github.com/adelpro/quran-search-engine-example)**: A minimal React + TypeScript + Vite template demonstrating Fast Refresh and production-ready ESLint configuration for Quran search applications.
+
 To run an example:
 
 ```bash

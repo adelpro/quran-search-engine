@@ -11,16 +11,14 @@ import { DataFileNotFoundError, DataParseError, DataSchemaInvalidError } from '.
  * @throws {DataParseError} When the file cannot be parsed as JSON
  * @throws {DataSchemaInvalidError} When the data structure is invalid
  */
-export const loadMorphology = async (path?: string): Promise<Map<number, MorphologyAya>> => {
-  const filePath = path || '../data/morphology.json';
+export const loadMorphology = async (): Promise<Map<number, MorphologyAya>> => {
+  const filePath = '../data/morphology.json';
 
   try {
     // Dynamic import for code splitting
     // We use a static string for the default path so Vite can analyze it.
     // If a custom path is provided, we use it directly but Vite might warn.
-    const morphologyModule = path
-      ? await import(/* @vite-ignore */ path)
-      : await import('../data/morphology.json');
+    const morphologyModule = await import('../data/morphology.json');
 
     // The JSON is likely an array (or has a 'default' property if it's a module).
     // We handle both cases to be safe with different bundlers.
@@ -91,13 +89,11 @@ export const loadMorphology = async (path?: string): Promise<Map<number, Morphol
  * @throws {DataParseError} When the file cannot be parsed as JSON
  * @throws {DataSchemaInvalidError} When the data structure is invalid
  */
-export const loadWordMap = async (path?: string): Promise<WordMap> => {
-  const filePath = path || '../data/word-map.json';
+export const loadWordMap = async (): Promise<WordMap> => {
+  const filePath = '../data/word-map.json';
 
   try {
-    const wordMapModule = path
-      ? await import(/* @vite-ignore */ path)
-      : await import('../data/word-map.json');
+    const wordMapModule = await import('../data/word-map.json');
     const wordMapRaw = (wordMapModule.default || wordMapModule) as Record<
       string,
       { lemma?: string; root?: string }
@@ -154,13 +150,11 @@ export const loadWordMap = async (path?: string): Promise<WordMap> => {
  * @throws {DataParseError} When the file cannot be parsed as JSON
  * @throws {DataSchemaInvalidError} When the data structure is invalid
  */
-export const loadQuranData = async (path?: string): Promise<Map<number, QuranText>> => {
-  const filePath = path || '../data/quran.json';
+export const loadQuranData = async (): Promise<Map<number, QuranText>> => {
+  const filePath = '../data/quran.json';
 
   try {
-    const quranModule = path
-      ? await import(/* @vite-ignore */ path)
-      : await import('../data/quran.json');
+    const quranModule = await import('../data/quran.json');
     const quranData = (quranModule.default || quranModule) as QuranText[];
 
     // Validate schema
@@ -303,13 +297,11 @@ export const buildInvertedIndex = (
   return { lemmaIndex, rootIndex, wordIndex, semanticIndex };
 };
 
-export const loadSemanticData = async (path?: string): Promise<Map<string, string[]>> => {
-  const filePath = path || '../data/semantic.json';
+export const loadSemanticData = async (): Promise<Map<string, string[]>> => {
+  const filePath = '../data/semantic.json';
 
   try {
-    const semanticModule = path
-      ? await import(/* @vite-ignore */ path)
-      : await import('../data/semantic.json');
+    const semanticModule = await import('../data/semantic.json');
     const semanticData = (semanticModule.default || semanticModule) as SemanticConcept[];
 
     if (!Array.isArray(semanticData)) {
@@ -372,13 +364,11 @@ const buildSemanticMap = (semanticData: SemanticConcept[]): Map<string, string[]
 
 type PhoneticDictionary = Record<string, string[]>;
 
-export const loadPhoneticData = async (path?: string): Promise<Map<string, string[]>> => {
-  const filePath = path || '../data/phonetic.json';
+export const loadPhoneticData = async (): Promise<Map<string, string[]>> => {
+  const filePath = '../data/phonetic.json';
 
   try {
-    const phoneticModule = path
-      ? await import(/* @vite-ignore */ path)
-      : await import('../data/phonetic.json');
+    const phoneticModule = await import('../data/phonetic.json');
     const phoneticData = (phoneticModule.default || phoneticModule) as PhoneticDictionary;
 
     if (!phoneticData || typeof phoneticData !== 'object') {
