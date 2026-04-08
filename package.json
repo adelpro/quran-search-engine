@@ -1,6 +1,6 @@
 {
   "name": "quran-search-engine",
-  "version": "0.3.1-athar-rc.3",
+  "version": "0.3.2",
   "description": "A powerful, stateless, and pure TypeScript search engine for the Quran.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -53,9 +53,23 @@
   },
   "keywords": [
     "quran",
-    "search",
+    "quran-search",
+    "search-engine",
+    "arabic",
     "islam",
-    "morphology"
+    "morphology",
+    "lemma",
+    "root-analysis",
+    "tokenization",
+    "diacritics",
+    "boolean-search",
+    "fuzzy-search",
+    "semantic-search",
+    "phonetic-search",
+    "regex-search",
+    "inverted-index",
+    "typescript",
+    "stateless"
   ],
   "author": "Adel Benyahia <contact@adelpro.us.kg>",
   "license": "MIT",
