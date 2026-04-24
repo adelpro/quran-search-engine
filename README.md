@@ -1065,6 +1065,14 @@ These are real-world applications built with `quran-search-engine`:
 
 - **[quran-search-engine-example](https://github.com/adelpro/quran-search-engine-example)**: A minimal React + TypeScript + Vite template demonstrating Fast Refresh and production-ready ESLint configuration for Quran search applications.
 
+### MCP Server
+
+Use the search engine as a [Model Context Protocol](https://modelcontextprotocol.io/) server
+to integrate Quran search capabilities into AI agents and assistants.
+
+- **[quran-search-engine-mcp](https://github.com/adelpro/quran-search-engine-mcp)**: MCP server
+  implementation providing Quran search tools to any MCP-compatible AI client.
+
 To run an example:
 
 ```bash
