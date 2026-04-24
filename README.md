@@ -11,6 +11,8 @@
 ![license](https://img.shields.io/npm/l/quran-search-engine)
 [![bundle limit](https://img.shields.io/badge/bundle%20limit-2%20MB-blue)](https://github.com/adelpro/quran-search-engine/blob/main/package.json#L80)
 [![Athar](https://img.shields.io/static/v1?label=Athar&message=%F0%9F%8C%99&color=blue)](https://community.itqan.dev/d/254/15)
+[![Live Demo](https://img.shields.io/badge/demo-live-blue)](https://quran.us.kg/search)
+[![Docs](https://img.shields.io/badge/docs-view-blue)](https://adelpro.us.kg/quran-search-engine/)
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
