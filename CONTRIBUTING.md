@@ -1,154 +1,168 @@
 # Contributing to quran-search-engine
 
-First off, thank you for considering contributing to `quran-search-engine`! It's people like you that make the open-source community such a great place.
+`quran-search-engine` is a stateless, UI-agnostic Quran search engine written
+in pure TypeScript. This guide covers everything you need to contribute a
+patch, a new search layer, or a docs fix. For user-facing docs see
+[`docs/index.md`](docs/index.md).
 
-## Code of Conduct
-
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## How Can I Help?
-
-- **Reporting Bugs:** Use the bug report template to help us identify and fix issues.
-- **Suggesting Features:** Have an idea? We'd love to hear it!
-- **Improving Documentation:** Documentation is just as important as code.
-- **Submitting Pull Requests:** Check out the issues labeled `good first issue` to get started.
-
-## Branching Strategy
-
-Contributors MUST create branches from `develop`.
-
-Example:
+## TL;DR
 
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b docs/improve-contributing-guidelines
+corepack enable && corepack prepare yarn@4.18.0 --activate
+yarn install
+yarn build
+yarn test
+yarn lint
 ```
 
-Naming conventions:
+Then open a PR against `develop` using
+[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
 
-- `feat/`
-- `fix/`
-- `docs/`
-- `refactor/`
+## Code of conduct
 
-Examples:
+By participating you agree to the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
-- `feat/add-diacritics-toggle`
-- `fix/normalization-edge-case`
-- `docs/update-readme`
+## Security
 
-## Commit Message Guidelines
+Report vulnerabilities per [SECURITY.md](SECURITY.md). Do not file public
+issues for security bugs.
 
-Conventional Commits style is recommended.
+## Requirements
 
-Examples:
+| Tool    | Version                       | Why                                         |
+| ------- | ----------------------------- | ------------------------------------------- |
+| Node.js | `24.x` (matches CI)           | Runtime for build, test, lint               |
+| Yarn    | `4.18.0` (Berry via Corepack) | Lockfile + scripts pinned in `package.json` |
+| Git     | any recent                    | Branch workflow                             |
 
-- `feat(search): add diacritics toggle`
-- `fix(normalization): handle hamza edge case`
-- `docs: update contributing guidelines`
+All other toolchain (TypeScript, tsup, vitest, eslint, prettier, husky,
+commitlint, markdownlint) is installed by `yarn install` — no global
+installs.
 
-## Development Setup
+## Branch model
 
-This project uses **yarn** for package management.
+| Branch    | Purpose                              | Stability   |
+| --------- | ------------------------------------ | ----------- |
+| `develop` | Default base for new work; PR target | Integration |
+| `main`    | Released versions only               | Stable      |
+| `staging` | Pre-release soak                     | Reserved    |
 
-1. **Clone the repository:**
+- Branch new work from `develop` (the default base).
+- Use Conventional Commits types as branch-name prefixes when they apply:
+  `feat/...`, `fix/...`, `docs/...`, `refactor/...`, `test/...`, `chore/...`.
+- Examples: `feat/search-diacritics-toggle`, `fix/normalization-hamza-edge`.
 
-   ```bash
-   git clone https://github.com/adelpro/quran-search-engine.git
-   cd quran-search-engine
-   ```
+## Development workflow
 
-2. **Install dependencies and build:**
+- TypeScript is `strict: true`; new `any` is warned by ESLint
+  (`@typescript-eslint/no-explicit-any: warn`).
+- Prettier: `semi: true`, `singleQuote: true`, `trailingComma: "all"`,
+  `printWidth: 100`, `tabWidth: 2`, `endOfLine: "auto"`.
+- Source authored as ESM (`module: "ESNext"`, `target: "ES2022"`); the build
+  emits dual CJS+ESM+`.d.ts` via `tsup` — do not edit `dist/`.
+- One logical change per PR — split refactors, features, and fixes.
+- Husky runs `yarn lint-staged` on pre-commit (ESLint --fix + Prettier on
+  staged `*.{js,jsx,ts,tsx}`) and `commitlint` on commit-msg. Bypassing
+  hooks is not supported.
 
-   ```bash
-   yarn playground:setup
-   ```
+## Pre-PR quality gate
 
-   Or step by step:
+Run in order; all must pass before opening a PR.
 
-   ```bash
-   yarn install
-   yarn build
-   ```
+1. `yarn lint` — ESLint with `--max-warnings=0`; must exit clean.
+2. `yarn lint:md` — markdownlint over `**/*.md` (excludes `node_modules`,
+   `.agent`).
+3. `yarn build` — `tsup` bundles CJS+ESM+types into `dist/`.
+4. `yarn test` — `vitest` suite (colocated with source as `*.test.ts`).
+5. `yarn size-limit` — verifies `dist/index.mjs` stays under the 2 MB cap
+   (CI runs this; run locally before bumping bundle-heavy deps).
 
-3. **Run tests:**
+Steps 1–4 run in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml); step 5 runs in
+[`.github/workflows/size.-limit.yml`](.github/workflows/size.-limit.yml).
+A green local run is a green CI run.
 
-   ```bash
-   yarn test
-   ```
+## Commit messages
 
-## Running Examples Locally
+Conventional Commits are **enforced** via
+`@commitlint/config-conventional` (see `commitlint.config.js`) in the
+`.husky/commit-msg` hook.
 
-Use the playground scripts:
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
+  `test`, `build`, `ci`, `chore`, `revert`.
+- Subject ≤ 72 characters; body wrapped ~100 characters.
+- Scopes are optional but encouraged when a clear module applies.
 
-```bash
-yarn playground:react     # React + Vite
-yarn playground:vanilla   # Vanilla TypeScript
-yarn playground:angular  # Angular
-yarn playground:node     # Node.js CLI
+```text
+feat(search): add diacritics toggle
+fix(normalization): handle hamza edge case
+docs: clarify branch base in CONTRIBUTING
+perf(worker): cache tokenizer output per query
 ```
 
-## Testing Guidelines
+## Verifying AI-generated or auto-generated code
 
-- Run all tests: `yarn test`
-- During development, you can run tests to verify your code behaves correctly.
-- Tests are typically located alongside the source code or in a dedicated tests directory.
-- We encourage adding tests for new features or bug fixes.
+- Build and test locally before committing — never submit code you have not
+  run.
+- Re-read the diff line-by-line; delete dead or speculative code.
+- Run the project's own linters (`yarn lint`, `yarn lint:md`) and fix every
+  warning.
+- Add or update tests for every behavior change — AI-generated code without
+  tests will be rejected.
+- If you cannot explain why a line is there, rewrite or remove it.
 
-## Project Structure
+You are the author of record; tooling assistance does not transfer
+responsibility.
 
-- `src/core`: Main search logic and tokenization.
-- `src/utils`: Normalization, highlighting, and data loading.
-- `src/data`: Bundled Quranic datasets (morphology, word maps).
-- `examples/`: Demonstration apps (Vite/React, Node.js, Vanilla TS).
+## Pull requests
 
-## CHANGELOG Update Process
+- Target branch: `develop`.
+- Use [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md);
+  its checklist mirrors the Pre-PR quality gate above.
+- Reference issues with `Fixes #123` or `Refs #123`.
+- One logical change per PR — split unrelated changes.
+- Attach screenshots or short clips for any user-visible UI change (the
+  playground examples count).
+- Update [`CHANGELOG.md`](CHANGELOG.md) under `[Unreleased]` using
+  Keep-a-Changelog categories (`Added`, `Changed`, `Deprecated`, `Removed`,
+  `Fixed`, `Security`). Do not invent new categories like `Refactored`.
+- Branch from `develop`, not `main`.
 
-Contributors must update `CHANGELOG.md` under `[Unreleased]`.
+## Adding a new search layer
 
-Example formatting:
+- Read [Architecture & Design Decisions](docs/reference/architecture.md)
+  before writing a layer — layers compose into `core/search.ts` and must
+  implement the existing contract.
+- Place the implementation in `src/core/layers/<name>.ts` and its tests in
+  `src/core/layers/<name>.test.ts` (colocated, vitest).
+- For tokenization or matcher contracts, see
+  [Tokenizer & Matching Types](docs/reference/api/tokenizer.md); for data
+  shapes see
+  [Inverted Index & Data Strategy](docs/reference/api/inverted-index.md).
 
-```markdown
-### Added
+## Reporting bugs / requesting features
 
-- Description
+- Bugs: open an issue using
+  [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml).
+  Include reproduction, expected vs actual, environment (Node version, OS,
+  library version), and a minimal snippet.
+- Features: open an issue using
+  [`.github/ISSUE_TEMPLATE/feature_request.yml`](.github/ISSUE_TEMPLATE/feature_request.yml).
+  Describe the use case first, then the proposed API.
 
-### Fixed
+## License
 
-- Description
+This project is MIT — see [`LICENSE`](LICENSE). By submitting a
+contribution you agree to license it under the same MIT terms.
 
-### Changed
+## Documentation
 
-- Description
-
-### Refactored
-
-- Description
-```
-
-## Code Quality & Pre-PR Checklist
-
-Before submitting a PR, contributors must:
-
-- Branch from develop
-- Run:
-
-  ```bash
-  yarn lint
-  yarn build
-  yarn format
-  yarn test
-  ```
-
-- Ensure all tests pass
-- Review code manually
-- Submit your PR with a clear description of the problem solved (linting will run automatically via husky).
-
-## Responsible Use of AI
-
-AI tools may assist development. However, contributors are fully responsible for understanding and reviewing submitted code. Code must not be blindly generated and submitted.
+User-facing docs live under [`docs/`](docs/index.md). Update the relevant
+guide rather than duplicating content here. The cross-link from
+[`docs/index.md`](docs/index.md) back to this file is kept in sync.
 
 ## Questions?
 
-Feel free to open a [Discussion](https://github.com/adelpro/quran-search-engine/discussions) or reach out via email.
+- [GitHub Discussions](https://github.com/adelpro/quran-search-engine/discussions)
+- `contact@adelpro.us.kg`
