@@ -34,6 +34,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Installation](#installation)
 - [Development Setup](#development-setup)
 - [Quickstart](#quickstart)
+- [CLI](#cli)
 - [Public API](#public-api)
 - [Error Handling](#error-handling)
 - [How scoring works](#how-scoring-works)
@@ -213,6 +214,127 @@ console.log(response.results[0]);
 
 > [!IMPORTANT]
 > **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with `yarn build --watch`) for those changes to be reflected in the example applications.
+
+## CLI
+
+The package publishes a `quran-search-engine` command, so the engine can be queried from a terminal or a shell
+script without writing any code.
+
+Run it without installing anything:
+
+```bash
+npx quran-search-engine "رحم"
+```
+
+Or install it globally:
+
+```bash
+yarn global add quran-search-engine
+```
+
+<details> <summary>Other package managers</summary>
+<br>
+npm install -g quran-search-engine <br>
+pnpm add -g quran-search-engine <br>
+
+</details>
+
+Usage is one search per invocation:
+
+```bash
+quran-search-engine <query> [options]
+```
+
+### CLI options
+
+Defaults are the library's own defaults, not choices made for the terminal.
+
+| Option                      | Value                    | Default        | Effect                       |
+| --------------------------- | ------------------------ | -------------- | ---------------------------- |
+| `--lemma` / `--no-lemma`    | —                        | on             | Word-family matching         |
+| `--root` / `--no-root`      | —                        | on             | Word-root matching           |
+| `--fuzzy` / `--no-fuzzy`    | —                        | on             | Approximate matching         |
+| `--semantic`                | —                        | off            | Related-concept matching     |
+| `--regex`                   | —                        | off            | Treat the query as a pattern |
+| `--sura <n>`                | positive integer         | all            | Restrict to one sura         |
+| `--juz <n>`                 | positive integer         | all            | Restrict to one juz          |
+| `--page <n>`                | positive integer         | `1`            | Which page of results        |
+| `--limit <n>`               | positive integer         | `20`           | Results per page             |
+| `--format <json\|csv\|tsv>` | `json` \| `csv` \| `tsv` | readable table | Machine-readable output      |
+| `--output <file>`           | file path                | stdout         | Write to a file instead      |
+| `-h`, `--help`              | —                        | —              | Show the help screen         |
+| `--version`                 | —                        | —              | Show the installed version   |
+
+The same list, with defaults, is printed by `quran-search-engine --help`.
+
+### Exit codes
+
+| Code | Meaning       | Examples                                                   |
+| ---- | ------------- | ---------------------------------------------------------- |
+| `0`  | completed     | Results found, and also when nothing matched               |
+| `1`  | runtime error | Data could not be loaded, output file could not be written |
+| `2`  | invalid usage | Unknown option, missing or blank query, bad value          |
+
+Scripts can therefore distinguish "nothing matched" from a real failure without parsing message text.
+
+### Query shapes recognised without a flag
+
+These are detected from the query itself, so no option enables them:
+
+| Shape                 | Example                                          | Behaviour                     |
+| --------------------- | ------------------------------------------------ | ----------------------------- |
+| Verse coordinates     | `2:255`, `1:1-7`, `2:`                           | Returns those verses directly |
+| Logical operators     | `الله AND (الرحمن OR الرحيم)`, `الله NOT الرحمن` | Operators are honoured        |
+| Latin transliteration | `rahman`, `bismi allah`                          | Treated as a transliteration  |
+
+```bash
+quran-search-engine "2:255"
+quran-search-engine "الله NOT الرحمن"
+quran-search-engine "rahman"
+```
+
+Transliteration is matched word by word, so write each word separately — `bismi allah` rather
+than `bismillah`.
+
+### Output formats
+
+Without `--format`, results are printed as a readable table: one line per verse, then the totals.
+
+```bash
+quran-search-engine "رحم"
+```
+
+With `--format json`, the output is an array of verse objects:
+
+```bash
+quran-search-engine "رحم" --format json
+```
+
+With `--format csv`, the output starts with a UTF-8 BOM (so spreadsheets open Arabic text correctly),
+followed by the columns `sura,aya,score,matchType,text`:
+
+```bash
+quran-search-engine "رحم" --format csv --output results.csv
+```
+
+`--format tsv` produces the same columns, tab-separated:
+
+```bash
+quran-search-engine "رحم" --format tsv
+```
+
+Machine-readable output contains only the data — no headings, totals, or progress messages — so it can be piped
+straight into another tool:
+
+```bash
+quran-search-engine "رحمة" --format json | jq .
+```
+
+### Custom data
+
+Custom data loading (`--quran <file>` / `--data-dir <dir>`) is not supported by the CLI; it always searches the
+bundled dataset. Custom datasets remain available through the library API, and CLI support for them is tracked
+as separate future work.
 
 ## Public API
 
@@ -1056,6 +1178,9 @@ Several example applications are available in the `examples/` directory:
 - **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
 - **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
 - **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
+
+The bundled [CLI](#cli) is another way to try the engine without writing any code:
+`npx quran-search-engine "رحم"`.
 
 ### Production Examples
 
