@@ -24,10 +24,10 @@ This library provides a deterministic and highly customizable search experience 
 - [Project Description & Getting Started](./guides/getting-started.md)
 - [Installation Guide](./guides/installation.md)
 - [Quick Start](./guides/quick-start.md)
-- [CLI](./cli.md)
 
 ### Guides
 
+- [CLI](./guides/cli.md)
 - [Search Syntax & Scoring](./guides/search-syntax.md)
 - [Advanced Configuration](./guides/configuration.md)
 - [Examples & Integrations](./guides/examples.md)

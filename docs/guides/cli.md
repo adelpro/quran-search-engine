@@ -4,7 +4,7 @@ The package publishes a `quran-search-engine` command, so the engine can be quer
 terminal or a shell script without writing any code. It is a thin wrapper over the library:
 options map onto the same arguments `search()` takes, and results come back unchanged.
 
-For a two-line introduction see the [CLI section of the README](../README.md#cli). This page
+For a two-line introduction see the [CLI section of the README](../../README.md#cli). This page
 covers the full surface.
 
 ## Installation

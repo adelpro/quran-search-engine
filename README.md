@@ -235,7 +235,7 @@ quran-search-engine --help                       # every option, with its defaul
 Exit codes are `0` when it completed, including when nothing matched, `1` for a runtime error
 and `2` for invalid usage, so scripts can tell those apart without reading the message.
 
-See the [CLI guide](./docs/cli.md) for the full option list, the output formats, the query
+See the [CLI guide](./docs/guides/cli.md) for the full option list, the output formats, the query
 shapes that need no flag, and how to run it from a source checkout.
 
 ## Public API
