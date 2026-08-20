@@ -79,13 +79,17 @@ describe('Phonetic Search Integration', () => {
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].gid).toBe(1);
   });
-  it('should support phonetic search for "bismillah" as a phrase-level entry', async () => {
+
+  it('should map "bismillah" to the correct Arabic phrase and support phonetic search', async () => {
     if (!mockQuranData) mockQuranData = await loadQuranData();
     if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
     if (!mockWordMap) mockWordMap = await loadWordMap();
     if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
 
-    // "bismillah" -> "بسم الله" (phrase-level entry, not word-by-word)
+    // Verify the phrase-level mapping itself is correct
+    expect(mockPhoneticMap.get('bismillah')).toContain('بسم الله');
+
+    // Verify the search actually uses this mapping to return results
     const result = search('bismillah', {
       quranData: mockQuranData,
       morphologyMap: mockMorphologyMap,
@@ -95,13 +99,16 @@ describe('Phonetic Search Integration', () => {
     expect(result.results.length).toBeGreaterThan(0);
   });
 
-  it('should support phonetic search for "alhamdulillah" as a phrase-level entry', async () => {
+  it('should map "alhamdulillah" to the correct Arabic phrase and support phonetic search', async () => {
     if (!mockQuranData) mockQuranData = await loadQuranData();
     if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
     if (!mockWordMap) mockWordMap = await loadWordMap();
     if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
 
-    // "alhamdulillah" -> "الحمد لله" (phrase-level entry, not word-by-word)
+    // Verify the phrase-level mapping itself is correct
+    expect(mockPhoneticMap.get('alhamdulillah')).toContain('الحمد لله');
+
+    // Verify the search actually uses this mapping to return results
     const result = search('alhamdulillah', {
       quranData: mockQuranData,
       morphologyMap: mockMorphologyMap,
@@ -111,13 +118,16 @@ describe('Phonetic Search Integration', () => {
     expect(result.results.length).toBeGreaterThan(0);
   });
 
-  it('should support phonetic search for "subhanallah" as a phrase-level entry', async () => {
+  it('should map "subhanallah" to the correct Arabic phrase and support phonetic search', async () => {
     if (!mockQuranData) mockQuranData = await loadQuranData();
     if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
     if (!mockWordMap) mockWordMap = await loadWordMap();
     if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
 
-    // "subhanallah" -> "سبحان الله" (phrase-level entry, not word-by-word)
+    // Verify the phrase-level mapping itself is correct
+    expect(mockPhoneticMap.get('subhanallah')).toContain('سبحان الله');
+
+    // Verify the search actually uses this mapping to return results
     const result = search('subhanallah', {
       quranData: mockQuranData,
       morphologyMap: mockMorphologyMap,
