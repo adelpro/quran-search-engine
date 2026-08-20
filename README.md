@@ -245,6 +245,8 @@ Usage is one search per invocation:
 quran-search-engine <query> [options]
 ```
 
+Options accept their value either way, so `--limit 5` and `--limit=5` are equivalent.
+
 ### CLI options
 
 Defaults are the library's own defaults, not choices made for the terminal.
@@ -256,8 +258,8 @@ Defaults are the library's own defaults, not choices made for the terminal.
 | `--fuzzy` / `--no-fuzzy`    | —                        | on             | Approximate matching         |
 | `--semantic`                | —                        | off            | Related-concept matching     |
 | `--regex`                   | —                        | off            | Treat the query as a pattern |
-| `--sura <n>`                | positive integer         | all            | Restrict to one sura         |
-| `--juz <n>`                 | positive integer         | all            | Restrict to one juz          |
+| `--sura <n>`                | 1 to 114                 | all            | Restrict to one sura         |
+| `--juz <n>`                 | 1 to 30                  | all            | Restrict to one juz          |
 | `--page <n>`                | positive integer         | `1`            | Which page of results        |
 | `--limit <n>`               | positive integer         | `20`           | Results per page             |
 | `--format <json\|csv\|tsv>` | `json` \| `csv` \| `tsv` | readable table | Machine-readable output      |
@@ -335,6 +337,28 @@ quran-search-engine "رحمة" --format json | jq .
 Custom data loading (`--quran <file>` / `--data-dir <dir>`) is not supported by the CLI; it always searches the
 bundled dataset. Custom datasets remain available through the library API, and CLI support for them is tracked
 as separate future work.
+
+### Running the CLI from source
+
+Contributors do not need to install the package. Build once, then run the built entry point
+directly:
+
+```bash
+yarn install
+yarn build
+node dist/cli.js "رحم"
+node dist/cli.js --help
+```
+
+Rebuild after changing anything under `src/`, since `dist/` is what the command runs. To
+exercise it exactly as a published user would, including the `bin` link and the shebang, pack
+and install the tarball into a throwaway prefix:
+
+```bash
+npm pack --pack-destination /tmp/qse
+npm install --prefix /tmp/qse /tmp/qse/quran-search-engine-*.tgz
+/tmp/qse/node_modules/.bin/quran-search-engine "رحم"
+```
 
 ## Public API
 
