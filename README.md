@@ -217,148 +217,26 @@ console.log(response.results[0]);
 
 ## CLI
 
-The package publishes a `quran-search-engine` command, so the engine can be queried from a terminal or a shell
-script without writing any code.
-
-Run it without installing anything:
+The package publishes a `quran-search-engine` command, so the engine can be queried from a
+terminal or a shell script without writing any code.
 
 ```bash
-npx quran-search-engine "رحم"
+npx quran-search-engine "رحم"                    # no install needed
+yarn global add quran-search-engine              # or install it globally
 ```
-
-Or install it globally:
 
 ```bash
-yarn global add quran-search-engine
+quran-search-engine "رحمة" --format json | jq .  # pipe into another tool
+quran-search-engine "الله" --sura 1 --limit 5    # narrow and page
+quran-search-engine "2:255"                      # verse coordinates, no flag needed
+quran-search-engine --help                       # every option, with its default
 ```
 
-<details> <summary>Other package managers</summary>
-<br>
-npm install -g quran-search-engine <br>
-pnpm add -g quran-search-engine <br>
+Exit codes are `0` when it completed, including when nothing matched, `1` for a runtime error
+and `2` for invalid usage, so scripts can tell those apart without reading the message.
 
-</details>
-
-Usage is one search per invocation:
-
-```bash
-quran-search-engine <query> [options]
-```
-
-Options accept their value either way, so `--limit 5` and `--limit=5` are equivalent.
-
-### CLI options
-
-Defaults are the library's own defaults, not choices made for the terminal.
-
-| Option                      | Value                    | Default        | Effect                       |
-| --------------------------- | ------------------------ | -------------- | ---------------------------- |
-| `--lemma` / `--no-lemma`    | —                        | on             | Word-family matching         |
-| `--root` / `--no-root`      | —                        | on             | Word-root matching           |
-| `--fuzzy` / `--no-fuzzy`    | —                        | on             | Approximate matching         |
-| `--semantic`                | —                        | off            | Related-concept matching     |
-| `--regex`                   | —                        | off            | Treat the query as a pattern |
-| `--sura <n>`                | 1 to 114                 | all            | Restrict to one sura         |
-| `--juz <n>`                 | 1 to 30                  | all            | Restrict to one juz          |
-| `--page <n>`                | positive integer         | `1`            | Which page of results        |
-| `--limit <n>`               | positive integer         | `20`           | Results per page             |
-| `--format <json\|csv\|tsv>` | `json` \| `csv` \| `tsv` | readable table | Machine-readable output      |
-| `--output <file>`           | file path                | stdout         | Write to a file instead      |
-| `-h`, `--help`              | —                        | —              | Show the help screen         |
-| `--version`                 | —                        | —              | Show the installed version   |
-
-The same list, with defaults, is printed by `quran-search-engine --help`.
-
-### Exit codes
-
-| Code | Meaning       | Examples                                                   |
-| ---- | ------------- | ---------------------------------------------------------- |
-| `0`  | completed     | Results found, and also when nothing matched               |
-| `1`  | runtime error | Data could not be loaded, output file could not be written |
-| `2`  | invalid usage | Unknown option, missing or blank query, bad value          |
-
-Scripts can therefore distinguish "nothing matched" from a real failure without parsing message text.
-
-### Query shapes recognised without a flag
-
-These are detected from the query itself, so no option enables them:
-
-| Shape                 | Example                                          | Behaviour                     |
-| --------------------- | ------------------------------------------------ | ----------------------------- |
-| Verse coordinates     | `2:255`, `1:1-7`, `2:`                           | Returns those verses directly |
-| Logical operators     | `الله AND (الرحمن OR الرحيم)`, `الله NOT الرحمن` | Operators are honoured        |
-| Latin transliteration | `rahman`, `bismi allah`                          | Treated as a transliteration  |
-
-```bash
-quran-search-engine "2:255"
-quran-search-engine "الله NOT الرحمن"
-quran-search-engine "rahman"
-```
-
-Transliteration is matched word by word, so write each word separately — `bismi allah` rather
-than `bismillah`.
-
-### Output formats
-
-Without `--format`, results are printed as a readable table: one line per verse, then the totals.
-
-```bash
-quran-search-engine "رحم"
-```
-
-With `--format json`, the output is an array of verse objects:
-
-```bash
-quran-search-engine "رحم" --format json
-```
-
-With `--format csv`, the output starts with a UTF-8 BOM (so spreadsheets open Arabic text correctly),
-followed by the columns `sura,aya,score,matchType,text`:
-
-```bash
-quran-search-engine "رحم" --format csv --output results.csv
-```
-
-`--format tsv` produces the same columns, tab-separated:
-
-```bash
-quran-search-engine "رحم" --format tsv
-```
-
-Machine-readable output contains only the data — no headings, totals, or progress messages — so it can be piped
-straight into another tool:
-
-```bash
-quran-search-engine "رحمة" --format json | jq .
-```
-
-### Custom data
-
-Custom data loading (`--quran <file>` / `--data-dir <dir>`) is not supported by the CLI; it always searches the
-bundled dataset. Custom datasets remain available through the library API, and CLI support for them is tracked
-as separate future work.
-
-### Running the CLI from source
-
-Contributors do not need to install the package. Build once, then run the built entry point
-directly:
-
-```bash
-yarn install
-yarn build
-node dist/cli.js "رحم"
-node dist/cli.js --help
-```
-
-Rebuild after changing anything under `src/`, since `dist/` is what the command runs. To
-exercise it exactly as a published user would, including the `bin` link and the shebang, pack
-and install the tarball into a throwaway prefix:
-
-```bash
-npm pack --pack-destination /tmp/qse
-npm install --prefix /tmp/qse /tmp/qse/quran-search-engine-*.tgz
-/tmp/qse/node_modules/.bin/quran-search-engine "رحم"
-```
+See the [CLI guide](./docs/cli.md) for the full option list, the output formats, the query
+shapes that need no flag, and how to run it from a source checkout.
 
 ## Public API
 

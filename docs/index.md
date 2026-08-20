@@ -24,6 +24,7 @@ This library provides a deterministic and highly customizable search experience 
 - [Project Description & Getting Started](./guides/getting-started.md)
 - [Installation Guide](./guides/installation.md)
 - [Quick Start](./guides/quick-start.md)
+- [CLI](./cli.md)
 
 ### Guides
 
