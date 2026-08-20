@@ -266,10 +266,17 @@ describe('run', () => {
       expect(out).toMatch(/no results/i);
     });
 
-    it('reports no results for an out-of-range sura instead of failing', async () => {
-      // An empty corpus would make search() throw MissingDependenciesError; the CLI answers
-      // directly instead, so this stays a successful run with nothing found.
-      const { code, out } = await invoke(['الرحمن', '--sura', '999']);
+    it('rejects a sura number that does not exist', async () => {
+      const { code, err } = await invoke(['الرحمن', '--sura', '999']);
+
+      expect(code).toBe(2);
+      expect(err).toMatch(/1 to 114/);
+    });
+
+    it('still succeeds when an in-range scope simply holds nothing', async () => {
+      // Sura 1 sits in juz 1, so this combination is legal but empty. An empty corpus would
+      // make search() throw MissingDependenciesError, so the CLI answers directly instead.
+      const { code, out } = await invoke(['الرحمن', '--sura', '1', '--juz', '2']);
 
       expect(code).toBe(0);
       expect(out).toMatch(/no results/i);
@@ -283,6 +290,35 @@ describe('run', () => {
         Number(r.out.match(/of (\d+) results?/)?.[1] ?? -1);
       expect(total(all)).toBeGreaterThan(total(scoped));
       expect(total(scoped)).toBe(2);
+    });
+  });
+
+  describe('match breakdown in the table footer', () => {
+    it('reports which layers produced the matches', async () => {
+      const { out } = await invoke(['الرحمن']);
+
+      expect(out).toMatch(/Matches: /);
+      expect(out).toMatch(/exact \d+/);
+    });
+
+    it('names the range layer for a coordinate query, without the zeroes', async () => {
+      const { out } = await invoke(['1:1-3']);
+
+      expect(out).toContain('range 3');
+      expect(out).not.toContain('exact 0');
+      expect(out).not.toContain('lemma 0');
+    });
+
+    it('says nothing about matches when there are none', async () => {
+      const { out } = await invoke(['زقفونة']);
+
+      expect(out).not.toMatch(/Matches: /);
+    });
+
+    it('stays out of the machine-readable formats', async () => {
+      const { out } = await invoke(['الرحمن', '--format', 'json']);
+
+      expect(out).not.toMatch(/Matches: /);
     });
   });
 

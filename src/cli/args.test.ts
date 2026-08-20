@@ -127,6 +127,34 @@ describe('parseArgs', () => {
     it('rejects a numeric option with no value', () => {
       expect(parseError(['رحم', '--sura']).message).toMatch(/needs a value/i);
     });
+
+    it.each([
+      ['--sura', '115', '1 to 114'],
+      ['--sura', '999', '1 to 114'],
+      ['--juz', '31', '1 to 30'],
+    ])('rejects %s %s as out of range', (flag, value, expected) => {
+      // Out of range is a usage mistake. Returning nothing would read as "no matches in that
+      // sura" when the sura does not exist.
+      const error = parseError(['رحم', flag, value]);
+
+      expect(error.flag).toBe(flag);
+      expect(error.message).toContain(expected);
+    });
+
+    it.each([
+      ['--sura', '114'],
+      ['--juz', '30'],
+    ])('accepts %s %s at the upper bound', (flag, value) => {
+      expect(isUsageError(parseArgs(['رحم', flag, value]))).toBe(false);
+    });
+
+    it.each(['--page', '--limit'])('leaves %s unbounded, since it paginates results', (flag) => {
+      expect(parseOk(['رحم', flag, '99999']).pagination).toMatchObject({});
+    });
+
+    it('mentions the range when a bounded flag is missing its value', () => {
+      expect(parseError(['رحم', '--juz']).message).toContain('1 to 30');
+    });
   });
 
   describe('output options', () => {

@@ -6,6 +6,7 @@ import type {
   PaginationOptions,
   QuranText,
   SearchContext,
+  SearchCounts,
   SearchResponse,
   WordMap,
 } from '../types';
@@ -90,10 +91,21 @@ const scopeCorpus = (
   return scoped;
 };
 
+const NO_COUNTS: SearchCounts = {
+  simple: 0,
+  lemma: 0,
+  root: 0,
+  fuzzy: 0,
+  range: 0,
+  semantic: 0,
+  regex: 0,
+  total: 0,
+};
+
 /** An empty result set, for when a scope filter leaves no verses to search at all. */
 const emptyResponse = (pagination: PaginationOptions): SearchResponse<QuranText> => ({
   results: [],
-  counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, semantic: 0, regex: 0, total: 0 },
+  counts: NO_COUNTS,
   pagination: {
     totalResults: 0,
     totalPages: 0,

@@ -30,6 +30,12 @@ export type CliUsageError = {
 
 const EXPORT_FORMATS: readonly ExportFormat[] = ['json', 'csv', 'tsv'];
 
+// Fixed properties of the mushaf, so they are safe to state here. Deliberately not derived
+// from the exported SURAS constant: that module imports quran.json at load time, and pulling
+// the corpus into the parser would make even `--help` pay for it.
+const SURA_COUNT = 114;
+const JUZ_COUNT = 30;
+
 /** Options the regex layer ignores; combining them with `--regex` earns a warning. */
 const REGEX_IGNORED_FLAGS = ['--lemma', '--root', '--fuzzy', '--semantic'] as const;
 
@@ -42,21 +48,36 @@ const usageError = (message: string, flag?: string): CliUsageError => ({ message
 /**
  * Parses a positive integer, rejecting `0`, negatives, decimals and non-numeric input.
  * Shared by `--page`, `--limit`, `--sura` and `--juz` so their messages stay consistent.
+ *
+ * @param flag - The flag being parsed, used in the message.
+ * @param raw - The raw value, if one was supplied.
+ * @param max - Upper bound, for flags that address a fixed range like suras or juz.
+ * @returns The parsed number, or a usage error explaining what to change.
  */
-const parsePositiveInteger = (flag: string, raw: string | undefined): number | CliUsageError => {
+const parsePositiveInteger = (
+  flag: string,
+  raw: string | undefined,
+  max?: number,
+): number | CliUsageError => {
+  const expected =
+    max === undefined ? 'a positive whole number' : `a whole number from 1 to ${max}`;
+
   if (raw === undefined || raw === '') {
-    return usageError(
-      `${flag} needs a value: a positive whole number, for example ${flag} 2`,
-      flag,
-    );
+    return usageError(`${flag} needs a value: ${expected}, for example ${flag} 2`, flag);
   }
 
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 1) {
     return usageError(
-      `${flag} must be a positive whole number, but got "${raw}". Use ${flag} 2 or higher.`,
+      `${flag} must be ${expected}, but got "${raw}". Use ${flag} 2 or higher.`,
       flag,
     );
+  }
+
+  // Out of range is a usage mistake, not an empty search: returning nothing for --sura 999
+  // reads as "this sura has no matches" when the sura does not exist at all.
+  if (max !== undefined && value > max) {
+    return usageError(`${flag} must be ${expected}, but got "${raw}".`, flag);
   }
 
   return value;
@@ -148,7 +169,8 @@ export const parseArgs = (argv: string[]): CliOptions | CliUsageError => {
       case '--juz':
       case '--page':
       case '--limit': {
-        const value = parsePositiveInteger(flag, takeValue());
+        const bound = flag === '--sura' ? SURA_COUNT : flag === '--juz' ? JUZ_COUNT : undefined;
+        const value = parsePositiveInteger(flag, takeValue(), bound);
         if (typeof value !== 'number') return value;
         if (flag === '--sura') options.suraId = value;
         else if (flag === '--juz') options.juzId = value;

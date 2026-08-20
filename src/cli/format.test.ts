@@ -147,6 +147,17 @@ describe('helpText', () => {
     expect(help).toMatch(/Transliteration/i);
   });
 
+  it('states the valid range for the scope filters', () => {
+    const help = helpText();
+
+    expect(help).toMatch(/--sura .*1 to 114/);
+    expect(help).toMatch(/--juz .*1 to 30/);
+  });
+
+  it('mentions that options accept --flag=value too', () => {
+    expect(helpText()).toMatch(/--limit=5/);
+  });
+
   it('documents the three exit codes', () => {
     const help = helpText();
 

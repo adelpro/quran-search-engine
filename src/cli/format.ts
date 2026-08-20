@@ -1,4 +1,4 @@
-import type { QuranText, SearchResponse } from '../types';
+import type { QuranText, SearchCounts, SearchResponse } from '../types';
 import { exportResults } from '../utils/export';
 import type { OutputFormat } from './args';
 
@@ -12,6 +12,8 @@ export const helpText = (): string =>
 Usage:
   quran-search-engine <query> [options]
 
+Options take their value either way: --limit 5 or --limit=5
+
 Matching (defaults match the library's own defaults):
   --lemma, --no-lemma      Word-family matching                    (default: on)
   --root, --no-root        Word-root matching                      (default: on)
@@ -20,8 +22,8 @@ Matching (defaults match the library's own defaults):
   --regex                  Treat the query as a pattern            (default: off)
 
 Scope:
-  --sura <n>               Restrict to one sura                    (default: all)
-  --juz <n>                Restrict to one juz                     (default: all)
+  --sura <n>               Restrict to one sura, 1 to 114          (default: all)
+  --juz <n>                Restrict to one juz, 1 to 30            (default: all)
 
 Results:
   --page <n>               Which page of results                   (default: 1)
@@ -57,6 +59,34 @@ and continues: pattern matching runs on its own and ignores them.
 `;
 
 /**
+ * Summarises which layers produced the matches, skipping the ones that produced none.
+ *
+ * `counts.simple` is reported as "exact" to match the `matchType` a reader sees, and
+ * `counts.fuzzy` covers both fuzzy and unscored matches, which is the library's own
+ * grouping. A range or regex query populates only its own field, so the zeros would be
+ * noise rather than information.
+ *
+ * @param counts - The counts block from the search response.
+ * @returns A one-line breakdown, or an empty string when there is nothing to report.
+ */
+const formatCounts = (counts: SearchCounts): string => {
+  const labelled: [string, number][] = [
+    ['exact', counts.simple],
+    ['lemma', counts.lemma],
+    ['root', counts.root],
+    ['fuzzy', counts.fuzzy],
+    ['semantic', counts.semantic],
+    ['regex', counts.regex],
+    ['range', counts.range],
+  ];
+
+  const present = labelled.filter(([, value]) => value > 0);
+  if (present.length === 0) return '';
+
+  return present.map(([label, value]) => `${label} ${value}`).join(' · ');
+};
+
+/**
  * Renders results for a terminal reader: one line per verse, then the totals so the
  * reader knows what they have not yet seen.
  *
@@ -78,7 +108,10 @@ export const formatTable = (response: SearchResponse<QuranText>, query: string):
     `${pagination.totalResults === 1 ? 'result' : 'results'} ` +
     `(page ${pagination.currentPage} of ${pagination.totalPages})`;
 
-  return `${rows.join('\n')}\n${summary}\n`;
+  const breakdown = formatCounts(response.counts);
+  const matches = breakdown === '' ? '' : `\nMatches: ${breakdown}`;
+
+  return `${rows.join('\n')}\n${summary}${matches}\n`;
 };
 
 /**
