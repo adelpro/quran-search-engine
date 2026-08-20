@@ -79,4 +79,51 @@ describe('Phonetic Search Integration', () => {
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results[0].gid).toBe(1);
   });
+  it('should support phonetic search for "bismillah" as a phrase-level entry', async () => {
+    if (!mockQuranData) mockQuranData = await loadQuranData();
+    if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
+    if (!mockWordMap) mockWordMap = await loadWordMap();
+    if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
+
+    // "bismillah" -> "بسم الله" (phrase-level entry, not word-by-word)
+    const result = search('bismillah', {
+      quranData: mockQuranData,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMap,
+      phoneticMap: mockPhoneticMap,
+    });
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+
+  it('should support phonetic search for "alhamdulillah" as a phrase-level entry', async () => {
+    if (!mockQuranData) mockQuranData = await loadQuranData();
+    if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
+    if (!mockWordMap) mockWordMap = await loadWordMap();
+    if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
+
+    // "alhamdulillah" -> "الحمد لله" (phrase-level entry, not word-by-word)
+    const result = search('alhamdulillah', {
+      quranData: mockQuranData,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMap,
+      phoneticMap: mockPhoneticMap,
+    });
+    expect(result.results.length).toBeGreaterThan(0);
+  });
+
+  it('should support phonetic search for "subhanallah" as a phrase-level entry', async () => {
+    if (!mockQuranData) mockQuranData = await loadQuranData();
+    if (!mockMorphologyMap) mockMorphologyMap = await loadMorphology();
+    if (!mockWordMap) mockWordMap = await loadWordMap();
+    if (!mockPhoneticMap) mockPhoneticMap = buildPhoneticMap();
+
+    // "subhanallah" -> "سبحان الله" (phrase-level entry, not word-by-word)
+    const result = search('subhanallah', {
+      quranData: mockQuranData,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMap,
+      phoneticMap: mockPhoneticMap,
+    });
+    expect(result.results.length).toBeGreaterThan(0);
+  });
 });
