@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CLI**: New `quran-search-engine` command for searching the Quran from a terminal, runnable via
+  `npx quran-search-engine "<query>"` or after a global install.
+- **CLI output formats**: `--format json|csv|tsv` and `--output <file>` for scripting, alongside matching,
+  scope, and pagination options that mirror the library's own defaults.
+
 ## [0.3.2]
 
 ### Added

@@ -34,6 +34,7 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Installation](#installation)
 - [Development Setup](#development-setup)
 - [Quickstart](#quickstart)
+- [CLI](#cli)
 - [Public API](#public-api)
 - [Error Handling](#error-handling)
 - [How scoring works](#how-scoring-works)
@@ -213,6 +214,29 @@ console.log(response.results[0]);
 
 > [!IMPORTANT]
 > **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with `yarn build --watch`) for those changes to be reflected in the example applications.
+
+## CLI
+
+The package publishes a `quran-search-engine` command, so the engine can be queried from a
+terminal or a shell script without writing any code.
+
+```bash
+npx quran-search-engine "رحم"                    # no install needed
+yarn global add quran-search-engine              # or install it globally
+```
+
+```bash
+quran-search-engine "رحمة" --format json | jq .  # pipe into another tool
+quran-search-engine "الله" --sura 1 --limit 5    # narrow and page
+quran-search-engine "2:255"                      # verse coordinates, no flag needed
+quran-search-engine --help                       # every option, with its default
+```
+
+Exit codes are `0` when it completed, including when nothing matched, `1` for a runtime error
+and `2` for invalid usage, so scripts can tell those apart without reading the message.
+
+See the [CLI guide](./docs/guides/cli.md) for the full option list, the output formats, the query
+shapes that need no flag, and how to run it from a source checkout.
 
 ## Public API
 
@@ -1056,6 +1080,9 @@ Several example applications are available in the `examples/` directory:
 - **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
 - **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
 - **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
+
+The bundled [CLI](#cli) is another way to try the engine without writing any code:
+`npx quran-search-engine "رحم"`.
 
 ### Production Examples
 

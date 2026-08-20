@@ -27,6 +27,7 @@ This library provides a deterministic and highly customizable search experience 
 
 ### Guides
 
+- [CLI](./guides/cli.md)
 - [Search Syntax & Scoring](./guides/search-syntax.md)
 - [Advanced Configuration](./guides/configuration.md)
 - [Examples & Integrations](./guides/examples.md)

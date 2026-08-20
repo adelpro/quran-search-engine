@@ -294,6 +294,9 @@ export const search = <TVerse extends VerseInput>(
     simple: combined.filter((v) => v.matchType === 'exact').length,
     lemma: combined.filter((v) => v.matchType === 'lemma').length,
     root: combined.filter((v) => v.matchType === 'root').length,
+    // BUG: `fuzzy` also counts verses whose matchType is 'none', so it over-reports fuzzy
+    // matches and no field reports unscored ones. Consumers displaying a per-type breakdown
+    // (the CLI does) therefore attribute 'none' results to fuzzy matching. Tracked in #102.
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
     semantic: combined.filter((v) => v.matchType === 'semantic').length,
     regex: 0,
