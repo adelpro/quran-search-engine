@@ -1,0 +1,102 @@
+[
+  {
+    "subject": "weather",
+    "english": ["weather", "climate", "atmosphere", "rain", "rainfall", "storm", "wind", "winds", "thunder", "lightning", "cloud", "clouds", "sky", "snow", "hail", "flood", "drought"],
+    "arabic": ["مطر", "امطار", "ريح", "رياح", "عاصفة", "عواصف", "سحاب", "سحابة", "برق", "رعد", "ثلج", "برد", "غيث", "صيب", "بحر", "موج", "طوفان", "قطر", "ودق"]
+  },
+  {
+    "subject": "worship",
+    "english": ["worship", "prayer", "pray", "fasting", "fast", "pilgrimage", "hajj", "zakat", "charity", "ritual", "devotion", "supplication", "dua", "remembrance", "dhikr"],
+    "arabic": ["صلاة", "صلوات", "زكاة", "صيام", "صوم", "حج", "عمرة", "دعاء", "ذكر", "تسبيح", "ركوع", "سجود", "قيام", "عبادة", "قربة", "توبة", "استغفار", "اخبات"]
+  },
+  {
+    "subject": "family",
+    "english": ["family", "relatives", "kin", "kinship", "household", "parents", "children", "spouse", "mother", "father", "son", "daughter", "brother", "sister", "wife", "husband", "ancestry"],
+    "arabic": ["اب", "ام", "ابن", "بنت", "اولاد", "زوج", "زوجة", "اخ", "اخت", "والد", "والدة", "ذرية", "اهل", "قربى", "نساء", "رجال", "جد", "نسل", "عشيرة", "قوم"]
+  },
+  {
+    "subject": "faith",
+    "english": ["faith", "belief", "believe", "trust", "piety", "righteousness", "taqwa", "iman", "conviction", "certainty", "submission", "islam", "monotheism", "tawhid"],
+    "arabic": ["ايمان", "تقوى", "يقين", "اسلام", "توحيد", "اخلاص", "صدق", "تصديق", "خشوع", "خوف", "رجاء", "توكل", "صبر", "شكر", "عقيدة", "دين"]
+  },
+  {
+    "subject": "disbelief",
+    "english": ["disbelief", "kufr", "polytheism", "shirk", "infidel", "unbeliever", "hypocrite", "hypocrisy", "apostasy", "rejection", "denial", "arrogance"],
+    "arabic": ["كفر", "شرك", "نفاق", "فسق", "ضلال", "ضلالة", "جحود", "انكار", "كبر", "استكبار", "طغيان", "فتنة", "ردة", "الحاد"]
+  },
+  {
+    "subject": "paradise",
+    "english": ["paradise", "heaven", "jannah", "garden", "gardens", "afterlife", "hereafter", "reward", "bliss", "eternal life", "houris"],
+    "arabic": ["جنة", "جنات", "فردوس", "نعيم", "خلد", "حور", "عين", "انهار", "ثمار", "ظل", "سلام", "رضوان", "فلاح", "سعادة"]
+  },
+  {
+    "subject": "hellfire",
+    "english": ["hellfire", "hell", "fire", "punishment", "torment", "gehenna", "jahannam", "blazing fire", "penalty", "wrath", "doom"],
+    "arabic": ["نار", "جهنم", "عذاب", "حريق", "حميم", "زقوم", "غساق", "سعير", "سقر", "لظى", "ضريع", "غل", "خزي", "عقاب", "سخط"]
+  },
+  {
+    "subject": "prophethood",
+    "english": ["prophet", "prophethood", "messenger", "messengers", "revelation", "message", "apostle", "nabi", "rasul", "scripture", "sent"],
+    "arabic": ["نبي", "انبياء", "رسول", "رسل", "وحي", "رسالة", "نبوة", "بشير", "نذير", "مرسل", "كتاب", "صحف", "بينة", "دليل"]
+  },
+  {
+    "subject": "creation",
+    "english": ["creation", "create", "creator", "universe", "earth", "heavens", "cosmos", "nature", "origin", "existence", "formed", "made"],
+    "arabic": ["خلق", "خالق", "ارض", "سماء", "سماوات", "كون", "عالم", "ماء", "تراب", "طين", "نطفة", "علقة", "مضغة", "فطر", "انشاء", "ابداع", "بارئ"]
+  },
+  {
+    "subject": "judgment",
+    "english": ["judgment", "judgment day", "day of judgment", "resurrection", "reckoning", "accountability", "scales", "deeds", "record", "last day", "qiyama"],
+    "arabic": ["قيامة", "يوم", "حساب", "ميزان", "صحيفة", "اعمال", "بعث", "نشور", "حشر", "صراط", "شهادة", "شفاعة", "خزي", "فوز"]
+  },
+  {
+    "subject": "justice",
+    "english": ["justice", "fairness", "equity", "righteous", "judgment", "rights", "oppression", "wrongdoing", "transgression", "corruption", "tyranny"],
+    "arabic": ["عدل", "قسط", "ظلم", "حق", "باطل", "فساد", "طغيان", "جور", "انصاف", "ميزان", "حكم", "قضاء", "حكمة"]
+  },
+  {
+    "subject": "knowledge",
+    "english": ["knowledge", "wisdom", "learn", "science", "intellect", "reason", "thinking", "understanding", "insight", "enlightenment", "reading", "writing"],
+    "arabic": ["علم", "حكمة", "عقل", "فهم", "فكر", "قلم", "كتابة", "قراءة", "تدبر", "تفكر", "بصيرة", "نور", "هدى", "بيان", "تعليم", "تعلم"]
+  },
+  {
+    "subject": "money",
+    "english": ["money", "wealth", "property", "trade", "commerce", "business", "usury", "riba", "gold", "silver", "spending", "charity", "giving", "greed"],
+    "arabic": ["مال", "اموال", "ثروة", "ذهب", "فضة", "ربا", "تجارة", "بيع", "شراء", "صدقة", "انفاق", "بخل", "حرص", "كنز", "غنى", "فقر", "ميسرة"]
+  },
+  {
+    "subject": "patience",
+    "english": ["patience", "perseverance", "steadfastness", "endurance", "hardship", "trial", "tribulation", "calamity", "difficulty", "affliction", "test"],
+    "arabic": ["صبر", "صابر", "بلاء", "مصيبة", "شدة", "ضيق", "كرب", "عسر", "يسر", "فرج", "ثبات", "تحمل", "استقامة", "جهاد"]
+  },
+  {
+    "subject": "gratitude",
+    "english": ["gratitude", "thankfulness", "thanks", "blessings", "grace", "bounty", "favor", "gift", "ingratitude"],
+    "arabic": ["شكر", "شاكر", "نعمة", "نعم", "فضل", "منة", "رزق", "كفران", "جحود", "نعمة", "احسان", "كرم"]
+  },
+  {
+    "subject": "food",
+    "english": ["food", "eating", "drink", "water", "milk", "honey", "fruit", "permissible", "forbidden", "halal", "haram", "nourishment", "sustenance"],
+    "arabic": ["طعام", "شراب", "ماء", "لبن", "عسل", "فاكهة", "حلال", "حرام", "رزق", "اكل", "خبز", "سمك", "لحم", "خنزير", "خمر"]
+  },
+  {
+    "subject": "war",
+    "english": ["war", "battle", "fight", "jihad", "struggle", "enemy", "peace", "truce", "victory", "defeat", "army", "weapons", "martyr"],
+    "arabic": ["قتال", "جهاد", "حرب", "معركة", "سلاح", "سلام", "هدنة", "غزوة", "شهيد", "غنيمة", "نصر", "هزيمة", "جيش", "مجاهد", "عدو"]
+  },
+  {
+    "subject": "sin",
+    "english": ["sin", "evil", "wrong", "transgression", "crime", "offense", "guilt", "shame", "mistake", "error", "immorality", "indecency"],
+    "arabic": ["ذنب", "اثم", "خطيئة", "فاحشة", "منكر", "فساد", "معصية", "جريمة", "فجور", "فحش", "عصيان", "سيئة"]
+  },
+  {
+    "subject": "mercy",
+    "english": ["mercy", "compassion", "forgiveness", "grace", "kindness", "love", "gentleness", "pardon", "clemency"],
+    "arabic": ["رحمة", "رحمن", "رحيم", "غفران", "مغفرة", "عفو", "تواب", "حليم", "لطيف", "رؤوف", "كريم", "جود", "حنان"]
+  },
+  {
+    "subject": "light",
+    "english": ["light", "darkness", "guidance", "enlightenment", "lamp", "illumination", "sun", "moon", "star", "stars"],
+    "arabic": ["نور", "ظلام", "ظلمة", "هدى", "مصباح", "شمس", "قمر", "نجم", "نجوم", "ضياء", "سراج", "فجر", "صبح"]
+  }
+]
