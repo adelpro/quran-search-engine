@@ -144,6 +144,8 @@ function App() {
           ]);
 
           if (!cancelled) {
+            setSubjectMap(subject);
+
             const buildStart = performance.now();
             const index = buildInvertedIndex(morphology, data, semantic, subject);
             const buildMs = performance.now() - buildStart;

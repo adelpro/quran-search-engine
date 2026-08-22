@@ -298,16 +298,19 @@ export const buildInvertedIndex = (
     }
   }
 
-  // Build subjectIndex: each subject key → union of GIDs for all its Arabic words
+  // Build subjectIndex: each subject key → union of GIDs for all its Arabic words.
+  // Uses substring matching (includes) so prefixed forms like وامطرنا match root مطر,
+  // keeping parity with the scan path in performSubjectSearch.
   if (subjectMap && subjectIndex) {
     for (const [key, words] of subjectMap.entries()) {
       const gids = new Set<number>();
-      for (const word of words) {
-        const normalized = normalizeArabic(word);
-        const matches = wordIndex.get(normalized) || wordIndex.get(word);
-        if (matches) {
-          for (const gid of matches) {
-            gids.add(gid);
+      for (const verse of quranData.values()) {
+        const normalizedVerse = normalizeArabic(verse.standard);
+        for (const word of words) {
+          const normalized = normalizeArabic(word);
+          if (normalized && normalizedVerse.includes(normalized)) {
+            gids.add(verse.gid);
+            break;
           }
         }
       }
@@ -442,16 +445,19 @@ interface SubjectConcept {
 
 const buildSubjectMap = (subjectData: SubjectConcept[]): Map<string, string[]> => {
   const map = new Map<string, string[]>();
+  const addWords = (key: string, words: string[]) => {
+    map.set(key, [...new Set([...(map.get(key) ?? []), ...words])]);
+  };
   for (const concept of subjectData) {
     const normalizedArabic = concept.arabic.map((w) => normalizeArabic(w)).filter(Boolean);
-    map.set(concept.subject.toLowerCase(), normalizedArabic);
+    addWords(concept.subject.toLowerCase(), normalizedArabic);
     for (const engWord of concept.english) {
       const cleanWord = engWord
         .toLowerCase()
         .replace(/[^a-z\s]/g, '')
         .trim();
       if (cleanWord) {
-        map.set(cleanWord, normalizedArabic);
+        addWords(cleanWord, normalizedArabic);
       }
     }
   }

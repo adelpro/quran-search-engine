@@ -56,7 +56,15 @@ export type SearchContext<TVerse extends VerseInput = QuranText> = {
 };
 
 export type MatchType =
-  'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'none' | 'semantic' | 'subject' | 'regex';
+  | 'exact'
+  | 'lemma'
+  | 'root'
+  | 'fuzzy'
+  | 'range'
+  | 'none'
+  | 'semantic'
+  | 'subject'
+  | 'regex';
 
 export type ScoredVerse<TVerse extends VerseInput = QuranText> = TVerse & {
   matchScore: number;

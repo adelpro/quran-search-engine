@@ -14,7 +14,18 @@ export const performSubjectSearch = <TVerse extends VerseInput>(
   const matchedArabicWords = new Set<string>();
   const matchedSubjects: string[] = [];
 
-  const tokens = (originalQuery || query).split(/\s+/);
+  const rawQuery = (originalQuery || query).trim();
+
+  // Try the full query as a phrase key before falling back to individual tokens.
+  // This resolves multi-word aliases like "eternal life", "judgment day", "blazing fire".
+  const fullPhrase = rawQuery.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  if (fullPhrase && subjectMap.has(fullPhrase)) {
+    const phraseWords = subjectMap.get(fullPhrase)!;
+    phraseWords.forEach((w) => matchedArabicWords.add(w));
+    matchedSubjects.push(fullPhrase);
+  }
+
+  const tokens = rawQuery.split(/\s+/);
 
   for (const token of tokens) {
     if (isArabic(token)) {
