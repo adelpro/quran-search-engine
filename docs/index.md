@@ -13,6 +13,7 @@ This library provides a deterministic and highly customizable search experience 
 - Lemma & Root matching (via morphology and word maps)
 - Regular Expression search with ReDoS safety validation
 - Advanced Fuzzy fallback
+- Independent multi-term search (`search()` with an array of terms) with score/coverage/frequency ranking
 - Computed highlight ranges (UI-agnostic)
 
 ---
