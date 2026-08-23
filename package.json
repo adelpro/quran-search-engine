@@ -39,7 +39,7 @@
     "test": "vitest",
     "lint": "npx eslint . --cache --max-warnings=0",
     "lint:fix": "npx eslint . --fix --cache",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.agent\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#**/node_modules\" \"#.agent\"",
     "docs:start": "cd docs && npx fumapress",
     "format": "prettier --write .",
     "prepare": "husky",
