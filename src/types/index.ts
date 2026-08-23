@@ -115,6 +115,31 @@ export type SearchResponse<TVerse extends VerseInput = QuranText> = {
   };
 };
 
+/** Ranking strategy for search()'s multi-term (string[]) results. */
+export type RankBy = 'score' | 'coverage' | 'frequency';
+
+export type MultiTermOptions = PaginationOptions & {
+  rankBy?: RankBy;
+};
+
+/** A verse matched by one or more independent term searches, with per-verse aggregation metadata. */
+export type MergedSearchResult<TVerse extends VerseInput = QuranText> = ScoredVerse<TVerse> & {
+  matchedTerms: string[];
+  distinctTermCount: number;
+  totalFrequency: number;
+};
+
+export type MultiTermResponse<TVerse extends VerseInput = QuranText> = {
+  results: MergedSearchResult<TVerse>[];
+  counts: SearchCounts;
+  pagination: {
+    totalResults: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+};
+
 export type ErrorShape = {
   message: string;
   code: string;
