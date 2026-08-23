@@ -10,7 +10,7 @@ yarn add quran-search-engine
 
 ### Alternatives
 
-<details> 
+<details>
 <summary>NPM / pnpm</summary>
 <br>
 

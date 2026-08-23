@@ -579,6 +579,7 @@ const response = search(
   { page: 1, limit: 10 },
 );
 ```
+
 ### `exportResults(response, format?)`
 
 **Description:** Exports search results in JSON, CSV, or TSV format.

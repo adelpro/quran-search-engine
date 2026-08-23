@@ -37,7 +37,7 @@ response.results.forEach((verse) => {
 });
 ```
 
-### Response Shape Output Example:
+### Response Shape Output Example
 
 ```sh
 1 1 exact 6

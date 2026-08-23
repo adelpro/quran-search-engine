@@ -15,6 +15,7 @@ The error handling system provides structured error types for data loading, sear
 The `BaseError` class extends the native JavaScript `Error` class and provides structured error codes and types.
 
 **Features**:
+
 - Extends native `Error` class for compatibility
 - Implements `ErrorShape` interface from types
 - Includes structured error codes and types
@@ -31,26 +32,31 @@ The `BaseError` class extends the native JavaScript `Error` class and provides s
 ## Error Classes (10 Total)
 
 ### 1. Data Loading Errors (3)
+
 - `DataFileNotFoundError` - Missing data files
 - `DataParseError` - JSON parsing failures
 - `DataSchemaInvalidError` - Invalid data structure
 
 ### 2. Search Errors (3)
+
 - `InvalidQueryError` - Invalid search queries
 - `MissingDependenciesError` - Missing required dependencies
 - `SearchOperationFailedError` - Search operation failures
 
 ### 3. Validation Errors (2)
+
 - `InvalidPaginationError` - Invalid pagination parameters
 - `InvalidOptionsError` - Invalid search options
 
 ### 4. Tokenization Errors (2)
+
 - `MissingMorphologyError` - Missing morphology data
 - `InvalidModeError` - Invalid tokenization mode
 
 ## Integration Status
 
 ### ✅ Fully Integrated
+
 - **Data Loading**: All loader functions throw appropriate errors
 - **Search Validation**: `search()` validates pagination and dependencies
 - **Tokenization Validation**: `getPositiveTokens()` validates mode parameter
@@ -58,6 +64,7 @@ The `BaseError` class extends the native JavaScript `Error` class and provides s
 ## Testing
 
 **Total**: 123 tests passing
+
 - 18 error-specific unit tests
 - 13 integration tests
 - 92 existing tests

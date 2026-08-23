@@ -6,7 +6,7 @@
 
 Instead of looping through all 6000+ verses (O(N) search times), we utilize the `wordMap` dictionary.
 
-### Data Types:
+### Data Types
 
 #### `QuranText`
 

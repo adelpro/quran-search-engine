@@ -32,7 +32,7 @@ interface EnglishArabicConcept {
 
 ### Query Processing Flow
 
-```
+```text
 User Query: "truth verity"
     ↓
 Split into tokens: ["truth", "verity"]

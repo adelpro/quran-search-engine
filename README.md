@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-next-line MD041 -->
 <p align="center">
   <img src="./assets/800x450.png" width="850" height="400" alt="quran-search-engine logo" />
 </p>
@@ -41,7 +42,6 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - [Multi-word search](#multi-word-search)
 - [Caching with LRUCache](#caching-with-lrucache)
 - [Performance Optimization](#performance-optimization-advanced)
-- [Web Worker Offloading](#web-worker-offloading-browser)
 - [Core types](#core-types)
 - [Non-goals](#non-goals)
 - [Example apps](#example-apps)

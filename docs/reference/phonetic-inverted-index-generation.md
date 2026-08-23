@@ -43,7 +43,8 @@ For each verse in the transliteration files, the script attempts to map the phon
 
 - **Compare & Align:**
 - **If token counts match (1:1):** Appends the aligned records directly.
-- **If counts differ slightly (≤ 3):** * **Merge:** Tries to merge adjacent phonetic tokens using pre-defined `mergeSeeds`. This *reduces\* the phonetic token count to match the Arabic.
+- **If counts differ slightly (≤ 3):**
+- **Merge:** Tries to merge adjacent phonetic tokens using pre-defined `mergeSeeds`. This _reduces_ the phonetic token count to match the Arabic.
 - **Split:** Tries to replace a single phonetic token with mapped sub-tokens using `splitSeedsMap`. This _increases_ the phonetic token count to match the Arabic.
 
 - **If still unresolved:** Pushes a `MismatchedWord` object to a `not_matched_words` array for later debugging.

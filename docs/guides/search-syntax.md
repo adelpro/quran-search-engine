@@ -52,11 +52,11 @@ const response2 = search('الله.*الرحمن', quranData, morphologyMap, wor
   - **NOT**: Exclusion of results. The term must not match.
   - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
 
-#### Boolean Search Helper Functions
+### Boolean Search Helper Functions
 
 The library exposes two utility functions for working with boolean queries:
 
-##### `hasBooleanOperators(query)`
+#### `hasBooleanOperators(query)`
 
 Checks if a query string contains boolean operators (`+`, `-`, `|`).
 
@@ -67,7 +67,7 @@ hasBooleanOperators('+الله -الرحمن'); // Returns: true
 hasBooleanOperators('الله الرحمن'); // Returns: false
 ```
 
-##### `clearBooleanOperators(query)`
+#### `clearBooleanOperators(query)`
 
 Removes all boolean operators from a query and normalizes whitespace. Useful for creating a clean fallback query when boolean mode isn't enabled.
 
