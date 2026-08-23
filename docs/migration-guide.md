@@ -81,7 +81,7 @@ You must build the inverted index before searching.
 **New (v0.3.x):**
 
 ```typescript
-import { buildInvertedIndex, loadSemanticData } from 'quran-search-engine';
+import { buildInvertedIndex, loadSemanticData, loadSubjectData } from 'quran-search-engine';
 
 const semanticMap = await loadSemanticData();
 const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
@@ -198,7 +198,8 @@ setWordMap(dictionary);
 setSemanticMap(semantic);
 
 // Build inverted index
-const index = buildInvertedIndex(morphology, data, semantic);
+const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphology, data, semantic, subjectMap);
 setInvertedIndex(index);
 ```
 
@@ -278,7 +279,8 @@ const [indexStats, setIndexStats] = useState<{
 const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
 
 const buildStart = performance.now();
-const index = buildInvertedIndex(morphologyMap, quranData, semanticMap);
+const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 const buildMs = performance.now() - buildStart;
 
 setIndexStats({
@@ -365,7 +367,8 @@ useEffect(() => {
     setWordMap(dictionary);
     setSemanticMap(semantic);
 
-    const index = buildInvertedIndex(morphology, data, semantic);
+    const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphology, data, semantic, subjectMap);
     setInvertedIndex(index);
   }
   init();

@@ -16,6 +16,7 @@ export type AdvancedSearchOptions = {
   fuzzy?: boolean; // Default: true
   isRegex?: boolean;
   semantic?: boolean;
+  subject?: boolean;
 
   // Optional geographic filtering parameters
   suraId?: number;
@@ -31,6 +32,7 @@ export type SearchOptions = AdvancedSearchOptions;
 - **Fuzzy Matching:** By default `fuzzy` is allowed to fallback if exact/lemma/root checks fail. Pass `{ fuzzy: false }` to strictly enforce absolute dict matches.
 - **Regex Search:** Passing `{ isRegex: true }` processes the query as a regular expression instead of standard token matching. The pattern is validated for syntactic correctness and checked against known ReDoS-prone patterns (nested quantifiers, overlapping alternation) before execution. Throws `InvalidRegexError` for invalid or unsafe patterns. Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and matches directly against the normalized `standard` text field. Can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
 - **Semantic Search:** Enable `{ semantic: true }` to integrate with AI embeddings conditionally if valid data map shapes are configured.
+- **Subject Search:** Enable `{ subject: true }` to perform thematic search. Requires passing `subjectMap` (loaded via `loadSubjectData()`) in the search context. Maps English concept words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas grouped by Islamic theme, then searches for those lemmas in the Quran. The initial `src/data/subjects.json` seed covers 20 themes and is designed to be expanded by contributors over time.
 - **Filtering Options:** Narrow searches spatially via explicit `{ suraId: 2, juzId: 3 }` etc.
 
 ## `PaginationOptions`

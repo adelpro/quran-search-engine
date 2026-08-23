@@ -301,15 +301,21 @@ export const buildInvertedIndex = (
   // Build subjectIndex: each subject key → union of GIDs for all its Arabic words.
   // Uses substring matching (includes) so prefixed forms like وامطرنا match root مطر,
   // keeping parity with the scan path in performSubjectSearch.
+  // Verses are normalized once outside the key loop to avoid redundant work.
   if (subjectMap && subjectIndex) {
+    const normalizedVerses = new Map<number, string>();
+    for (const verse of quranData.values()) {
+      normalizedVerses.set(verse.gid, normalizeArabic(verse.standard));
+    }
+
     for (const [key, words] of subjectMap.entries()) {
+      const normalizedWords = words.map((w) => normalizeArabic(w)).filter(Boolean);
+      if (normalizedWords.length === 0) continue;
       const gids = new Set<number>();
-      for (const verse of quranData.values()) {
-        const normalizedVerse = normalizeArabic(verse.standard);
-        for (const word of words) {
-          const normalized = normalizeArabic(word);
-          if (normalized && normalizedVerse.includes(normalized)) {
-            gids.add(verse.gid);
+      for (const [gid, normalizedVerse] of normalizedVerses) {
+        for (const word of normalizedWords) {
+          if (normalizedVerse.includes(word)) {
+            gids.add(gid);
             break;
           }
         }
