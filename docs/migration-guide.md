@@ -78,13 +78,14 @@ You must build the inverted index before searching.
 // No inverted index needed
 ```
 
-**New (v0.3.x):**
+**New (v0.3.x / v0.4.x):**
 
 ```typescript
 import { buildInvertedIndex, loadSemanticData, loadSubjectData } from 'quran-search-engine';
 
 const semanticMap = await loadSemanticData();
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
+const subjectMap = await loadSubjectData(); // v0.4.0+
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 ```
 
 ### 4. Data Loading Changes
@@ -214,6 +215,7 @@ const response = search(
     wordMap: wordMap,
     invertedIndex: invertedIndex,
     semanticMap: semanticMap,
+    subjectMap: subjectMap, // v0.4.0+
   },
   options,
   { page: currentPage, limit: PAGE_SIZE },
@@ -356,19 +358,19 @@ const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
 
 useEffect(() => {
   async function init() {
-    const [data, morphology, dictionary, semantic] = await Promise.all([
+    const [data, morphology, dictionary, semantic, subject] = await Promise.all([
       loadQuranData(),
       loadMorphology(),
       loadWordMap(),
       loadSemanticData(),
+      loadSubjectData(), // v0.4.0+
     ]);
     setQuranData(data);
     setMorphologyMap(morphology);
     setWordMap(dictionary);
     setSemanticMap(semantic);
 
-    const subjectMap = await loadSubjectData();
-const index = buildInvertedIndex(morphology, data, semantic, subjectMap);
+    const index = buildInvertedIndex(morphology, data, semantic, subject);
     setInvertedIndex(index);
   }
   init();
@@ -382,6 +384,7 @@ const response = search(
     wordMap: wordMap,
     invertedIndex: invertedIndex,
     semanticMap: semanticMap,
+    subjectMap: subject, // v0.4.0+
   },
   options,
   { page: 1, limit: 10 },
