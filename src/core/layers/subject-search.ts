@@ -1,6 +1,73 @@
 import { normalizeArabic, isArabic } from '../../utils/normalization';
 import type { VerseInput, ScoredVerse, AdvancedSearchOptions, InvertedIndex } from '../../types';
 
+/** Resolve a raw query string to matched Arabic words and subject keys. */
+const resolveQuery = (
+  rawQuery: string,
+  subjectMap: Map<string, string[]>,
+): { matchedArabicWords: Set<string>; matchedSubjects: string[] } => {
+  const matchedArabicWords = new Set<string>();
+  const matchedSubjects: string[] = [];
+
+  // Try the full query as a phrase key first — resolves multi-word aliases
+  // like "eternal life", "judgment day", "blazing fire".
+  const fullPhrase = rawQuery.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  if (fullPhrase && subjectMap.has(fullPhrase)) {
+    subjectMap.get(fullPhrase)!.forEach((w) => matchedArabicWords.add(w));
+    matchedSubjects.push(fullPhrase);
+  }
+
+  for (const token of rawQuery.split(/\s+/)) {
+    if (isArabic(token)) {
+      const normalized = normalizeArabic(token);
+      if (!normalized) continue;
+      const subjectWords = subjectMap.get(normalized);
+      if (subjectWords) {
+        subjectWords.forEach((w) => matchedArabicWords.add(w));
+        matchedSubjects.push(normalized);
+      } else {
+        matchedArabicWords.add(normalized);
+      }
+      continue;
+    }
+
+    const cleanToken = token.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+    if (!cleanToken) continue;
+    const subjectWords = subjectMap.get(cleanToken);
+    if (subjectWords) {
+      subjectWords.forEach((w) => matchedArabicWords.add(w));
+      matchedSubjects.push(cleanToken);
+    }
+  }
+
+  return { matchedArabicWords, matchedSubjects };
+};
+
+/** Score a single verse against the matched Arabic words, respecting range filters. */
+const scoreVerse = <TVerse extends VerseInput>(
+  verse: TVerse,
+  options: AdvancedSearchOptions,
+  matchedArabicWords: Set<string>,
+): ScoredVerse<TVerse> | null => {
+  if (options.suraId && verse.sura_id !== options.suraId) return null;
+  if (options.juzId && verse.juz_id !== options.juzId) return null;
+  if (options.suraName && verse.sura_name !== options.suraName) return null;
+
+  const normalizedVerse = normalizeArabic(verse.standard);
+  const matchedKeywords = Array.from(matchedArabicWords).filter((w) =>
+    normalizedVerse.includes(w),
+  );
+
+  if (matchedKeywords.length === 0) return null;
+
+  return {
+    ...verse,
+    matchType: 'subject',
+    matchScore: matchedKeywords.length * 4,
+    matchedTokens: matchedKeywords,
+  };
+};
+
 export const performSubjectSearch = <TVerse extends VerseInput>(
   query: string,
   quranData: Map<number, TVerse>,
@@ -11,51 +78,10 @@ export const performSubjectSearch = <TVerse extends VerseInput>(
 ): ScoredVerse<TVerse>[] => {
   if (!options.subject || !subjectMap) return [];
 
-  const matchedArabicWords = new Set<string>();
-  const matchedSubjects: string[] = [];
-
-  const rawQuery = (originalQuery || query).trim();
-
-  // Try the full query as a phrase key before falling back to individual tokens.
-  // This resolves multi-word aliases like "eternal life", "judgment day", "blazing fire".
-  const fullPhrase = rawQuery.toLowerCase().replace(/[^a-z\s]/g, '').trim();
-  if (fullPhrase && subjectMap.has(fullPhrase)) {
-    const phraseWords = subjectMap.get(fullPhrase)!;
-    phraseWords.forEach((w) => matchedArabicWords.add(w));
-    matchedSubjects.push(fullPhrase);
-  }
-
-  const tokens = rawQuery.split(/\s+/);
-
-  for (const token of tokens) {
-    if (isArabic(token)) {
-      const normalized = normalizeArabic(token);
-      if (normalized) {
-        // Check if this Arabic word is a key in the subject map (subject name in Arabic)
-        const subjectWords = subjectMap.get(normalized);
-        if (subjectWords) {
-          subjectWords.forEach((w) => matchedArabicWords.add(w));
-          matchedSubjects.push(normalized);
-        } else {
-          // Otherwise treat it as a direct Arabic search term
-          matchedArabicWords.add(normalized);
-        }
-      }
-      continue;
-    }
-
-    const cleanToken = token
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, '')
-      .trim();
-    if (!cleanToken) continue;
-
-    const subjectWords = subjectMap.get(cleanToken);
-    if (subjectWords) {
-      subjectWords.forEach((w) => matchedArabicWords.add(w));
-      matchedSubjects.push(cleanToken);
-    }
-  }
+  const { matchedArabicWords, matchedSubjects } = resolveQuery(
+    (originalQuery || query).trim(),
+    subjectMap,
+  );
 
   if (matchedArabicWords.size === 0) return [];
 
@@ -63,69 +89,33 @@ export const performSubjectSearch = <TVerse extends VerseInput>(
   const wordIndex = invertedIndex?.wordIndex;
   const results: ScoredVerse<TVerse>[] = [];
 
-  // Fast path: use pre-built subjectIndex
+  // Fast path: collect candidate GIDs from the pre-built index
   if (subjectIndex) {
     const matchedGids = new Set<number>();
 
     for (const subject of matchedSubjects) {
-      const gids = subjectIndex.get(subject);
-      if (gids) {
-        for (const gid of gids) matchedGids.add(gid);
-      }
+      subjectIndex.get(subject)?.forEach((gid) => matchedGids.add(gid));
     }
 
-    // Also look up individual Arabic words that weren't resolved via a subject key
+    // Also cover Arabic words entered directly (not resolved via a subject key)
     for (const word of matchedArabicWords) {
-      const gids = wordIndex?.get(word);
-      if (gids) {
-        for (const gid of gids) matchedGids.add(gid);
-      }
+      wordIndex?.get(word)?.forEach((gid) => matchedGids.add(gid));
     }
 
     for (const gid of matchedGids) {
       const verse = quranData.get(gid);
       if (!verse) continue;
-      if (options.suraId && verse.sura_id !== options.suraId) continue;
-      if (options.juzId && verse.juz_id !== options.juzId) continue;
-      if (options.suraName && verse.sura_name !== options.suraName) continue;
-
-      const normalizedVerse = normalizeArabic(verse.standard);
-      const matchedKeywords = Array.from(matchedArabicWords).filter((w) =>
-        normalizedVerse.includes(w),
-      );
-
-      if (matchedKeywords.length > 0) {
-        results.push({
-          ...verse,
-          matchType: 'subject',
-          matchScore: matchedKeywords.length * 4,
-          matchedTokens: matchedKeywords,
-        });
-      }
+      const scored = scoreVerse(verse, options, matchedArabicWords);
+      if (scored) results.push(scored);
     }
 
     return results;
   }
 
-  // Slow path: iterate all verses
+  // Slow path: scan all verses
   for (const verse of quranData.values()) {
-    if (options.suraId && verse.sura_id !== options.suraId) continue;
-    if (options.juzId && verse.juz_id !== options.juzId) continue;
-    if (options.suraName && verse.sura_name !== options.suraName) continue;
-
-    const normalizedVerse = normalizeArabic(verse.standard);
-    const matchedKeywords = Array.from(matchedArabicWords).filter((w) =>
-      normalizedVerse.includes(w),
-    );
-
-    if (matchedKeywords.length > 0) {
-      results.push({
-        ...verse,
-        matchType: 'subject',
-        matchScore: matchedKeywords.length * 4,
-        matchedTokens: matchedKeywords,
-      });
-    }
+    const scored = scoreVerse(verse, options, matchedArabicWords);
+    if (scored) results.push(scored);
   }
 
   return results;
