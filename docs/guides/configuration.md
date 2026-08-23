@@ -1,6 +1,7 @@
 # Search Configuration
 
-The main `search` function accepts two optional configuration layers allowing fine-tuned control over behavior and pagination limits.
+The main `search` function accepts two optional configuration layers allowing fine-tuned control over behavior and
+pagination limits.
 
 ## `SearchOptions`
 
@@ -28,9 +29,15 @@ export type AdvancedSearchOptions = {
 export type SearchOptions = AdvancedSearchOptions;
 ```
 
-- **Fuzzy Matching:** By default `fuzzy` is allowed to fallback if exact/lemma/root checks fail. Pass `{ fuzzy: false }` to strictly enforce absolute dict matches.
-- **Regex Search:** Passing `{ isRegex: true }` processes the query as a regular expression instead of standard token matching. The pattern is validated for syntactic correctness and checked against known ReDoS-prone patterns (nested quantifiers, overlapping alternation) before execution. Throws `InvalidRegexError` for invalid or unsafe patterns. Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and matches directly against the normalized `standard` text field. Can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
-- **Semantic Search:** Enable `{ semantic: true }` to integrate with AI embeddings conditionally if valid data map shapes are configured.
+- **Fuzzy Matching:** By default `fuzzy` is allowed to fallback if exact/lemma/root checks fail. Pass `{ fuzzy: false }`
+  to strictly enforce absolute dict matches.
+- **Regex Search:** Passing `{ isRegex: true }` processes the query as a regular expression instead of standard token
+  matching. The pattern is validated for syntactic correctness and checked against known ReDoS-prone patterns (nested
+  quantifiers, overlapping alternation) before execution. Throws `InvalidRegexError` for invalid or unsafe patterns.
+  Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and matches directly against the normalized
+  `standard` text field. Can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
+- **Semantic Search:** Enable `{ semantic: true }` to integrate with AI embeddings conditionally if valid data map
+  shapes are configured.
 - **Filtering Options:** Narrow searches spatially via explicit `{ suraId: 2, juzId: 3 }` etc.
 
 ## `PaginationOptions`

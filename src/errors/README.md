@@ -4,7 +4,8 @@ This directory contains error classes for handling failures across the Quran Sea
 
 ## Overview
 
-The error handling system provides structured error types for data loading, search operations, validation, and tokenization, allowing library consumers to catch and handle specific error scenarios programmatically.
+The error handling system provides structured error types for data loading, search operations, validation, and
+tokenization, allowing library consumers to catch and handle specific error scenarios programmatically.
 
 ## Architecture
 

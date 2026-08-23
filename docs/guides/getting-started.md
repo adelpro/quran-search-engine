@@ -1,10 +1,12 @@
 # Getting Started
 
-Welcome to `quran-search-engine`. This lightweight library empowers developers to seamlessly integrate deterministic Arabic text search for the Quran into any application environment—browser, React, Vue, Native, or a Node.js API backend.
+Welcome to `quran-search-engine`. This lightweight library empowers developers to seamlessly integrate deterministic
+Arabic text search for the Quran into any application environment—browser, React, Vue, Native, or a Node.js API backend.
 
 ## Why this Library?
 
-Unlike existing Quran search solutions which are tightly coupled to stateful UI components, restrictive queries, or backend API latency, `quran-search-engine`:
+Unlike existing Quran search solutions which are tightly coupled to stateful UI components, restrictive queries, or
+backend API latency, `quran-search-engine`:
 
 - Operates 100% agnostic of any UI layer.
 - Functions statelessly (allowing for rapid deterministic query times).

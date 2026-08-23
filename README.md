@@ -86,7 +86,8 @@ pnpm add quran-search-engine <br>
 
 ## Development Setup
 
-This is a **yarn workspace** monorepo containing the main library and example applications. The workspace is configured in `package.json` to include:
+This is a **yarn workspace** monorepo containing the main library and example applications. The workspace is configured
+in `package.json` to include:
 
 - The main library (root package)
 - All examples in the `examples/` directory
@@ -213,7 +214,9 @@ console.log(response.results[0]);
 ```
 
 > [!IMPORTANT]
-> **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with `yarn build --watch`) for those changes to be reflected in the example applications.
+> **Note for Developers**: This project uses a yarn workspace with `workspace:*` links. If you make changes to the
+> library's source code in `src/`, you **must build the library** using `yarn build` (or run it in watch mode with
+> `yarn build --watch`) for those changes to be reflected in the example applications.
 
 ## CLI
 
@@ -324,7 +327,8 @@ const result = search(
 
 #### `loadInvertedIndex()`
 
-Loads the pre-built inverted index from the bundled static JSON files (`lemma-index.json`, `root-index.json`, `word-index.json`) and reconstructs them as `Map<string, Set<number>>` structures.
+Loads the pre-built inverted index from the bundled static JSON files (`lemma-index.json`, `root-index.json`,
+`word-index.json`) and reconstructs them as `Map<string, Set<number>>` structures.
 
 Use case: avoid the CPU cost of `buildInvertedIndex` by loading the pre-computed index from disk instead.
 
@@ -405,7 +409,8 @@ const response = search(
 | Range      | 1 (direct lookup)    |
 | Regex      | 1                    |
 
-The search engine processes queries through a series of architectural layers, each handling a specific type of search logic. This layered approach allows for efficient short-circuiting and specialized processing:
+The search engine processes queries through a series of architectural layers, each handling a specific type of search
+logic. This layered approach allows for efficient short-circuiting and specialized processing:
 
 1. **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
 2. **Boolean layer** — Complex logic (`AND`, `OR`, `NOT`, `()`) handled via an AST-based parser when `isBoolean: true`.
@@ -418,9 +423,12 @@ The search engine processes queries through a series of architectural layers, ea
 
 #### Regex Search
 
-`search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware `RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
+`search` supports regex queries when `{ isRegex: true }` is passed. The query string is compiled as a Unicode-aware
+`RegExp` and matched against each verse's normalized `standard` text. The engine validates patterns for correctness and
+rejects unsafe patterns known to cause catastrophic backtracking (ReDoS).
 
-Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and can be combined with `suraId`, `juzId`, or `suraName` to narrow the search scope.
+Regex search bypasses all linguistic pipelines (lemma, root, fuzzy) and can be combined with `suraId`, `juzId`, or
+`suraName` to narrow the search scope.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -451,7 +459,8 @@ const filtered = search(
 
 #### Boolean Search
 
-`search` supports complex boolean logic when `{ isBoolean: true }` is enabled. This allows combining multiple terms with `AND`, `OR`, `NOT` operators and grouping them with parentheses.
+`search` supports complex boolean logic when `{ isBoolean: true }` is enabled. This allows combining multiple terms with
+`AND`, `OR`, `NOT` operators and grouping them with parentheses.
 
 - **Operators**: `AND` (intersection), `OR` (union), `NOT` (exclusion).
 - **Grouping**: Use `(` and `)` to control operator precedence.
@@ -477,7 +486,8 @@ const response2 = search(
 
 #### Range search
 
-`search` also supports range queries that return verses directly by sura/aya coordinates, bypassing the linguistic search pipeline.
+`search` also supports range queries that return verses directly by sura/aya coordinates, bypassing the linguistic
+search pipeline.
 
 | Query   | Result                                       |
 | ------- | -------------------------------------------- |
@@ -485,7 +495,8 @@ const response2 = search(
 | `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7) |
 | `2:`    | Entire sura (all verses of Al-Baqarah)       |
 
-Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
+Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range
+queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -502,10 +513,12 @@ const sura = search('1:', { quranData, morphologyMap, wordMap });
 
 #### Semantic Search
 
-`search` supports semantic (concept-based) queries. It uses a pre-built semantic map to link words to their synonyms and related concepts.
+`search` supports semantic (concept-based) queries. It uses a pre-built semantic map to link words to their synonyms and
+related concepts.
 
 - **Arabic Synonyms**: Searching for "إنسان" (human) will also find verses containing "بشر", "ناس", "بني آدم", etc.
-- **English Concepts**: Searching for "Paradise" will find verses containing "جنة", "فردوس", "عدن", etc. (Note: Ensure the query cleaning logic allows English characters if you enable this).
+- **English Concepts**: Searching for "Paradise" will find verses containing "جنة", "فردوس", "عدن", etc. (Note: Ensure
+  the query cleaning logic allows English characters if you enable this).
 
 ```ts
 const response = search(
@@ -520,10 +533,12 @@ const response = search(
 
 #### Phonetic Search
 
-`search` supports phonetic (Latin) queries. Using a pre-built phonetic map, the engine detects non-Arabic input and translates it to the corresponding Arabic representation.
+`search` supports phonetic (Latin) queries. Using a pre-built phonetic map, the engine detects non-Arabic input and
+translates it to the corresponding Arabic representation.
 
 - **Exact Phonetic Match**: Searching for "Bismillah" will correctly find verses containing "بسم الله".
-- **Fuzzy Phonetic Fallback**: The engine handles common transliteration typos (e.g., "bismii" instead of "bismi") using a strict fuzzy matching fallback (Fuse.js).
+- **Fuzzy Phonetic Fallback**: The engine handles common transliteration typos (e.g., "bismii" instead of "bismi") using
+  a strict fuzzy matching fallback (Fuse.js).
 
 ```ts
 const response = search('Bismillah', { quranData, morphologyMap, wordMap, phoneticMap });
@@ -671,7 +686,8 @@ export function Verse({ verse }: { verse: ScoredQuranText }) {
 
 ## Error Handling
 
-The library provides a comprehensive error handling system with **10 specialized error classes** organized into 4 categories. All errors include structured error codes, types, and actionable messages with context.
+The library provides a comprehensive error handling system with **10 specialized error classes** organized into 4
+categories. All errors include structured error codes, types, and actionable messages with context.
 
 ### Error Categories
 
@@ -778,7 +794,8 @@ For complete error handling documentation, architecture details, and best practi
   - Exact word matches in the verse: `+3` per matched word
   - Lemma matches (when enabled): `+2` per matched word
   - Root matches (when enabled): `+1` per matched word
-  - Fuzzy matches: only used as a fallback when the verse has no exact/lemma/root matches; `+0.5` per fuzzy segment extracted from Fuse indices
+  - Fuzzy matches: only used as a fallback when the verse has no exact/lemma/root matches; `+0.5` per fuzzy segment
+    extracted from Fuse indices
 - `matchedTokens` is deduplicated (used for highlighting).
 - `matchType` is the best “overall” type seen on that verse (`exact` > `lemma` > `root` > `fuzzy`/`none`).
 
@@ -788,7 +805,8 @@ For complete error handling documentation, architecture details, and best practi
 
 - Query tokenization: the normalized query is split by whitespace.
 - AND logic:
-  - `search` intersects matches per token, so results must match every token (via exact, lemma/root, or fuzzy fallback for that token).
+  - `search` intersects matches per token, so results must match every token (via exact, lemma/root, or fuzzy fallback
+    for that token).
 
 Example:
 
@@ -807,14 +825,19 @@ const response = search(
 
 ## Caching with LRUCache
 
-`quran-search-engine` ships a generic `LRUCache<K, V>` class that you can pass into `search()` to avoid recomputing identical queries. The cache uses JavaScript `Map` internally for **O(1)** `get`, `set`, and eviction.
+`quran-search-engine` ships a generic `LRUCache<K, V>` class that you can pass into `search()` to avoid recomputing
+identical queries. The cache uses JavaScript `Map` internally for **O(1)** `get`, `set`, and eviction.
 
 ### Why use it?
 
 - **Instant repeat lookups** — paginating through pages 2, 3, … of the same query won't re-run the search pipeline.
-- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse targets efficiently without iterating.
-- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser. This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like `(الله OR رب) AND (الرحمن NOT الرحيم)`.
-- **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return `matchType: semantic` metadata gracefully.
+- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse
+  targets efficiently without iterating.
+- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser.
+  This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like
+  `(الله OR رب) AND (الرحمن NOT الرحيم)`.
+- **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return
+  `matchType: semantic` metadata gracefully.
 - **Configurable capacity** — set the max number of cached results to control memory.
 - **Zero setup** — create the cache once, pass it to every `search()` call.
 
@@ -876,7 +899,8 @@ console.log(searchCache.size); // 3
 
 ### Cache key behavior
 
-The cache key is derived from `JSON.stringify({ query, options, pagination })`. Two calls produce a cache hit only when **all three** match exactly:
+The cache key is derived from `JSON.stringify({ query, options, pagination })`. Two calls produce a cache hit only when
+**all three** match exactly:
 
 | Parameter    | Different value = different cache entry |
 | ------------ | --------------------------------------- |
@@ -1088,9 +1112,13 @@ The bundled [CLI](#cli) is another way to try the engine without writing any cod
 
 These are real-world applications built with `quran-search-engine`:
 
-- **[Open-Mushaf Native](https://github.com/adelpro/open-mushaf-native)**: A modern Quran Mushaf application built with Expo and React Native. Features offline Quran reading, gesture-based page navigation, and dynamic Tafseer popups with optimized image caching.
+- **[Open-Mushaf Native](https://github.com/adelpro/open-mushaf-native)**: A modern Quran Mushaf application built with
+  Expo and React Native. Features offline Quran reading, gesture-based page navigation, and dynamic Tafseer popups with
+  optimized image caching.
 
-- **[quran-search-engine-example](https://github.com/adelpro/quran-search-engine-example)**: A minimal React + TypeScript + Vite template demonstrating Fast Refresh and production-ready ESLint configuration for Quran search applications.
+- **[quran-search-engine-example](https://github.com/adelpro/quran-search-engine-example)**: A minimal React +
+  TypeScript + Vite template demonstrating Fast Refresh and production-ready ESLint configuration for Quran search
+  applications.
 
 ### MCP Server
 
@@ -1141,7 +1169,8 @@ The test suite covers:
 - **Data Loading**: Quran data, morphology, and word map loading utilities
 - **Highlighting**: UI-agnostic highlight range generation
 
-**Note**: These are **unit tests** that test individual functions in isolation. For integration testing, see the Verification Script below.
+**Note**: These are **unit tests** that test individual functions in isolation. For integration testing, see the
+Verification Script below.
 
 ### Verification Script
 
@@ -1167,7 +1196,8 @@ This script performs **integration testing** that validates the complete search 
 
 ### Pre-building the Inverted Index
 
-By default, `search()` performs O(n) linear scans through all morphology entries on every lemma/root lookup. For production apps, pre-build the inverted index once and pass it to every `search()` call for O(1) lookups.
+By default, `search()` performs O(n) linear scans through all morphology entries on every lemma/root lookup. For
+production apps, pre-build the inverted index once and pass it to every `search()` call for O(1) lookups.
 
 **Option A — Build from loaded data** (no extra I/O, costs one CPU pass at startup):
 
@@ -1264,7 +1294,8 @@ const result = search(
 
 ### Pre-computing the Fuse Index
 
-By default, `search()` builds a new Fuse.js index on every call if fuzzy search is enabled. For high-performance applications (e.g., real-time search as you type), you can pre-compute the index and pass it to `search`.
+By default, `search()` builds a new Fuse.js index on every call if fuzzy search is enabled. For high-performance
+applications (e.g., real-time search as you type), you can pre-compute the index and pass it to `search`.
 
 ```ts
 import { search, createArabicFuseSearch } from 'quran-search-engine';
@@ -1332,7 +1363,8 @@ yarn run build
 
 ## Acknowledgments
 
-Special thanks to the [ITQAN Community](https://community.itqan.dev) for their support and contribution to the Quran technology ecosystem.
+Special thanks to the [ITQAN Community](https://community.itqan.dev) for their support and contribution to the Quran
+technology ecosystem.
 
 <p align="center">
   <a href="https://itqan.dev">

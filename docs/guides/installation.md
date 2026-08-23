@@ -24,4 +24,5 @@ pnpm add quran-search-engine
 
 ## Requirements
 
-The library leverages async contexts natively `(Node 18+, ESM, browsers)` and targets modern ECMAScript. Ensure you're compiling TypeScript code paths for compatible resolution.
+The library leverages async contexts natively `(Node 18+, ESM, browsers)` and targets modern ECMAScript. Ensure you're
+compiling TypeScript code paths for compatible resolution.

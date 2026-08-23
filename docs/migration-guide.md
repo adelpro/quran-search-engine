@@ -391,4 +391,5 @@ const response = search(
 
 ## Need Help?
 
-If you encounter issues during migration, please [open an issue](https://github.com/adelpro/quran-search-engine/issues) or reach out to the community.
+If you encounter issues during migration, please [open an issue](https://github.com/adelpro/quran-search-engine/issues)
+or reach out to the community.

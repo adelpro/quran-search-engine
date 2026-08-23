@@ -1,6 +1,7 @@
 # Quick Start
 
-The fastest way to initialize `quran-search-engine` is to load the necessary structured datasets, initialize the engine, and pass a query string.
+The fastest way to initialize `quran-search-engine` is to load the necessary structured datasets, initialize the engine,
+and pass a query string.
 
 > Note: this example requires an async environment (Node 18+, ESM, browsers).
 
@@ -79,4 +80,5 @@ response.results.forEach((verse) => {
 });
 ```
 
-The engine validates regex patterns for correctness and rejects unsafe patterns (e.g. nested quantifiers) to prevent catastrophic backtracking.
+The engine validates regex patterns for correctness and rejects unsafe patterns (e.g. nested quantifiers) to prevent
+catastrophic backtracking.
