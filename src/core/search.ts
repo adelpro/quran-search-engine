@@ -11,6 +11,7 @@ import { createArabicFuseSearch } from './layers/fuse-search';
 import { performAdvancedLinguisticSearch } from './layers/linguistic-search';
 import { performSemanticSearch } from './layers/semantic-search';
 import { performSubjectSearch } from './layers/subject-search';
+import { searchManyImpl } from './layers/search-many';
 import { computeScore } from '../utils/scoring';
 
 import type {
@@ -23,6 +24,8 @@ import type {
   VerseWithFuseMatches,
   BooleanQuery,
   SearchContext,
+  MultiTermOptions,
+  MultiTermResponse,
 } from '../types';
 import {
   clearBooleanOperators,
@@ -36,26 +39,59 @@ import {
  * Combines simple text search with linguistic (lemma/root) analysis and fuzzy fallback.
  * Results are scored, deduplicated, and sorted by relevance.
  * @param query - The user's input string.
- * @param quranData - The verse dataset.
- * @param morphologyMap - Morphological data for scoring.
- * @param wordMap - Dictionary for linguistic resolution.
+ * @param context - The verse dataset, morphology map, word map, and optional indexes.
  * @param options - Toggles for different search modes.
  * @param pagination - Page number and results per page.
- * @param preComputedFuseIndex - Optional pre-built fuzzy index.
+ * @param fuseIndex - Optional pre-built fuzzy index.
  * @param cache - Optional LRU cache for performance.
- * @param invertedIndex - Optional Pre-built word/lemma/root indexes.
  * @returns Paginated results with metadata and match counts.
  * @example
- * result = search("الحمد لله", quranData, morphologyMap, wordMap, options, { page: 1, limit: 10 }, undefined, searchCache)
+ * result = search("الحمد لله", context, options, { page: 1, limit: 10 }, undefined, searchCache)
  */
-export const search = <TVerse extends VerseInput>(
+export function search<TVerse extends VerseInput>(
   query: string,
   context: SearchContext<TVerse>,
-  options: AdvancedSearchOptions = { lemma: true, root: true },
-  pagination: PaginationOptions = { page: 1, limit: 20 },
+  options?: AdvancedSearchOptions,
+  pagination?: PaginationOptions,
   fuseIndex?: Fuse<TVerse>,
   cache?: LRUCache<string, SearchResponse<TVerse>>,
-): SearchResponse<TVerse> => {
+): SearchResponse<TVerse>;
+/**
+ * Searches for multiple terms independently and merges results by verse `gid`.
+ * Each term runs through the full `search()` pipeline separately (no OR-query rewriting),
+ * so lemma/root/semantic matching still operates on one term at a time as intended.
+ * @param query - Independent search terms, e.g. ["muhammad", "yunus", "ibrahim"].
+ * @param context - The same search context accepted by the string overload.
+ * @param options - Toggles for different search modes, forwarded to each term's search.
+ * @param multiTermOptions - Pagination plus a `rankBy` mode (`score` | `coverage` | `frequency`).
+ * @param fuseIndex - Optional pre-built fuzzy index, forwarded to each term's search.
+ * @param cache - Optional LRU cache, forwarded to each term's search.
+ * @returns Paginated, merged results with metadata and match counts.
+ * @example
+ * result = search(["محمد", "يونس"], context, options, { page: 1, limit: 10, rankBy: 'coverage' })
+ */
+export function search<TVerse extends VerseInput>(
+  query: string[],
+  context: SearchContext<TVerse>,
+  options?: AdvancedSearchOptions,
+  multiTermOptions?: MultiTermOptions,
+  fuseIndex?: Fuse<TVerse>,
+  cache?: LRUCache<string, SearchResponse<TVerse>>,
+): MultiTermResponse<TVerse>;
+export function search<TVerse extends VerseInput>(
+  query: string | string[],
+  context: SearchContext<TVerse>,
+  options: AdvancedSearchOptions = { lemma: true, root: true },
+  multiTermOptions: MultiTermOptions = {},
+  fuseIndex?: Fuse<TVerse>,
+  cache?: LRUCache<string, SearchResponse<TVerse>>,
+): SearchResponse<TVerse> | MultiTermResponse<TVerse> {
+  if (Array.isArray(query)) {
+    return searchManyImpl(search, query, context, options, multiTermOptions, fuseIndex, cache);
+  }
+
+  const pagination: PaginationOptions = multiTermOptions;
+
   const { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, subjectMap, phoneticMap } =
     context;
 
@@ -324,6 +360,9 @@ export const search = <TVerse extends VerseInput>(
     simple: combined.filter((v) => v.matchType === 'exact').length,
     lemma: combined.filter((v) => v.matchType === 'lemma').length,
     root: combined.filter((v) => v.matchType === 'root').length,
+    // BUG: `fuzzy` also counts verses whose matchType is 'none', so it over-reports fuzzy
+    // matches and no field reports unscored ones. Consumers displaying a per-type breakdown
+    // (the CLI does) therefore attribute 'none' results to fuzzy matching. Tracked in #102.
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
     semantic: combined.filter((v) => v.matchType === 'semantic').length,
     subject: combined.filter((v) => v.matchType === 'subject').length,
@@ -348,4 +387,4 @@ export const search = <TVerse extends VerseInput>(
   }
 
   return response;
-};
+}

@@ -338,6 +338,13 @@ const result = await workerClient.runSearch(
   { page: 1, limit: 20 },
 );
 
+// Run an independent multi-term search (see the Multi-Term Search guide)
+const manyResult = await workerClient.runSearchMany(
+  ['محمد', 'يونس', 'إبراهيم'],
+  { lemma: true, root: true },
+  { page: 1, limit: 20, rankBy: 'score' },
+);
+
 // Cleanup
 workerClient.terminate();
 ```

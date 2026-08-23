@@ -12,7 +12,13 @@ import {
 import { search } from '../core/search';
 import { LRUCache } from '../utils/lru-cache';
 import type { QuranText, MorphologyAya, WordMap, SearchResponse, InvertedIndex } from '../types';
-import type { WorkerRequest, InitDataResponse, SearchResultResponse, ErrorResponse } from './types';
+import type {
+  WorkerRequest,
+  InitDataResponse,
+  SearchResultResponse,
+  SearchManyResultResponse,
+  ErrorResponse,
+} from './types';
 
 // ── Worker-scoped state ────────────────────────────────────────
 
@@ -27,7 +33,13 @@ const cache = new LRUCache<string, SearchResponse<QuranText>>(100);
 
 // ── Helpers ────────────────────────────────────────────────────
 
-function postTyped(msg: InitDataResponse | SearchResultResponse<QuranText> | ErrorResponse): void {
+function postTyped(
+  msg:
+    | InitDataResponse
+    | SearchResultResponse<QuranText>
+    | SearchManyResultResponse<QuranText>
+    | ErrorResponse,
+): void {
   postMessage(msg);
 }
 
@@ -109,6 +121,52 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 
         postTyped({
           type: 'SEARCH_RESULT',
+          requestId: msg.requestId,
+          data: result,
+          timingMs: performance.now() - start,
+        });
+      } catch (err) {
+        postTyped({
+          type: 'ERROR',
+          requestId: msg.requestId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      break;
+    }
+
+    case 'RUN_SEARCH_MANY': {
+      const start = performance.now();
+
+      if (!quranData || !morphologyMap || !wordMap) {
+        postTyped({
+          type: 'ERROR',
+          requestId: msg.requestId,
+          error: 'Worker data not initialized. Call INIT_DATA first.',
+        });
+        return;
+      }
+
+      try {
+        // Array overload of search() — routes internally to the multi-term path.
+        const result = search(
+          msg.terms,
+          {
+            quranData,
+            morphologyMap,
+            wordMap,
+            invertedIndex: invertedIndex ?? undefined,
+            semanticMap: semanticMap ?? undefined,
+            phoneticMap: phoneticMap ?? undefined,
+          },
+          msg.options,
+          msg.searchManyOptions,
+          undefined,
+          cache,
+        );
+
+        postTyped({
+          type: 'SEARCH_MANY_RESULT',
           requestId: msg.requestId,
           data: result,
           timingMs: performance.now() - start,

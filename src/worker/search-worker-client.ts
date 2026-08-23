@@ -13,6 +13,8 @@ import type {
   AdvancedSearchOptions,
   PaginationOptions,
   SearchResponse,
+  MultiTermOptions,
+  MultiTermResponse,
   QuranText,
   SearchContext,
 } from '../types';
@@ -46,7 +48,9 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
     throw new WorkerInitializationError(err instanceof Error ? err.message : String(err));
   }
 
-  type PendingResolve = (value: void | SearchResponse<QuranText>) => void;
+  type PendingResolve = (
+    value: void | SearchResponse<QuranText> | MultiTermResponse<QuranText>,
+  ) => void;
   const pending = new Map<string, { resolve: PendingResolve; reject: (reason: unknown) => void }>();
 
   worker.onmessage = (event: MessageEvent<WorkerResponse<QuranText>>) => {
@@ -73,6 +77,10 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
         break;
 
       case 'SEARCH_RESULT':
+        entry.resolve(msg.data);
+        break;
+
+      case 'SEARCH_MANY_RESULT':
         entry.resolve(msg.data);
         break;
 
@@ -117,6 +125,21 @@ function createWorkerClient(workerUrl: URL | string): SearchWorkerClient {
           reject,
         });
         post({ type: 'RUN_SEARCH', requestId, query, options, pagination });
+      });
+    },
+
+    runSearchMany(
+      terms: string[],
+      options: AdvancedSearchOptions,
+      searchManyOptions: MultiTermOptions,
+    ): Promise<MultiTermResponse> {
+      const requestId = generateRequestId();
+      return new Promise<MultiTermResponse>((resolve, reject) => {
+        pending.set(requestId, {
+          resolve: resolve as PendingResolve,
+          reject,
+        });
+        post({ type: 'RUN_SEARCH_MANY', requestId, terms, options, searchManyOptions });
       });
     },
 
@@ -166,6 +189,32 @@ function createFallbackClient(deps: FallbackDependencies): SearchWorkerClient {
         },
         options,
         pagination,
+        undefined,
+        lruCache ?? undefined,
+      );
+    },
+
+    async runSearchMany(
+      terms: string[],
+      options: AdvancedSearchOptions,
+      searchManyOptions: MultiTermOptions,
+    ): Promise<MultiTermResponse> {
+      if (!ready) {
+        throw new WorkerNotInitializedError();
+      }
+      // Array overload of search() — routes internally to the multi-term path.
+      return search(
+        terms,
+        {
+          quranData: deps.quranData,
+          morphologyMap: deps.morphologyMap,
+          wordMap: deps.wordMap,
+          invertedIndex: deps.invertedIndex,
+          semanticMap: deps.semanticMap,
+          phoneticMap: deps.phoneticMap,
+        },
+        options,
+        searchManyOptions,
         undefined,
         lruCache ?? undefined,
       );

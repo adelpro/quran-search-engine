@@ -2,13 +2,19 @@ import type {
   AdvancedSearchOptions,
   PaginationOptions,
   SearchResponse,
+  MultiTermOptions,
+  MultiTermResponse,
   VerseInput,
 } from '../types';
 
 // ── Message types ──────────────────────────────────────────────
 
-export type WorkerMessageType = 'INIT_DATA' | 'RUN_SEARCH' | 'DISPOSE';
-export type WorkerResponseType = 'INIT_DATA_RESULT' | 'SEARCH_RESULT' | 'ERROR';
+export type WorkerMessageType = 'INIT_DATA' | 'RUN_SEARCH' | 'RUN_SEARCH_MANY' | 'DISPOSE';
+export type WorkerResponseType =
+  | 'INIT_DATA_RESULT'
+  | 'SEARCH_RESULT'
+  | 'SEARCH_MANY_RESULT'
+  | 'ERROR';
 
 // ── Request payloads (main → worker) ───────────────────────────
 
@@ -25,11 +31,23 @@ export type RunSearchRequest = {
   pagination: PaginationOptions;
 };
 
+export type RunSearchManyRequest = {
+  type: 'RUN_SEARCH_MANY';
+  requestId: string;
+  terms: string[];
+  options: AdvancedSearchOptions;
+  searchManyOptions: MultiTermOptions;
+};
+
 export type DisposeRequest = {
   type: 'DISPOSE';
 };
 
-export type WorkerRequest = InitDataRequest | RunSearchRequest | DisposeRequest;
+export type WorkerRequest =
+  | InitDataRequest
+  | RunSearchRequest
+  | RunSearchManyRequest
+  | DisposeRequest;
 
 // ── Response payloads (worker → main) ──────────────────────────
 
@@ -47,6 +65,13 @@ export type SearchResultResponse<TVerse extends VerseInput = VerseInput> = {
   timingMs: number;
 };
 
+export type SearchManyResultResponse<TVerse extends VerseInput = VerseInput> = {
+  type: 'SEARCH_MANY_RESULT';
+  requestId: string;
+  data: MultiTermResponse<TVerse>;
+  timingMs: number;
+};
+
 export type ErrorResponse = {
   type: 'ERROR';
   requestId: string;
@@ -56,6 +81,7 @@ export type ErrorResponse = {
 export type WorkerResponse<TVerse extends VerseInput = VerseInput> =
   | InitDataResponse
   | SearchResultResponse<TVerse>
+  | SearchManyResultResponse<TVerse>
   | ErrorResponse;
 
 // ── Client interface ───────────────────────────────────────────
@@ -70,6 +96,13 @@ export interface SearchWorkerClient {
     options: AdvancedSearchOptions,
     pagination: PaginationOptions,
   ): Promise<SearchResponse>;
+
+  /** Run an independent multi-term search inside the Worker and return the merged response. */
+  runSearchMany(
+    terms: string[],
+    options: AdvancedSearchOptions,
+    searchManyOptions: MultiTermOptions,
+  ): Promise<MultiTermResponse>;
 
   /** Terminate the underlying Worker. */
   terminate(): void;

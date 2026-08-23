@@ -1,5 +1,7 @@
 import {
   type ScoredQuranText,
+  type MergedSearchResult,
+  type QuranText,
   type MorphologyAya,
   type WordMap,
   getHighlightRanges,
@@ -7,7 +9,7 @@ import {
 import type { ReactNode } from 'react';
 
 interface VerseItemProps {
-  verse: ScoredQuranText;
+  verse: ScoredQuranText | MergedSearchResult<QuranText>;
   query: string;
   morphologyMap: Map<number, MorphologyAya>;
   wordMap: WordMap;
@@ -70,6 +72,21 @@ export function VerseItem({ verse }: VerseItemProps) {
           <span className={`match-tag tag-${verse.matchType}`}>
             {verse.matchType === 'none' ? 'fuzzy' : verse.matchType} (Score: {verse.matchScore})
           </span>
+          {'matchedTerms' in verse && (
+            <span
+              style={{
+                fontSize: '10px',
+                color: '#666',
+                background: '#eee',
+                padding: '2px 4px',
+                borderRadius: '4px',
+              }}
+              title={`Matched terms: ${verse.matchedTerms.join(', ')}`}
+            >
+              {verse.distinctTermCount} term{verse.distinctTermCount === 1 ? '' : 's'} ·{' '}
+              {verse.totalFrequency} hit{verse.totalFrequency === 1 ? '' : 's'}
+            </span>
+          )}
         </div>
       </div>
       <div className="verse-arabic">{renderHighlightedVerse()}</div>

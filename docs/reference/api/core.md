@@ -579,6 +579,35 @@ const response = search(
   { page: 1, limit: 10 },
 );
 ```
+### `exportResults(response, format?)`
+
+**Description:** Exports search results in JSON, CSV, or TSV format.
+
+**Parameters:**
+
+- `response` (`SearchResponse<QuranText>`): The search response containing the results to export.
+- `format` (`ExportFormat`, optional): The output format. Supported values are `json`, `csv`, and `tsv`. Defaults to `json`.
+
+**Returns:** `string`
+
+```typescript
+import { search, exportResults } from 'quran-search-engine';
+
+const response = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap },
+  { lemma: true, root: true },
+);
+
+// JSON export
+const json = exportResults(response);
+
+// CSV export
+const csv = exportResults(response, 'csv');
+
+// TSV export
+const tsv = exportResults(response, 'tsv');
+```
 
 ### Regex Search
 

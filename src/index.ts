@@ -37,3 +37,4 @@ export {
 } from './worker';
 
 export { SURAS } from './utils/suras';
+export { exportResults, type ExportFormat } from './utils/export';

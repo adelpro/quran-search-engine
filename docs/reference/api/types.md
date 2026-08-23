@@ -240,6 +240,68 @@ type ParsedRange = {
 
 ---
 
+## Multi-Term Search Types
+
+See the [Multi-Term Search guide](../../guides/search-syntax.md#multi-term-search-search-with-an-array) for usage.
+
+### `RankBy`
+
+Ranking strategy for `search()`'s multi-term (`string[]`) results.
+
+```typescript
+type RankBy = 'score' | 'coverage' | 'frequency';
+```
+
+### `MultiTermOptions`
+
+Pagination plus ranking mode for `search()`'s array overload. `PaginationOptions & { rankBy?: RankBy }` —
+`PaginationOptions` itself is unchanged; this only adds `rankBy` on top.
+
+```typescript
+type MultiTermOptions = {
+  /** Page number (1-based, default: 1) */
+  page?: number;
+  /** Results per page (default: 20) */
+  limit?: number;
+  /** Ranking strategy (default: 'score') */
+  rankBy?: RankBy;
+};
+```
+
+### `MergedSearchResult<TVerse>`
+
+A verse matched by one or more independent term searches, with per-verse aggregation metadata.
+
+```typescript
+type MergedSearchResult<TVerse extends VerseInput = QuranText> = ScoredVerse<TVerse> & {
+  /** Which input terms matched this verse */
+  matchedTerms: string[];
+  /** matchedTerms.length */
+  distinctTermCount: number;
+  /** Summed raw hit count across every matching term */
+  totalFrequency: number;
+};
+```
+
+### `MultiTermResponse<TVerse>`
+
+The complete result object for `search()`'s array overload. Same shape as `SearchResponse`, with `MergedSearchResult` entries.
+
+```typescript
+type MultiTermResponse<TVerse extends VerseInput = QuranText> = {
+  results: MergedSearchResult<TVerse>[];
+  counts: SearchCounts;
+  pagination: {
+    totalResults: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+};
+```
+
+---
+
 ## Index Types
 
 ### `LemmaIndex`, `RootIndex`, `WordIndex`
@@ -367,6 +429,7 @@ Request messages sent to the worker.
 type WorkerRequest =
   | InitDataRequest // { type: 'INIT_DATA', requestId }
   | RunSearchRequest // { type: 'RUN_SEARCH', requestId, query, options, pagination }
+  | RunSearchManyRequest // { type: 'RUN_SEARCH_MANY', requestId, terms, options, searchManyOptions }
   | DisposeRequest; // { type: 'DISPOSE' }
 ```
 
@@ -378,6 +441,7 @@ Response messages received from the worker.
 type WorkerResponse<TVerse extends VerseInput = VerseInput> =
   | InitDataResponse // { type: 'INIT_DATA_RESULT', requestId, success, error? }
   | SearchResultResponse // { type: 'SEARCH_RESULT', requestId, data, timingMs }
+  | SearchManyResultResponse // { type: 'SEARCH_MANY_RESULT', requestId, data, timingMs }
   | ErrorResponse; // { type: 'ERROR', requestId, error }
 ```
 
@@ -423,6 +487,11 @@ interface SearchWorkerClient {
     options: AdvancedSearchOptions,
     pagination: PaginationOptions,
   ): Promise<SearchResponse>;
+  runSearchMany(
+    terms: string[],
+    options: AdvancedSearchOptions,
+    searchManyOptions: MultiTermOptions,
+  ): Promise<MultiTermResponse>;
   terminate(): void;
 }
 ```

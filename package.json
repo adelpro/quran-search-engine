@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": "./dist/cli.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -39,7 +40,7 @@
     "test": "vitest",
     "lint": "npx eslint . --cache --max-warnings=0",
     "lint:fix": "npx eslint . --fix --cache",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#.agent\"",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#**/node_modules\" \"#.agent\"",
     "docs:start": "cd docs && npx fumapress",
     "format": "prettier --write .",
     "prepare": "husky",
