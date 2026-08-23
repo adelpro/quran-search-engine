@@ -55,3 +55,5 @@ jobs:
         run: yarn build
       - name: Test
         run: yarn test
+      - name: Lint:md
+        run: yarn lint:md
