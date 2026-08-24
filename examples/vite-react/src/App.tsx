@@ -5,6 +5,7 @@ import {
   loadWordMap,
   loadSemanticData,
   loadPhoneticData,
+  loadSubjectData,
   buildInvertedIndex,
   search,
   LRUCache,
@@ -42,6 +43,7 @@ function App() {
   const [morphologyMap, setMorphologyMap] = useState<Map<number, MorphologyAya> | null>(null);
   const [wordMap, setWordMap] = useState<WordMap | null>(null);
   const [semanticMap, setSemanticMap] = useState<Map<string, string[]> | null>(null);
+  const [subjectMap, setSubjectMap] = useState<Map<string, string[]> | null>(null);
   const [phoneticMap, setPhoneticMap] = useState<Map<string, string[]> | null>(null);
   const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
   const [indexStats, setIndexStats] = useState<{
@@ -80,6 +82,7 @@ function App() {
     fuzzy: true,
     isRegex: false,
     semantic: true,
+    subject: false,
     suraId: undefined as number | undefined,
     juzId: undefined as number | undefined,
     suraName: '',
@@ -112,22 +115,24 @@ function App() {
         }
 
         if (!workerClient.current) {
-          const [data, morphology, dictionary, semantic, phonetic] = await Promise.all([
+          const [data, morphology, dictionary, semantic, phonetic, subject] = await Promise.all([
             loadQuranData(),
             loadMorphology(),
             loadWordMap(),
             loadSemanticData(),
             loadPhoneticData(),
+            loadSubjectData(),
           ]);
           if (!cancelled) {
             setQuranData(data);
             setMorphologyMap(morphology);
             setWordMap(dictionary);
             setSemanticMap(semantic);
+            setSubjectMap(subject);
             setPhoneticMap(phonetic);
 
             const buildStart = performance.now();
-            const index = buildInvertedIndex(morphology, data, semantic);
+            const index = buildInvertedIndex(morphology, data, semantic, subject);
             const buildMs = performance.now() - buildStart;
 
             if (!cancelled) {
@@ -143,17 +148,20 @@ function App() {
           }
         } else {
           // When using worker, still build index for stats display
-          const [data, morphology, , semantic, phonetic] = await Promise.all([
+          const [data, morphology, , semantic, phonetic, subject] = await Promise.all([
             loadQuranData(),
             loadMorphology(),
             loadWordMap(),
             loadSemanticData(),
             loadPhoneticData(),
+            loadSubjectData(),
           ]);
 
           if (!cancelled) {
+            setSubjectMap(subject);
+
             const buildStart = performance.now();
-            const index = buildInvertedIndex(morphology, data, semantic);
+            const index = buildInvertedIndex(morphology, data, semantic, subject);
             const buildMs = performance.now() - buildStart;
 
             setIndexStats({
@@ -230,6 +238,7 @@ function App() {
         morphologyMap,
         wordMap,
         semanticMap,
+        subjectMap: subjectMap ?? undefined,
         phoneticMap,
         invertedIndex,
       };
@@ -400,6 +409,14 @@ function App() {
         <label className="option-item">
           <input
             type="checkbox"
+            checked={options.subject}
+            onChange={(e) => setOptions({ ...options, subject: e.target.checked })}
+          />
+          Subject Search
+        </label>
+        <label className="option-item">
+          <input
+            type="checkbox"
             checked={options.isRegex}
             onChange={(e) => setOptions({ ...options, isRegex: e.target.checked })}
           />
@@ -489,6 +506,11 @@ function App() {
                 <span className="indicator indicator-semantic"></span>
                 <span className="stat-label">Semantic:</span>
                 <span className="stat-value">{activeResponse.counts.semantic}</span>
+              </span>
+              <span className="stat-item">
+                <span className="indicator indicator-semantic"></span>
+                <span className="stat-label">Subject:</span>
+                <span className="stat-value">{activeResponse.counts.subject}</span>
               </span>
               <span className="stat-item">
                 <span className="indicator indicator-semantic"></span>

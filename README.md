@@ -22,6 +22,8 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Lemma + root matching (via morphology + word map)
 - Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
+- **Subject-based thematic search** — map English concept words (e.g. `"climate"`,
+  `"worship"`) to curated Arabic lemmas via `loadSubjectData()`
 - Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
 - Regex search with ReDoS safety validation (`validateRegex` for UI-side input checking)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
@@ -282,13 +284,44 @@ const wordMap: WordMap = await loadWordMap();
 // wordMap['الله'] => { lemma: 'الله', root: 'ا ل ه' }
 ```
 
-#### `buildInvertedIndex(morphologyMap, quranData)`
+#### `loadSubjectData()`
 
-Builds in-memory inverted indices from the morphology map and verse data in a single pass. Produces three indices:
+Use case: enable subject-based thematic search by loading the curated Arabic lemma map grouped by Islamic theme.
+
+```ts
+import { loadSubjectData } from 'quran-search-engine';
+
+const subjectMap = await loadSubjectData();
+// subjectMap.get('climate') => ['مطر', 'رياح', 'عاصفة', 'سحاب', ...]
+// subjectMap.get('worship') => ['عبادة', 'صلاة', 'ذكر', ...]
+```
+
+Pass `subjectMap` to `buildInvertedIndex` and to the `search` context, then set `{ subject: true }` in options:
+
+```ts
+import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
+
+const subjectMap = await loadSubjectData();
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
+
+const response = search(
+  'climate',
+  { quranData, morphologyMap, wordMap, invertedIndex, subjectMap },
+  { subject: true },
+);
+// → returns verses about مطر، رياح، عاصفة، سحاب...
+```
+
+#### `buildInvertedIndex(morphologyMap, quranData, semanticMap?, subjectMap?)`
+
+Builds in-memory inverted indices from the morphology map and verse data in a single pass.
+Produces indices for lemma, root, word, semantic concepts, and (optionally) subject themes.
 
 - `lemmaIndex`: lemma → Set of verse GIDs
 - `rootIndex`: root → Set of verse GIDs
 - `wordIndex`: normalized word → Set of verse GIDs
+- `semanticIndex`: semantic concept → Set of verse GIDs (when `semanticMap` is provided)
+- `subjectIndex`: subject key → Set of verse GIDs (when `subjectMap` is provided)
 
 This converts lemma/root lookups during search from **O(n)** linear scans to **O(1)** Map lookups.
 
@@ -300,23 +333,27 @@ import {
   loadMorphology,
   loadQuranData,
   loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
   search,
   type InvertedIndex,
 } from 'quran-search-engine';
 
-const [quranData, morphologyMap, wordMap] = await Promise.all([
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(), // v0.4.0+
 ]);
 
 // Build once — O(n) one-time cost
-const invertedIndex: InvertedIndex = buildInvertedIndex(morphologyMap, quranData);
+const invertedIndex: InvertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 
-// Pass to every search call via context — O(1) lemma/root lookups
+// Pass to every search call via context — O(1) lookups
 const result = search(
   'الرحمن',
-  { quranData, morphologyMap, wordMap, invertedIndex },
+  { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, subjectMap },
   { lemma: true, root: true },
   { page: 1, limit: 20 },
 );
@@ -968,6 +1005,7 @@ export type SearchOptions = {
   root: boolean;
   fuzzy?: boolean;
   semantic?: boolean;
+  subject?: boolean;
   isRegex?: boolean;
   isBoolean?: boolean;
   suraId?: number;
@@ -992,7 +1030,9 @@ export type PaginationOptions = {
 Overall “best” match class for a verse:
 
 ```ts
-export type MatchType = 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range' | 'semantic' | 'none';
+export type MatchType =
+  | 'exact' | 'lemma' | 'root' | 'fuzzy' | 'range'
+  | 'none' | 'semantic' | 'subject' | 'regex';
 ```
 
 ### `ScoredQuranText`
@@ -1054,10 +1094,14 @@ type RootIndex = Map<string, Set<number>>;
 // WordIndex: normalized word → Set of verse GIDs
 type WordIndex = Map<string, Set<number>>;
 
+type SubjectIndex = Map<string, Set<number>>;
+
 type InvertedIndex = {
   lemmaIndex: LemmaIndex;
   rootIndex: RootIndex;
   wordIndex: WordIndex;
+  semanticIndex?: Map<string, Set<number>>;
+  subjectIndex?: SubjectIndex;
 };
 ```
 

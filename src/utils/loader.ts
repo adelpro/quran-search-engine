@@ -1,6 +1,25 @@
-import type { MorphologyAya, WordMap, QuranText, InvertedIndex } from '../types';
+import type { MorphologyAya, WordMap, QuranText, InvertedIndex, SubjectIndex } from '../types';
 import { normalizeArabic } from './normalization';
 import { DataFileNotFoundError, DataParseError, DataSchemaInvalidError } from '../errors';
+
+const rethrowLoadError = (filePath: string, error: unknown): never => {
+  if (
+    error instanceof DataFileNotFoundError ||
+    error instanceof DataParseError ||
+    error instanceof DataSchemaInvalidError
+  ) {
+    throw error;
+  }
+  if (error instanceof Error) {
+    if (error.message.includes('Cannot find module') || error.message.includes('Failed to fetch')) {
+      throw new DataFileNotFoundError(filePath, error);
+    }
+    if (error.message.includes('JSON') || error.message.includes('parse')) {
+      throw new DataParseError(filePath, error);
+    }
+  }
+  throw new DataParseError(filePath, error);
+};
 
 /**
  * Lazily loads the Quran morphology data.
@@ -227,11 +246,15 @@ export const buildInvertedIndex = (
   morphologyMap: Map<number, MorphologyAya>,
   quranData: Map<number, QuranText>,
   semanticMap?: Map<string, string[]>,
+  subjectMap?: Map<string, string[]>,
 ): InvertedIndex => {
   const lemmaIndex = new Map<string, Set<number>>();
   const rootIndex = new Map<string, Set<number>>();
   const wordIndex = new Map<string, Set<number>>();
   const semanticIndex = semanticMap ? new Map<string, Set<number>>() : undefined;
+  const subjectIndex: SubjectIndex | undefined = subjectMap
+    ? new Map<string, Set<number>>()
+    : undefined;
 
   for (const morph of morphologyMap.values()) {
     const gid = morph.gid;
@@ -294,7 +317,35 @@ export const buildInvertedIndex = (
     }
   }
 
-  return { lemmaIndex, rootIndex, wordIndex, semanticIndex };
+  // Build subjectIndex: each subject key → union of GIDs for all its Arabic words.
+  // Uses substring matching (includes) so prefixed forms like وامطرنا match root مطر,
+  // keeping parity with the scan path in performSubjectSearch.
+  // Verses are normalized once outside the key loop to avoid redundant work.
+  if (subjectMap && subjectIndex) {
+    const normalizedVerses = new Map<number, string>();
+    for (const verse of quranData.values()) {
+      normalizedVerses.set(verse.gid, normalizeArabic(verse.standard));
+    }
+
+    for (const [key, words] of subjectMap.entries()) {
+      const normalizedWords = words.map((w) => normalizeArabic(w)).filter(Boolean);
+      if (normalizedWords.length === 0) continue;
+      const gids = new Set<number>();
+      for (const [gid, normalizedVerse] of normalizedVerses) {
+        for (const word of normalizedWords) {
+          if (normalizedVerse.includes(word)) {
+            gids.add(gid);
+            break;
+          }
+        }
+      }
+      if (gids.size > 0) {
+        subjectIndex.set(key, gids);
+      }
+    }
+  }
+
+  return { lemmaIndex, rootIndex, wordIndex, semanticIndex, subjectIndex };
 };
 
 export const loadSemanticData = async (): Promise<Map<string, string[]>> => {
@@ -408,5 +459,53 @@ export const loadPhoneticData = async (): Promise<Map<string, string[]>> => {
     }
 
     throw new DataParseError(filePath, error);
+  }
+};
+
+interface SubjectConcept {
+  subject: string;
+  english: string[];
+  arabic: string[];
+}
+
+const buildSubjectMap = (subjectData: SubjectConcept[]): Map<string, string[]> => {
+  const map = new Map<string, string[]>();
+  const addWords = (key: string, words: string[]) => {
+    map.set(key, [...new Set([...(map.get(key) ?? []), ...words])]);
+  };
+  for (const concept of subjectData) {
+    const normalizedArabic = concept.arabic.map((w) => normalizeArabic(w)).filter(Boolean);
+    addWords(concept.subject.toLowerCase(), normalizedArabic);
+    for (const engWord of concept.english) {
+      const cleanWord = engWord
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, '')
+        .trim();
+      if (cleanWord) {
+        addWords(cleanWord, normalizedArabic);
+      }
+    }
+  }
+  return map;
+};
+
+export const loadSubjectData = async (): Promise<Map<string, string[]>> => {
+  const filePath = '../data/subjects.json';
+
+  try {
+    const subjectModule = await import('../data/subjects.json');
+    const subjectData = (subjectModule.default || subjectModule) as SubjectConcept[];
+
+    if (!Array.isArray(subjectData)) {
+      throw new DataSchemaInvalidError(filePath, 'Expected an array of subject data');
+    }
+
+    if (subjectData.length === 0) {
+      throw new DataSchemaInvalidError(filePath, 'Subject data is empty');
+    }
+
+    return buildSubjectMap(subjectData);
+  } catch (error) {
+    rethrowLoadError(filePath, error);
   }
 };

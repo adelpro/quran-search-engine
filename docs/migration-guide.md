@@ -1,6 +1,9 @@
-# Migration Guide: Upgrading to v0.3.x
+# Migration Guide: Upgrading to v0.3.x / v0.4.x
 
-This guide helps you migrate your application from v0.1.x/v0.2.x to the new v0.3.x architecture in `quran-search-engine`.
+This guide helps you migrate your application from v0.1.x/v0.2.x to the new architecture
+in `quran-search-engine`. Sections marked **v0.3.x** cover the inverted-index and semantic
+search changes introduced in that release. Sections marked **v0.4.x** cover the subject-based
+thematic search added in v0.4.0.
 
 ## Overview of Breaking Changes
 
@@ -78,13 +81,14 @@ You must build the inverted index before searching.
 // No inverted index needed
 ```
 
-**New (v0.3.x):**
+**New (v0.3.x)** — inverted index + semantic; **New (v0.4.x)** — subject data:
 
 ```typescript
-import { buildInvertedIndex, loadSemanticData } from 'quran-search-engine';
+import { buildInvertedIndex, loadSemanticData, loadSubjectData } from 'quran-search-engine';
 
 const semanticMap = await loadSemanticData();
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
+const subjectMap = await loadSubjectData(); // v0.4.0+
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 ```
 
 ### 4. Data Loading Changes
@@ -198,7 +202,8 @@ setWordMap(dictionary);
 setSemanticMap(semantic);
 
 // Build inverted index
-const index = buildInvertedIndex(morphology, data, semantic);
+const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphology, data, semantic, subjectMap);
 setInvertedIndex(index);
 ```
 
@@ -213,6 +218,7 @@ const response = search(
     wordMap: wordMap,
     invertedIndex: invertedIndex,
     semanticMap: semanticMap,
+    subjectMap: subjectMap, // v0.4.0+
   },
   options,
   { page: currentPage, limit: PAGE_SIZE },
@@ -251,7 +257,7 @@ const phoneticMap = await loadPhoneticData();
 
 ---
 
-## New Features in v0.3.x
+## New Features in v0.3.x / v0.4.x
 
 ### Worker Status Tracking
 
@@ -278,7 +284,8 @@ const [indexStats, setIndexStats] = useState<{
 const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
 
 const buildStart = performance.now();
-const index = buildInvertedIndex(morphologyMap, quranData, semanticMap);
+const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 const buildMs = performance.now() - buildStart;
 
 setIndexStats({
@@ -354,18 +361,19 @@ const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
 
 useEffect(() => {
   async function init() {
-    const [data, morphology, dictionary, semantic] = await Promise.all([
+    const [data, morphology, dictionary, semantic, subject] = await Promise.all([
       loadQuranData(),
       loadMorphology(),
       loadWordMap(),
       loadSemanticData(),
+      loadSubjectData(), // v0.4.0+
     ]);
     setQuranData(data);
     setMorphologyMap(morphology);
     setWordMap(dictionary);
     setSemanticMap(semantic);
 
-    const index = buildInvertedIndex(morphology, data, semantic);
+    const index = buildInvertedIndex(morphology, data, semantic, subject);
     setInvertedIndex(index);
   }
   init();
@@ -379,6 +387,7 @@ const response = search(
     wordMap: wordMap,
     invertedIndex: invertedIndex,
     semanticMap: semanticMap,
+    subjectMap: subject, // v0.4.0+
   },
   options,
   { page: 1, limit: 10 },
@@ -386,6 +395,32 @@ const response = search(
   searchCache,
 );
 ```
+
+---
+
+## New in v0.4.x: Subject-Based Thematic Search
+
+v0.4.0 adds `loadSubjectData()` and the `subject` search option, which maps English concept
+words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas grouped by Islamic theme.
+
+```typescript
+import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
+
+// Load alongside other data
+const subjectMap = await loadSubjectData();
+const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
+
+// Enable subject search
+search(
+  'climate',
+  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex: index },
+  { subject: true },
+);
+// → returns verses about مطر، رياح، عاصفة، سحاب...
+```
+
+The initial `src/data/subjects.json` seeds 20 Islamic themes and is designed to grow —
+contributions for more themes, synonyms, and Arabic lemmas are welcome.
 
 ---
 

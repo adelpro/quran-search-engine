@@ -185,6 +185,7 @@ function createFallbackClient(deps: FallbackDependencies): SearchWorkerClient {
           invertedIndex: deps.invertedIndex,
           semanticMap: deps.semanticMap,
           phoneticMap: deps.phoneticMap,
+          subjectMap: deps.subjectMap,
         },
         options,
         pagination,

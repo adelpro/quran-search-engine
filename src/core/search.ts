@@ -10,6 +10,7 @@ import { filterVerses, simpleSearch, simpleSearchOr } from './layers/simple-sear
 import { createArabicFuseSearch } from './layers/fuse-search';
 import { performAdvancedLinguisticSearch } from './layers/linguistic-search';
 import { performSemanticSearch } from './layers/semantic-search';
+import { performSubjectSearch } from './layers/subject-search';
 import { searchManyImpl } from './layers/search-many';
 import { computeScore } from '../utils/scoring';
 
@@ -91,7 +92,8 @@ export function search<TVerse extends VerseInput>(
 
   const pagination: PaginationOptions = multiTermOptions;
 
-  const { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, phoneticMap } = context;
+  const { quranData, morphologyMap, wordMap, invertedIndex, semanticMap, subjectMap, phoneticMap } =
+    context;
 
   // Validate required dependencies
   if (!quranData || !(quranData instanceof Map) || quranData.size === 0) {
@@ -147,6 +149,7 @@ export function search<TVerse extends VerseInput>(
         root: 0,
         fuzzy: 0,
         semantic: 0,
+        subject: 0,
         regex: 0,
         range: totalResults,
         total: totalResults,
@@ -172,6 +175,7 @@ export function search<TVerse extends VerseInput>(
         root: 0,
         fuzzy: 0,
         semantic: 0,
+        subject: 0,
         regex: totalResults,
         range: 0,
         total: totalResults,
@@ -238,10 +242,24 @@ export function search<TVerse extends VerseInput>(
     .split(/\s+/)
     .some((token) => !isArabic(token) && token.trim().length > 0);
 
-  if (!cleanQuery && !(options.semantic && hasEnglishWords)) {
+  if (
+    !cleanQuery &&
+    !(options.semantic && hasEnglishWords) &&
+    !(options.subject && hasEnglishWords)
+  ) {
     return {
       results: [],
-      counts: { simple: 0, lemma: 0, root: 0, fuzzy: 0, range: 0, total: 0, semantic: 0, regex: 0 },
+      counts: {
+        simple: 0,
+        lemma: 0,
+        root: 0,
+        fuzzy: 0,
+        range: 0,
+        total: 0,
+        semantic: 0,
+        subject: 0,
+        regex: 0,
+      },
       pagination: {
         totalResults: 0,
         totalPages: 0,
@@ -282,9 +300,18 @@ export function search<TVerse extends VerseInput>(
     invertedIndex,
   );
 
+  const subjectMatches = performSubjectSearch(
+    cleanQuery,
+    quranData,
+    options,
+    subjectMap,
+    operatorFreeQuery,
+    invertedIndex,
+  );
+
   // 6. Boolean filtering (if boolean operators were present in query)
   // First, combine all search results from different layers
-  const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches];
+  const allMatches = [...simpleMatches, ...advancedMatches, ...semanticMatches, ...subjectMatches];
 
   // Then, if boolean query exists, filter combined results based on boolean logic
   // This allows queries like "+الله -الرحمن الرحيم | العليم" to:
@@ -301,8 +328,11 @@ export function search<TVerse extends VerseInput>(
     if (!gidSet.has(verse.gid)) {
       gidSet.add(verse.gid);
 
-      // If it's a semantic match (already scored), preserve it
-      if ('matchType' in verse && verse['matchType'] === 'semantic') {
+      // If it's a pre-scored match (semantic/subject), preserve it
+      if (
+        'matchType' in verse &&
+        (verse['matchType'] === 'semantic' || verse['matchType'] === 'subject')
+      ) {
         combined.push(verse as ScoredVerse<TVerse>);
         continue;
       }
@@ -335,6 +365,7 @@ export function search<TVerse extends VerseInput>(
     // (the CLI does) therefore attribute 'none' results to fuzzy matching. Tracked in #102.
     fuzzy: combined.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
     semantic: combined.filter((v) => v.matchType === 'semantic').length,
+    subject: combined.filter((v) => v.matchType === 'subject').length,
     regex: 0,
     range: 0,
     total: combined.length,

@@ -6,6 +6,7 @@ import {
   loadWordMap,
   loadSemanticData,
   loadPhoneticData,
+  loadSubjectData,
   buildInvertedIndex,
 } from '../utils/loader';
 import { search } from '../core/search';
@@ -26,6 +27,7 @@ let morphologyMap: Map<number, MorphologyAya> | null = null;
 let wordMap: WordMap | null = null;
 let semanticMap: Map<string, string[]> | null = null;
 let phoneticMap: Map<string, string[]> | null = null;
+let subjectMap: Map<string, string[]> | null = null;
 let invertedIndex: InvertedIndex | null = null;
 const cache = new LRUCache<string, SearchResponse<QuranText>>(100);
 
@@ -49,12 +51,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   switch (msg.type) {
     case 'INIT_DATA': {
       try {
-        const [qd, morph, wm, semMap, phonMap] = await Promise.all([
+        const [qd, morph, wm, semMap, phonMap, subjMap] = await Promise.all([
           loadQuranData(),
           loadMorphology(),
           loadWordMap(),
           loadSemanticData().catch(() => null),
           loadPhoneticData().catch(() => null),
+          loadSubjectData().catch(() => null),
         ]);
 
         quranData = qd;
@@ -62,7 +65,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         wordMap = wm;
         semanticMap = semMap;
         phoneticMap = phonMap;
-        invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap ?? undefined);
+        subjectMap = subjMap;
+        invertedIndex = buildInvertedIndex(
+          morphologyMap,
+          quranData,
+          semanticMap ?? undefined,
+          subjectMap ?? undefined,
+        );
 
         postTyped({
           type: 'INIT_DATA_RESULT',
@@ -102,6 +111,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
             invertedIndex: invertedIndex ?? undefined,
             semanticMap: semanticMap ?? undefined,
             phoneticMap: phoneticMap ?? undefined,
+            subjectMap: subjectMap ?? undefined,
           },
           msg.options,
           msg.pagination,
@@ -178,6 +188,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       wordMap = null;
       semanticMap = null;
       phoneticMap = null;
+      subjectMap = null;
       invertedIndex = null;
       self.close();
       break;

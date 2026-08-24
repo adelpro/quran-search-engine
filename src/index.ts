@@ -7,6 +7,7 @@ export {
   buildInvertedIndex,
   loadSemanticData,
   loadPhoneticData,
+  loadSubjectData,
 } from './utils/loader';
 export { normalizeArabic, removeTashkeel, isArabic } from './utils/normalization';
 
