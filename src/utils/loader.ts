@@ -2,6 +2,25 @@ import type { MorphologyAya, WordMap, QuranText, InvertedIndex, SubjectIndex } f
 import { normalizeArabic } from './normalization';
 import { DataFileNotFoundError, DataParseError, DataSchemaInvalidError } from '../errors';
 
+const rethrowLoadError = (filePath: string, error: unknown): never => {
+  if (
+    error instanceof DataFileNotFoundError ||
+    error instanceof DataParseError ||
+    error instanceof DataSchemaInvalidError
+  ) {
+    throw error;
+  }
+  if (error instanceof Error) {
+    if (error.message.includes('Cannot find module') || error.message.includes('Failed to fetch')) {
+      throw new DataFileNotFoundError(filePath, error);
+    }
+    if (error.message.includes('JSON') || error.message.includes('parse')) {
+      throw new DataParseError(filePath, error);
+    }
+  }
+  throw new DataParseError(filePath, error);
+};
+
 /**
  * Lazily loads the Quran morphology data.
  * This large dataset is loaded asynchronously to avoid increasing the initial bundle size.
@@ -487,26 +506,6 @@ export const loadSubjectData = async (): Promise<Map<string, string[]>> => {
 
     return buildSubjectMap(subjectData);
   } catch (error) {
-    if (
-      error instanceof DataFileNotFoundError ||
-      error instanceof DataParseError ||
-      error instanceof DataSchemaInvalidError
-    ) {
-      throw error;
-    }
-
-    if (error instanceof Error) {
-      if (
-        error.message.includes('Cannot find module') ||
-        error.message.includes('Failed to fetch')
-      ) {
-        throw new DataFileNotFoundError(filePath, error);
-      }
-      if (error.message.includes('JSON') || error.message.includes('parse')) {
-        throw new DataParseError(filePath, error);
-      }
-    }
-
-    throw new DataParseError(filePath, error);
+    rethrowLoadError(filePath, error);
   }
 };

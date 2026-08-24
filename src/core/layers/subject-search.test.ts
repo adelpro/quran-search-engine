@@ -72,7 +72,7 @@ describe('Subject Search', () => {
       { lemma: false, root: false, subject: true },
     );
 
-    const gids = result.results.map((r: ScoredVerse<QuranText>) => r.gid);
+    const gids = result.results.map((r: ScoredVerse) => r.gid);
     // gid 1 has ماء, gid 2 has رياح — both are in the weather subject
     expect(gids).toContain(1);
     expect(gids).toContain(2);

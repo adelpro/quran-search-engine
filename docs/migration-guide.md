@@ -1,6 +1,9 @@
 # Migration Guide: Upgrading to v0.3.x / v0.4.x
 
-This guide helps you migrate your application from v0.1.x/v0.2.x to the new architecture in `quran-search-engine`. Sections marked **v0.3.x** cover the inverted-index and semantic search changes introduced in that release. Sections marked **v0.4.x** cover the subject-based thematic search added in v0.4.0.
+This guide helps you migrate your application from v0.1.x/v0.2.x to the new architecture
+in `quran-search-engine`. Sections marked **v0.3.x** cover the inverted-index and semantic
+search changes introduced in that release. Sections marked **v0.4.x** cover the subject-based
+thematic search added in v0.4.0.
 
 ## Overview of Breaking Changes
 
@@ -397,7 +400,8 @@ const response = search(
 
 ## New in v0.4.x: Subject-Based Thematic Search
 
-v0.4.0 adds `loadSubjectData()` and the `subject` search option, which maps English concept words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas grouped by Islamic theme.
+v0.4.0 adds `loadSubjectData()` and the `subject` search option, which maps English concept
+words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas grouped by Islamic theme.
 
 ```typescript
 import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
@@ -407,11 +411,16 @@ const subjectMap = await loadSubjectData();
 const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap);
 
 // Enable subject search
-search('climate', { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex: index }, { subject: true });
+search(
+  'climate',
+  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex: index },
+  { subject: true },
+);
 // → returns verses about مطر، رياح، عاصفة، سحاب...
 ```
 
-The initial `src/data/subjects.json` seeds 20 Islamic themes and is designed to grow — contributions for more themes, synonyms, and Arabic lemmas are welcome.
+The initial `src/data/subjects.json` seeds 20 Islamic themes and is designed to grow —
+contributions for more themes, synonyms, and Arabic lemmas are welcome.
 
 ---
 

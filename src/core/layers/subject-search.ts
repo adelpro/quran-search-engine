@@ -1,5 +1,5 @@
 import { normalizeArabic, isArabic } from '../../utils/normalization';
-import type { VerseInput, ScoredVerse, AdvancedSearchOptions, InvertedIndex } from '../../types';
+import type { VerseInput, ScoredVerse, AdvancedSearchOptions, InvertedIndex, SubjectIndex } from '../../types';
 
 /** Resolve a raw query string to matched Arabic words and subject keys. */
 const resolveQuery = (
@@ -13,7 +13,7 @@ const resolveQuery = (
   // like "eternal life", "judgment day", "blazing fire".
   const fullPhrase = rawQuery.toLowerCase().replace(/[^a-z\s]/g, '').trim();
   if (fullPhrase && subjectMap.has(fullPhrase)) {
-    subjectMap.get(fullPhrase)!.forEach((w) => matchedArabicWords.add(w));
+    subjectMap.get(fullPhrase)?.forEach((w) => matchedArabicWords.add(w));
     matchedSubjects.push(fullPhrase);
   }
 
@@ -68,6 +68,35 @@ const scoreVerse = <TVerse extends VerseInput>(
   };
 };
 
+/** Collect scored verse candidates via the pre-built subjectIndex (fast path). */
+const collectFromIndex = <TVerse extends VerseInput>(
+  matchedSubjects: string[],
+  matchedArabicWords: Set<string>,
+  quranData: Map<number, TVerse>,
+  options: AdvancedSearchOptions,
+  subjectIndex: SubjectIndex,
+  wordIndex?: Map<string, Set<number>>,
+): ScoredVerse<TVerse>[] => {
+  const matchedGids = new Set<number>();
+
+  for (const subject of matchedSubjects) {
+    subjectIndex.get(subject)?.forEach((gid) => matchedGids.add(gid));
+  }
+  // Also cover Arabic words entered directly (not resolved via a subject key)
+  for (const word of matchedArabicWords) {
+    wordIndex?.get(word)?.forEach((gid) => matchedGids.add(gid));
+  }
+
+  const results: ScoredVerse<TVerse>[] = [];
+  for (const gid of matchedGids) {
+    const verse = quranData.get(gid);
+    if (!verse) continue;
+    const scored = scoreVerse(verse, options, matchedArabicWords);
+    if (scored) results.push(scored);
+  }
+  return results;
+};
+
 export const performSubjectSearch = <TVerse extends VerseInput>(
   query: string,
   quranData: Map<number, TVerse>,
@@ -79,44 +108,30 @@ export const performSubjectSearch = <TVerse extends VerseInput>(
   if (!options.subject || !subjectMap) return [];
 
   const { matchedArabicWords, matchedSubjects } = resolveQuery(
-    (originalQuery || query).trim(),
+    (originalQuery ?? query).trim(),
     subjectMap,
   );
 
   if (matchedArabicWords.size === 0) return [];
 
   const subjectIndex = invertedIndex?.subjectIndex;
-  const wordIndex = invertedIndex?.wordIndex;
-  const results: ScoredVerse<TVerse>[] = [];
 
-  // Fast path: collect candidate GIDs from the pre-built index
   if (subjectIndex) {
-    const matchedGids = new Set<number>();
-
-    for (const subject of matchedSubjects) {
-      subjectIndex.get(subject)?.forEach((gid) => matchedGids.add(gid));
-    }
-
-    // Also cover Arabic words entered directly (not resolved via a subject key)
-    for (const word of matchedArabicWords) {
-      wordIndex?.get(word)?.forEach((gid) => matchedGids.add(gid));
-    }
-
-    for (const gid of matchedGids) {
-      const verse = quranData.get(gid);
-      if (!verse) continue;
-      const scored = scoreVerse(verse, options, matchedArabicWords);
-      if (scored) results.push(scored);
-    }
-
-    return results;
+    return collectFromIndex(
+      matchedSubjects,
+      matchedArabicWords,
+      quranData,
+      options,
+      subjectIndex,
+      invertedIndex?.wordIndex,
+    );
   }
 
   // Slow path: scan all verses
+  const results: ScoredVerse<TVerse>[] = [];
   for (const verse of quranData.values()) {
     const scored = scoreVerse(verse, options, matchedArabicWords);
     if (scored) results.push(scored);
   }
-
   return results;
 };

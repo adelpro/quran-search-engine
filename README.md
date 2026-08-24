@@ -22,7 +22,8 @@ Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure Type
 - Lemma + root matching (via morphology + word map)
 - Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
 - Semantic search (concept-based mapping)
-- **Subject-based thematic search** — map English concept words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas via `loadSubjectData()`
+- **Subject-based thematic search** — map English concept words (e.g. `"climate"`,
+  `"worship"`) to curated Arabic lemmas via `loadSubjectData()`
 - Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
 - Regex search with ReDoS safety validation (`validateRegex` for UI-side input checking)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
@@ -313,7 +314,8 @@ const response = search(
 
 #### `buildInvertedIndex(morphologyMap, quranData, semanticMap?, subjectMap?)`
 
-Builds in-memory inverted indices from the morphology map and verse data in a single pass. Produces indices for lemma, root, word, semantic concepts, and (optionally) subject themes.
+Builds in-memory inverted indices from the morphology map and verse data in a single pass.
+Produces indices for lemma, root, word, semantic concepts, and (optionally) subject themes.
 
 - `lemmaIndex`: lemma → Set of verse GIDs
 - `rootIndex`: root → Set of verse GIDs
