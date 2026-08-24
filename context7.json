@@ -1,0 +1,16 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "url": "https://context7.com/adelpro/quran-search-engine",
+  "public_key": "pk_qiM4HEbnjUHZB7itJCMt0",
+  "projectTitle": "quran-search-engine",
+  "description": "Stateless, UI-agnostic Quran search engine for Arabic text in pure TypeScript, supporting exact, lemma/root, fuzzy, semantic, phonetic, boolean, regex, and range search",
+  "excludeFolders": [".agent", ".github", ".husky", "assets"],
+  "excludeFiles": ["CHANGELOG.md", "CODE_OF_CONDUCT.md", "SECURITY.md"],
+  "rules": [
+    "Import only from the package root (quran-search-engine); everything documented is re-exported from src/index.ts",
+    "search() requires quranData, morphologyMap, and wordMap loaded via loadQuranData(), loadMorphology(), loadWordMap() before calling",
+    "For lemma/root search, pass { lemma: true, root: true } in options; for production, pre-build the inverted index with buildInvertedIndex() or loadInvertedIndex() instead of relying on the default O(n) scan",
+    "Range queries like '2:255' or '1:1-7' bypass linguistic search entirely and require sura_id/aya_id fields in the dataset",
+    "Use LRUCache and a pre-built Fuse index (createArabicFuseSearch) together for real-time/keystroke search performance"
+  ]
+}
