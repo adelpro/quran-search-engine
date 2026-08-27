@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { exportResults } from './export';
-import type { SearchResponse, QuranText } from '../types';
+import type { MultiTermResponse, SearchResponse, QuranText } from '../types';
 
 const mockResponse: SearchResponse<QuranText> = {
   results: [
@@ -72,5 +72,36 @@ describe('exportResults', () => {
 
     const result = exportResults(response, 'csv');
     expect(result).toContain('1,1,0.95,exact,"بسم الله\nالحمد لله"');
+  });
+
+  describe('MultiTermResponse', () => {
+    const mockMultiTermResponse: MultiTermResponse<QuranText> = {
+      results: [
+        {
+          sura_id: 1,
+          aya_id: 1,
+          matchScore: 6,
+          matchType: 'exact',
+          standard: 'بسم الله الرحمن الرحيم',
+          matchedTerms: ['الرحمن', 'الرحيم'],
+          distinctTermCount: 2,
+          totalFrequency: 2,
+        },
+      ],
+    } as MultiTermResponse<QuranText>;
+
+    it('includes matchedTerms, distinctTermCount and totalFrequency in json', () => {
+      const result = exportResults(mockMultiTermResponse);
+
+      expect(JSON.parse(result)).toEqual(mockMultiTermResponse.results);
+    });
+
+    it('keeps csv to the same fixed columns, dropping the multi-term fields', () => {
+      const result = exportResults(mockMultiTermResponse, 'csv');
+
+      expect(result).toContain('sura,aya,score,matchType,text');
+      expect(result).toContain('1,1,6,exact,بسم الله الرحمن الرحيم');
+      expect(result).not.toContain('الرحمن,الرحيم');
+    });
   });
 });

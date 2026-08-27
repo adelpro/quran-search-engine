@@ -1,4 +1,4 @@
-import type { AdvancedSearchOptions, PaginationOptions } from '../types';
+import type { AdvancedSearchOptions, MultiTermOptions, RankBy } from '../types';
 import type { ExportFormat } from '../utils/export';
 
 /** Output shapes the CLI can produce: the machine-readable ones plus the default table. */
@@ -10,11 +10,20 @@ export type CliMode = 'search' | 'help' | 'version';
 /**
  * A fully parsed command line, grouped so `run` can hand each part straight to `search()`
  * without rearranging fields.
+ *
+ * `query` is a `string[]` only for the array form (a single positional wrapped in `[ ... ]`,
+ * e.g. `"[محمد, يونس]"`) — that alone maps onto `search()`'s `string[]` overload. Any other
+ * positional(s) stay a single `string`; two or more bare positionals are joined with `AND`
+ * first. `pagination` is typed as `MultiTermOptions` (pagination plus `rankBy`) rather than
+ * plain `PaginationOptions` so the very same object can be handed to either overload
+ * unmodified — the string overload's `pagination` parameter structurally ignores the extra
+ * `rankBy` field, exactly like `core/search.ts` itself reuses one `multiTermOptions`
+ * parameter as `pagination` internally.
  */
 export type CliOptions = {
-  query: string;
+  query: string | string[];
   options: AdvancedSearchOptions;
-  pagination: PaginationOptions;
+  pagination: MultiTermOptions;
   format: OutputFormat;
   output?: string;
   mode: CliMode;
@@ -29,6 +38,7 @@ export type CliUsageError = {
 };
 
 const EXPORT_FORMATS: readonly ExportFormat[] = ['json', 'csv', 'tsv'];
+const RANK_BY_VALUES: readonly RankBy[] = ['score', 'coverage', 'frequency'];
 
 // Fixed properties of the mushaf, so they are safe to state here. Deliberately not derived
 // from the exported SURAS constant: that module imports quran.json at load time, and pulling
@@ -100,7 +110,7 @@ export const parseArgs = (argv: string[]): CliOptions | CliUsageError => {
     semantic: false,
     isRegex: false,
   };
-  const pagination: PaginationOptions = { page: 1, limit: 20 };
+  const pagination: MultiTermOptions = { page: 1, limit: 20, rankBy: 'score' };
   const positionals: string[] = [];
   const explicitFlags = new Set<string>();
 
@@ -206,6 +216,24 @@ export const parseArgs = (argv: string[]): CliOptions | CliUsageError => {
         break;
       }
 
+      case '--rank-by': {
+        const value = takeValue();
+        if (value === undefined) {
+          return usageError(
+            `--rank-by needs a value. Available modes: ${RANK_BY_VALUES.join(', ')}.`,
+            flag,
+          );
+        }
+        if (!RANK_BY_VALUES.includes(value as RankBy)) {
+          return usageError(
+            `--rank-by does not support "${value}". Available modes: ${RANK_BY_VALUES.join(', ')}.`,
+            flag,
+          );
+        }
+        pagination.rankBy = value as RankBy;
+        break;
+      }
+
       default:
         return usageError(
           `Unknown option "${flag}". Run with --help to see the available options.`,
@@ -225,22 +253,52 @@ export const parseArgs = (argv: string[]): CliOptions | CliUsageError => {
     );
   }
 
-  if (positionals.length > 1) {
-    return usageError(
-      `Expected a single query but received ${positionals.length} arguments. Quote the whole query, for example: quran-search-engine "الله الرحمن"`,
-    );
-  }
+  // A single positional wrapped in [ ... ] is the array form — search()'s own string[]
+  // overload, invoked directly: quran-search-engine "[محمد, يونس]" independently searches
+  // each term and merges the results by verse. Anything else — one bare positional, or
+  // several — is a single string, exactly what search()'s string overload already takes.
+  const firstPositional = positionals[0] ?? '';
+  const isArrayQuery =
+    positionals.length === 1 &&
+    firstPositional.trim().startsWith('[') &&
+    firstPositional.trim().endsWith(']');
 
-  const query = positionals[0] ?? '';
+  let query: string | string[];
 
-  // A blank query is the same mistake as no query. Rejecting it here keeps the library's
-  // InvalidQueryError off the runtime path, where it would surface as a runtime fault
-  // instead of the usage error it is. Punctuation-only queries are not blank: they search
-  // normally and simply match nothing.
-  if (query.trim() === '') {
-    return usageError(
-      'The search query is empty. Provide a word or phrase to search for, for example: quran-search-engine "رحم"',
-    );
+  if (isArrayQuery) {
+    const raw = firstPositional.trim();
+    const inner = raw.slice(1, -1).trim();
+    // Split on either the ASCII comma or the Arabic comma (،, U+060C) — an Arabic-language
+    // CLI should accept the punctuation its own users actually type.
+    const terms = inner === '' ? [] : inner.split(/[,،]/).map((term) => term.trim());
+
+    // A blank term is the same mistake as no query. Rejecting it here keeps the library's
+    // InvalidQueryError off the runtime path, where it would surface as a runtime fault
+    // instead of the usage error it is. "[]" is deliberately not an error: search([]) is a
+    // well-formed, empty multi-term search, not a mistake.
+    const blankIndex = terms.findIndex((term) => term === '');
+    if (blankIndex !== -1) {
+      return usageError(
+        `Term ${blankIndex + 1} in "${raw}" is empty. Each term must contain text to search for, or use "[]" for none.`,
+      );
+    }
+    query = terms;
+  } else {
+    // Two or more bare positionals rejoin into one multi-word string, same as if they had
+    // been quoted together in the first place — quran-search-engine محمد رسول becomes
+    // "محمد رسول". search()'s normal (non-boolean-operator) string path already runs an
+    // AND/intersection search over every token in a multi-word string (see simpleSearch in
+    // core/layers/simple-search.ts), so this needs no operator syntax of its own. For a
+    // single positional the join is a no-op, so this also covers that case unchanged.
+    const blankIndex = positionals.findIndex((term) => term.trim() === '');
+    if (blankIndex !== -1) {
+      return usageError(
+        positionals.length === 1
+          ? 'The search query is empty. Provide a word or phrase to search for, for example: quran-search-engine "رحم"'
+          : `Argument ${blankIndex + 1} ("${positionals[blankIndex]}") is empty. Each search term must contain text.`,
+      );
+    }
+    query = positionals.join(' ');
   }
 
   const warnings: string[] = [];
@@ -251,6 +309,11 @@ export const parseArgs = (argv: string[]): CliOptions | CliUsageError => {
         `${ignored.join(', ')} has no effect with --regex: pattern matching runs on its own and skips lemma, root, fuzzy and semantic matching. Remove --regex to use them.`,
       );
     }
+  }
+  if (!isArrayQuery && explicitFlags.has('--rank-by')) {
+    warnings.push(
+      '--rank-by has no effect outside the array form, e.g. "[term, term]": ranking only applies to independent multi-term search.',
+    );
   }
 
   return { query, options, pagination, format, output, mode, warnings };

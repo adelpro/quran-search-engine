@@ -147,10 +147,19 @@ export const run = async (argv: string[], io: CliIo, deps: CliDeps = {}): Promis
     io.stderr(`Warning: ${warning}\n`);
   }
 
+  // A single joined string for the diagnostics below that don't care about term boundaries:
+  // the language heuristic and the "no results for ..." message.
+  const queryText = Array.isArray(query) ? query.join(' ') : query;
+
   // Validate the pattern before loading megabytes of data, so a bad pattern fails fast.
+  // In multi-term mode, options.isRegex applies to every term's own search() call, so each
+  // one needs to be a valid pattern on its own.
   if (options.isRegex === true) {
+    const terms = Array.isArray(query) ? query : [query];
     try {
-      validateRegex(query);
+      for (const term of terms) {
+        validateRegex(term);
+      }
     } catch (error) {
       io.stderr(
         `${describe(error)}\nCheck the pattern, or drop --regex to search for these characters literally.\n`,
@@ -171,7 +180,7 @@ export const run = async (argv: string[], io: CliIo, deps: CliDeps = {}): Promis
     // data under --semantic, phonetic data only for non-Arabic input.
     const semanticMap =
       options.semantic === true ? await (deps.loadSemanticData ?? loadSemanticData)() : undefined;
-    const phoneticMap = isArabic(query)
+    const phoneticMap = isArabic(queryText)
       ? undefined
       : await (deps.loadPhoneticData ?? loadPhoneticData)();
 
@@ -196,8 +205,10 @@ export const run = async (argv: string[], io: CliIo, deps: CliDeps = {}): Promis
     const response =
       context.quranData.size === 0
         ? emptyResponse(pagination)
-        : search(query, context, options, pagination);
-    rendered = formatResults(response, format, query);
+        : Array.isArray(query)
+          ? search(query, context, options, pagination)
+          : search(query, context, options, pagination);
+    rendered = formatResults(response, format, queryText);
   } catch (error) {
     // These three mean the input was unacceptable, not that the run broke.
     if (

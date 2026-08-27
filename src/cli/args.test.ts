@@ -33,7 +33,7 @@ describe('parseArgs', () => {
         semantic: false,
         isRegex: false,
       });
-      expect(parsed.pagination).toEqual({ page: 1, limit: 20 });
+      expect(parsed.pagination).toEqual({ page: 1, limit: 20, rankBy: 'score' });
       expect(parsed.format).toBe('table');
       expect(parsed.output).toBeUndefined();
       expect(parsed.warnings).toEqual([]);
@@ -66,12 +66,105 @@ describe('parseArgs', () => {
       // Not blank: this is a valid search that simply matches nothing.
       expect(parseOk([query]).query).toBe(query);
     });
+  });
 
-    it('rejects several positionals and says to quote the query', () => {
-      const error = parseError(['الله', 'الرحمن']);
+  describe('bare multiple positionals (combined query)', () => {
+    it('rejoins two or more bare positionals into one space-separated string', () => {
+      const parsed = parseOk(['محمد', 'رسول']);
 
-      expect(error.message).toMatch(/single query/i);
-      expect(error.message).toMatch(/quote/i);
+      expect(parsed.query).toBe('محمد رسول');
+    });
+
+    it('rejoins three or more the same way', () => {
+      expect(parseOk(['محمد', 'يونس', 'ابراهيم']).query).toBe('محمد يونس ابراهيم');
+    });
+
+    it('keeps a single positional as a plain string, unchanged', () => {
+      expect(parseOk(['الرحمن']).query).toBe('الرحمن');
+    });
+
+    it('rejects a blank positional among several, naming its position', () => {
+      const error = parseError(['محمد', '  ', 'ابراهيم']);
+
+      expect(error.message).toMatch(/argument 2/i);
+      expect(error.message).toMatch(/empty/i);
+    });
+  });
+
+  describe('array-form queries ([term, term])', () => {
+    it('parses a bracketed, comma-separated positional into a terms array', () => {
+      const parsed = parseOk(['[محمد, يونس, ابراهيم]']);
+
+      expect(parsed.query).toEqual(['محمد', 'يونس', 'ابراهيم']);
+    });
+
+    it('trims whitespace around each term', () => {
+      expect(parseOk(['[  محمد ,يونس  ]']).query).toEqual(['محمد', 'يونس']);
+    });
+
+    it('accepts the Arabic comma (،) as a separator, not just the ASCII one', () => {
+      expect(parseOk(['[محمد،يونس]']).query).toEqual(['محمد', 'يونس']);
+      expect(parseOk(['[محمد، يونس]']).query).toEqual(['محمد', 'يونس']);
+    });
+
+    it('does not require the comma form to have a space after the comma', () => {
+      expect(parseOk(['[محمد,يونس]']).query).toEqual(['محمد', 'يونس']);
+    });
+
+    it('accepts a single term inside brackets', () => {
+      expect(parseOk(['[محمد]']).query).toEqual(['محمد']);
+    });
+
+    it('treats an empty bracket pair as a genuinely empty array, not an error', () => {
+      // search([]) is a well-formed, empty multi-term search in the library — not a mistake.
+      expect(parseOk(['[]']).query).toEqual([]);
+    });
+
+    it('rejects a blank term inside the brackets, naming its position', () => {
+      const error = parseError(['[محمد, , ابراهيم]']);
+
+      expect(error.message).toMatch(/term 2/i);
+      expect(error.message).toMatch(/empty/i);
+    });
+
+    it('does not trigger on a single bare positional without brackets', () => {
+      expect(parseOk(['محمد']).query).toBe('محمد');
+    });
+
+    it('does not trigger on two or more bracket-free positionals', () => {
+      // [ ... ] must be the entire, single positional argument.
+      expect(parseOk(['[محمد]', 'يونس']).query).toBe('[محمد] يونس');
+    });
+
+    it('defaults rankBy to score', () => {
+      expect(parseOk(['[محمد, يونس]']).pagination.rankBy).toBe('score');
+    });
+
+    it.each(['score', 'coverage', 'frequency'] as const)('accepts --rank-by %s', (mode) => {
+      expect(parseOk(['[محمد, يونس]', '--rank-by', mode]).pagination.rankBy).toBe(mode);
+    });
+
+    it('rejects an unsupported --rank-by value and names the supported ones', () => {
+      const error = parseError(['[محمد, يونس]', '--rank-by', 'popularity']);
+
+      expect(error.message).toContain('score');
+      expect(error.message).toContain('coverage');
+      expect(error.message).toContain('frequency');
+    });
+
+    it('rejects --rank-by with no value', () => {
+      expect(parseError(['[محمد, يونس]', '--rank-by']).flag).toBe('--rank-by');
+    });
+
+    it('warns that --rank-by has no effect outside the array form', () => {
+      const parsed = parseOk(['الرحمن', '--rank-by', 'coverage']);
+
+      expect(parsed.warnings).toHaveLength(1);
+      expect(parsed.warnings[0]).toMatch(/array form/i);
+    });
+
+    it('does not warn about --rank-by when the array form is used', () => {
+      expect(parseOk(['[محمد, يونس]', '--rank-by', 'coverage']).warnings).toEqual([]);
     });
   });
 
@@ -111,7 +204,7 @@ describe('parseArgs', () => {
     it('parses page, limit, sura and juz', () => {
       const parsed = parseOk(['رحم', '--page', '3', '--limit', '5', '--sura', '2', '--juz', '1']);
 
-      expect(parsed.pagination).toEqual({ page: 3, limit: 5 });
+      expect(parsed.pagination).toEqual({ page: 3, limit: 5, rankBy: 'score' });
       expect(parsed.options.suraId).toBe(2);
       expect(parsed.options.juzId).toBe(1);
     });

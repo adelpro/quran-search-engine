@@ -1,4 +1,4 @@
-import type { SearchResponse, QuranText } from '../types';
+import type { MultiTermResponse, SearchResponse, QuranText } from '../types';
 
 export type ExportFormat = 'json' | 'csv' | 'tsv';
 
@@ -19,7 +19,16 @@ function escapeDelimitedValue(value: string, separator: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function exportDelimited(response: SearchResponse<QuranText>, separator: string): string {
+/**
+ * Delimited (csv/tsv) rows only ever cover the fixed, single-term column set — a
+ * `MultiTermResponse`'s extra `matchedTerms`/`distinctTermCount`/`totalFrequency` fields are
+ * not included here even though `results` accepts one, unlike `json`, which serialises
+ * whatever fields the response objects actually carry.
+ */
+function exportDelimited(
+  response: SearchResponse<QuranText> | MultiTermResponse<QuranText>,
+  separator: string,
+): string {
   const rows = response.results.map((verse) => {
     const values = [
       String(verse.sura_id ?? ''),
@@ -35,7 +44,7 @@ function exportDelimited(response: SearchResponse<QuranText>, separator: string)
 }
 
 export function exportResults(
-  response: SearchResponse<QuranText>,
+  response: SearchResponse<QuranText> | MultiTermResponse<QuranText>,
   format: ExportFormat = 'json',
 ): string {
   switch (format) {
