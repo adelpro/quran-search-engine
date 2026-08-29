@@ -2,9 +2,12 @@
 
 ## Overview
 
-This script generates a comprehensive inverted index that maps phonetic transliterations of Quranic words to their normalized Arabic equivalents. It processes raw transliteration text files, cleans the data, aligns it word-by-word with structured Quran JSON data, and outputs a searchable JSON index.
+This script generates a comprehensive inverted index that maps phonetic transliterations of Quranic words to their
+normalized Arabic equivalents. It processes raw transliteration text files, cleans the data, aligns it word-by-word with
+structured Quran JSON data, and outputs a searchable JSON index.
 
-This documentation is designed to help anyone working on the codebase understand the exact workflow and how edge cases (like mismatched word counts between Arabic and English transliterations) are handled.
+This documentation is designed to help anyone working on the codebase understand the exact workflow and how edge cases
+(like mismatched word counts between Arabic and English transliterations) are handled.
 
 ---
 
@@ -22,20 +25,23 @@ The script runs through a systematic pipeline to clean, align, and index the dat
 
 ### 2. Load Quran JSON
 
-- Parses `quran.json` and maps the rows into `ayahData` objects (extracting fields like `text`, `sura_id`, `number_in_surah`, etc.).
+- Parses `quran.json` and maps the rows into `ayahData` objects (extracting fields like `text`, `sura_id`,
+  `number_in_surah`, etc.).
 - Builds an `ayahLookup` map keyed by `"{sura}-{verse}"` for fast retrieval during alignment.
 
 ### 3. Remove Basmala
 
 - Globally removes the phrase `بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ` from every standard ayah text.
-- _Note:_ Because the Basmala is removed globally to fix word count alignment on standard verses, the script manually seeds the Basmala tokens back into the `allRecords` array before processing.
+- _Note:_ Because the Basmala is removed globally to fix word count alignment on standard verses, the script manually
+  seeds the Basmala tokens back into the `allRecords` array before processing.
 
 ### 4. Per-Verse Alignment (Core Logic)
 
 For each verse in the transliteration files, the script attempts to map the phonetic tokens to the Arabic words:
 
 - **Tokenize:** Splits the transliterated verse into phonetic tokens.
-- **Lookup:** Finds the corresponding ayah record in the JSON data. It allows for small offsets (`0, -1, 1, -2, 2`) to account for numbering discrepancies between different data sources.
+- **Lookup:** Finds the corresponding ayah record in the JSON data. It allows for small offsets (`0, -1, 1, -2, 2`) to
+  account for numbering discrepancies between different data sources.
 - **Compute Word Arrays:**
 - `arabicWords`: The actual Quran text with stops removed.
 - `normalizedWords`: Buckwalter-friendly normalization of the Arabic text.
@@ -43,26 +49,33 @@ For each verse in the transliteration files, the script attempts to map the phon
 
 - **Compare & Align:**
 - **If token counts match (1:1):** Appends the aligned records directly.
-- **If counts differ slightly (≤ 3):** * **Merge:** Tries to merge adjacent phonetic tokens using pre-defined `mergeSeeds`. This *reduces\* the phonetic token count to match the Arabic.
-- **Split:** Tries to replace a single phonetic token with mapped sub-tokens using `splitSeedsMap`. This _increases_ the phonetic token count to match the Arabic.
+- **If counts differ slightly (≤ 3):**
+- **Merge:** Tries to merge adjacent phonetic tokens using pre-defined `mergeSeeds`. This _reduces_ the phonetic token
+  count to match the Arabic.
+- **Split:** Tries to replace a single phonetic token with mapped sub-tokens using `splitSeedsMap`. This _increases_ the
+  phonetic token count to match the Arabic.
 
 - **If still unresolved:** Pushes a `MismatchedWord` object to a `not_matched_words` array for later debugging.
 
 ### 5. Write Debug File & Build Index
 
-- **Debug Output:** If there are any unresolved mismatches, the script writes them to `debug_mismatch_verse.json` so developers can manually review where the alignment failed.
-- **Index Generation:** Builds an inverted index from `allRecords`. It maps the phonetic forms (both full and short versions) to their corresponding normalized Arabic words.
+- **Debug Output:** If there are any unresolved mismatches, the script writes them to `debug_mismatch_verse.json` so
+  developers can manually review where the alignment failed.
+- **Index Generation:** Builds an inverted index from `allRecords`. It maps the phonetic forms (both full and short
+  versions) to their corresponding normalized Arabic words.
 - **Final Save:** Sorts the keys and lists, then writes the final output to `phonetic_inverted_index.json`.
 
 ---
 
 ## Handling Misalignments & Edge Cases (The Seed Strategy)
 
-The most complex part of Step 4 is handling cases where English transliteration doesn't map 1-to-1 with Arabic words. The pipeline relies on pre-defined seed data to heal these misalignments automatically.
+The most complex part of Step 4 is handling cases where English transliteration doesn't map 1-to-1 with Arabic words.
+The pipeline relies on pre-defined seed data to heal these misalignments automatically.
 
 ### Merging Phonetic Tokens
 
-When there are _more_ phonetic words than Arabic words, the `mergeSeeds` array dictates which phonetic prefixes/suffixes to combine.
+When there are _more_ phonetic words than Arabic words, the `mergeSeeds` array dictates which phonetic prefixes/suffixes
+to combine.
 
 ```typescript
 // Keywords to merge to match the number of Arabic Quran words
@@ -71,7 +84,8 @@ const mergeSeeds = ['ya', 'awa', 'waal', 'baAAda', 'ha', 'wa', 'likay', 'waya', 
 
 ### Splitting Phonetic Tokens
 
-When there are _fewer_ phonetic words than Arabic words, the `splitSeedsMap` explicitly defines how to break specific compound tokens apart.
+When there are _fewer_ phonetic words than Arabic words, the `splitSeedsMap` explicitly defines how to break specific
+compound tokens apart.
 
 ```typescript
 // Keywords to split to match the number of Arabic Quran words
@@ -89,7 +103,8 @@ const splitSeedsMap: Record<string, string[]> = {
 
 ### Manual Record Injection
 
-Certain verses break the automated pipeline entirely (like Ayah 27:30 containing an inline Basmala). These are manually seeded to guarantee structural integrity.
+Certain verses break the automated pipeline entirely (like Ayah 27:30 containing an inline Basmala). These are manually
+seeded to guarantee structural integrity.
 
 ```typescript
 const allRecords: Array<[string, string, string, string]> = [

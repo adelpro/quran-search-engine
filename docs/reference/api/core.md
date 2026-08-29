@@ -1,10 +1,12 @@
 # Core API Reference
 
-The `quran-search-engine` library exposes several functions and types for loading data, normalizing Arabic text, and performing searches. Everything documented here is exported from `quran-search-engine`.
+The `quran-search-engine` library exposes several functions and types for loading data, normalizing Arabic text, and
+performing searches. Everything documented here is exported from `quran-search-engine`.
 
 ## Data Loading
 
-> **Note**: The bundled morphology logic and data (lemmas, roots) depend heavily on shapes imported from datasets like the Quranic Arabic Corpus.
+> **Note**: The bundled morphology logic and data (lemmas, roots) depend heavily on shapes imported from datasets like
+> the Quranic Arabic Corpus.
 
 ### `loadQuranData()`
 
@@ -32,7 +34,8 @@ const morphologyMap: Map<number, MorphologyAya> = await loadMorphology();
 
 ### `loadWordMap()`
 
-**Description:** Loads the token mapping to canonical lemmas/roots. This maps normalized query tokens back to their base forms.
+**Description:** Loads the token mapping to canonical lemmas/roots. This maps normalized query tokens back to their base
+forms.
 
 **Returns:** `Promise<WordMap>`
 
@@ -44,7 +47,8 @@ const wordMap: WordMap = await loadWordMap();
 
 ### `loadSemanticData()`
 
-**Description:** Loads the semantic mapping data for concept-based search. Maps normalized concepts to arrays of verse GIDs containing semantically related words.
+**Description:** Loads the semantic mapping data for concept-based search. Maps normalized concepts to arrays of verse
+GIDs containing semantically related words.
 
 **Returns:** `Promise<Map<string, string[]>>`
 
@@ -56,7 +60,8 @@ const semanticMap = await loadSemanticData();
 
 ### `loadPhoneticData()`
 
-**Description:** Loads the phonetic dictionary for Latin-to-Arabic transliteration search. Maps phonetic spellings (e.g., "Bismillah") to their Arabic equivalents.
+**Description:** Loads the phonetic dictionary for Latin-to-Arabic transliteration search. Maps phonetic spellings
+(e.g., "Bismillah") to their Arabic equivalents.
 
 **Returns:** `Promise<Map<string, string[]>>`
 
@@ -68,7 +73,8 @@ const phoneticMap = await loadPhoneticData();
 
 ### Data Validation
 
-To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native validators are exposed for internal schemas.
+To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native validators are exposed for
+internal schemas.
 
 #### Validation Functions
 
@@ -124,7 +130,8 @@ console.log(formatSchemaErrors(result));
 
 ## Error Handling
 
-The library provides a hierarchical error system for granular error handling. All errors extend `BaseError` and include `code`, `type`, and `message` properties.
+The library provides a hierarchical error system for granular error handling. All errors extend `BaseError` and include
+`code`, `type`, and `message` properties.
 
 ### Data Loading Errors
 
@@ -395,7 +402,8 @@ Each error class has a unique error code:
 
 ### `SURAS`
 
-**Description:** A pre-built Map containing all 114 Surahs of the Quran with metadata including names, verse counts, and page ranges.
+**Description:** A pre-built Map containing all 114 Surahs of the Quran with metadata including names, verse counts, and
+page ranges.
 
 **Returns:** `Map<number, Sura>`
 
@@ -456,7 +464,8 @@ const plain = removeTashkeel('بِسْمِ ٱللَّهِ'); // Returns: 'بسم
 
 ### `normalizeArabic(text: string)`
 
-**Description:** Prepares raw user input or raw data strings for searching. This unified function strips tashkeel and harmonizes alef variants.
+**Description:** Prepares raw user input or raw data strings for searching. This unified function strips tashkeel and
+harmonizes alef variants.
 
 **Returns:** `string`
 
@@ -468,7 +477,8 @@ const normalized = normalizeArabic('بِسْمِ ٱللَّهِ'); // Returns: '
 
 ### `isArabic(text: string)`
 
-**Description:** Detects whether a string contains Arabic script. Useful for conditional UI rendering or routing between Arabic and non-Arabic search pipelines.
+**Description:** Detects whether a string contains Arabic script. Useful for conditional UI rendering or routing between
+Arabic and non-Arabic search pipelines.
 
 **Returns:** `boolean`
 
@@ -483,7 +493,8 @@ isArabic('123'); // false
 
 ### `LRUCache<K, V>`
 
-**Description:** Generic Least Recently Used cache with configurable capacity. Used to cache search results and avoid redundant computation. Pass as the `cache` parameter to `search()`.
+**Description:** Generic Least Recently Used cache with configurable capacity. Used to cache search results and avoid
+redundant computation. Pass as the `cache` parameter to `search()`.
 
 **Constructor:** `new LRUCache(capacity: number)`
 
@@ -513,7 +524,9 @@ const result = search(
 
 ### `createArabicFuseSearch(collection, keys, options?)`
 
-**Description:** Creates a pre-configured Fuse.js search instance optimized for Arabic text. This is useful when you need to reuse the same Fuse index across multiple searches without rebuilding it each time. Pass as the `fuseIndex` parameter to `search()`.
+**Description:** Creates a pre-configured Fuse.js search instance optimized for Arabic text. This is useful when you
+need to reuse the same Fuse index across multiple searches without rebuilding it each time. Pass as the `fuseIndex`
+parameter to `search()`.
 
 **Parameters:**
 
@@ -556,12 +569,14 @@ const fuseResults = fuseIndex.search('الرحمن');
 
 ### `search(query, context, options?, pagination?, fuseIndex?, cache?)`
 
-**Description:** The main entry point for querying the engine. Combines Exact, Lemma, Root, and Fuzzy matching dynamically based on the provided tokens.
+**Description:** The main entry point for querying the engine. Combines Exact, Lemma, Root, and Fuzzy matching
+dynamically based on the provided tokens.
 
 **Parameters:**
 
 - `query` (string): The search query (can be multi-word).
-- `context` (`SearchContext`): Object containing `quranData`, `morphologyMap`, `wordMap`, and optionally `invertedIndex`, `semanticMap`, `phoneticMap`.
+- `context` (`SearchContext`): Object containing `quranData`, `morphologyMap`, `wordMap`, and optionally
+  `invertedIndex`, `semanticMap`, `phoneticMap`.
 - `options` (`SearchOptions`, optional): Toggles enabling linguistic matching features.
 - `pagination` (`PaginationOptions`, optional): Search result paging bounds.
 - `fuseIndex` (`Fuse<TVerse>`, optional): Pre-built Fuse index for performance.
@@ -579,6 +594,7 @@ const response = search(
   { page: 1, limit: 10 },
 );
 ```
+
 ### `exportResults(response, format?)`
 
 **Description:** Exports search results in JSON, CSV, or TSV format.
@@ -613,7 +629,9 @@ const tsv = exportResults(response, 'tsv');
 
 #### `validateRegex(pattern)`
 
-**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to cause catastrophic backtracking (ReDoS). Useful for UI-side validation before calling `search()` with `{ isRegex: true }`, similar to how `isArabic()` and `removeTashkeel()` are used for input validation.
+**Description:** Validates a user-supplied regex string for syntactic correctness and safety. Rejects patterns known to
+cause catastrophic backtracking (ReDoS). Useful for UI-side validation before calling `search()` with
+`{ isRegex: true }`, similar to how `isArabic()` and `removeTashkeel()` are used for input validation.
 
 **Parameters:**
 
@@ -640,7 +658,8 @@ validateRegex('(a+)+'); // Throws InvalidRegexError (nested quantifiers)
 
 #### Using regex via `search()`
 
-The main way to run regex search is through the `search()` function with `{ isRegex: true }`. This handles validation, filtering, and pagination automatically:
+The main way to run regex search is through the `search()` function with `{ isRegex: true }`. This handles validation,
+filtering, and pagination automatically:
 
 ```typescript
 import { search } from 'quran-search-engine';
@@ -659,7 +678,8 @@ const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
 
 #### `getHighlightRanges(text, matchedTokens, tokenTypes?)`
 
-**Description:** Computes an array of non-overlapping highlight ranges over the original uthmani text. Pure function that avoids HTML rendering, placing control in the UI's hands.
+**Description:** Computes an array of non-overlapping highlight ranges over the original uthmani text. Pure function
+that avoids HTML rendering, placing control in the UI's hands.
 
 **Returns:** `HighlightRange[]`
 

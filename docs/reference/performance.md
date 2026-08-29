@@ -2,9 +2,12 @@
 
 > 📍 This guide is located at `docs/performance.md`.
 
-This guide explains how to **measure** and **optimize** the performance of `quran-search-engine`. It covers benchmarking, caching, inverted indices, and worker offloading.
+This guide explains how to **measure** and **optimize** the performance of `quran-search-engine`. It covers
+benchmarking, caching, inverted indices, and worker offloading.
 
-> **See also:** [README](../README.md) · [Performance Optimization in README](../README.md#performance-optimization-advanced) · [Documentation Index](./index.md)
+> **See also:** [README](../README.md) ·
+> [Performance Optimization in README](../README.md#performance-optimization-advanced) ·
+> [Documentation Index](./index.md)
 
 ## Table of Contents {#table-of-contents}
 
@@ -43,7 +46,8 @@ console.log(`Data loading: ${loadTime.toFixed(2)}ms`);
 console.log(`  Verses: ${quranData.length}`);
 ```
 
-> **Node.js:** Use `performance.now()` (available globally in Node 16+). For older Node, use `import { performance } from 'node:perf_hooks';`.
+> **Node.js:** Use `performance.now()` (available globally in Node 16+). For older Node, use
+> `import { performance } from 'node:perf_hooks';`.
 
 ### Index Build Time
 
@@ -189,7 +193,8 @@ npx tsx scripts/benchmark.ts
 
 ## LRU Cache Usage
 
-The library is **stateless**. Every `search()` call runs the full pipeline unless you pass a cache. Use the built-in `LRUCache` and pass it as the **6th parameter** to `search()`.
+The library is **stateless**. Every `search()` call runs the full pipeline unless you pass a cache. Use the built-in
+`LRUCache` and pass it as the **6th parameter** to `search()`.
 
 ### Why Cache?
 
@@ -199,7 +204,8 @@ The library is **stateless**. Every `search()` call runs the full pipeline unles
 ### How to Use
 
 > [!WARNING]
-> Use `new LRUCache(500)` — capacity is a number, not `{ max: 500 }`. Copying older examples that use `{ max: 500 }` will cause a runtime error.
+> Use `new LRUCache(500)` — capacity is a number, not `{ max: 500 }`. Copying older examples that use `{ max: 500 }`
+> will cause a runtime error.
 
 ```typescript
 import { search, LRUCache } from 'quran-search-engine';
@@ -217,13 +223,15 @@ const result = search(
 );
 ```
 
-The cache key is generated internally as `JSON.stringify({ query, options, pagination })`, so different pages or options get separate entries.
+The cache key is generated internally as `JSON.stringify({ query, options, pagination })`, so different pages or options
+get separate entries.
 
 ---
 
 ## Inverted Index Optimization
 
-Without an inverted index, the engine does linear scans over all 6,236 verses per token. Passing an `InvertedIndex` enables **O(1)** lemma/root/word lookups.
+Without an inverted index, the engine does linear scans over all 6,236 verses per token. Passing an `InvertedIndex`
+enables **O(1)** lemma/root/word lookups.
 
 ```mermaid
 flowchart LR
@@ -270,7 +278,8 @@ const result = search(
 
 ## Pre-built Fuse Index
 
-When `fuzzy` is enabled (default), the engine builds a Fuse.js index per call. Pass a **pre-built** index as the **5th parameter** to reuse it.
+When `fuzzy` is enabled (default), the engine builds a Fuse.js index per call. Pass a **pre-built** index as the **5th
+parameter** to reuse it.
 
 ```typescript
 import { createArabicFuseSearch, search } from 'quran-search-engine';
@@ -441,4 +450,5 @@ flowchart TB
 
 ### Memory and Edge Runtimes
 
-Loading all datasets increases memory. For Cloudflare Workers, Vercel Edge, or AWS Lambda, ensure initialization fits within memory and execution limits.
+Loading all datasets increases memory. For Cloudflare Workers, Vercel Edge, or AWS Lambda, ensure initialization fits
+within memory and execution limits.

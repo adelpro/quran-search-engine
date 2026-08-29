@@ -1,6 +1,7 @@
 # 🏷️ GitHub Labels Guide
 
-This document defines the label conventions used in the `quran-search-engine` repository. Please use these labels to categorize issues and pull requests.
+This document defines the label conventions used in the `quran-search-engine` repository. Please use these labels to
+categorize issues and pull requests.
 
 ---
 

@@ -1,6 +1,7 @@
 # Example Applications
 
-For practical insight into real-world stateless implementation, `quran-search-engine` ships with a suite of complete apps demonstrating various runtimes and frameworks under the root `examples/` directory of the repository.
+For practical insight into real-world stateless implementation, `quran-search-engine` ships with a suite of complete
+apps demonstrating various runtimes and frameworks under the root `examples/` directory of the repository.
 
 ## Quick Start
 
@@ -19,7 +20,8 @@ yarn playground:node      # Node.js CLI
 
 ## Important Note for Local Development
 
-Because the project utilizes `yarn workspace` linking (`workspace:*`), you must first build the core library out of `/src` before any example application will detect your latest changes properly.
+Because the project utilizes `yarn workspace` linking (`workspace:*`), you must first build the core library out of
+`/src` before any example application will detect your latest changes properly.
 
 ```bash
 # Build the core library once
