@@ -26,6 +26,7 @@ A Node.js example demonstrating the Quran Search Engine library for server-side 
    ```
 
 3. For custom searches, provide a search term as an argument:
+
    ```bash
    yarn workspace nodejs-example start "الله"
    ```
@@ -41,7 +42,7 @@ The script will:
 
 ## Output Example
 
-```
+```text
 🚀 Loading Quran Search Engine data...
 
 ✅ Loaded 6236 verses

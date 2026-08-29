@@ -78,6 +78,10 @@
     "*.{js,jsx,ts,tsx}": [
       "npx eslint --fix --cache",
       "prettier --write"
+    ],
+    "{,!(.agent)/**/}*.md": [
+      "npx markdownlint-cli2 --fix",
+      "prettier --write"
     ]
   },
   "devDependencies": {

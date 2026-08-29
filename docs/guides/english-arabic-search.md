@@ -2,7 +2,8 @@
 
 ## Overview
 
-This feature adds the ability to search the Quran using English words (and their synonyms), which are translated to Arabic roots for searching. The implementation leverages the library's existing root search capability.
+This feature adds the ability to search the Quran using English words (and their synonyms), which are translated to
+Arabic roots for searching. The implementation leverages the library's existing root search capability.
 
 ## Data Structure
 
@@ -25,14 +26,16 @@ interface EnglishArabicConcept {
 ### Why This Structure Works
 
 1. **Reduced Data Complexity** - Group all English synonyms in one field instead of duplicating entries
-2. **Leverage Existing Features** - Store only roots in `arabic` field; the library's built-in root search automatically finds all derived words
-3. **Consistent with Phonetic Flow** - English translation lookup runs at the same point as phonetic, creating a unified non-Arabic query pipeline
+2. **Leverage Existing Features** - Store only roots in `arabic` field; the library's built-in root search automatically
+   finds all derived words
+3. **Consistent with Phonetic Flow** - English translation lookup runs at the same point as phonetic, creating a unified
+   non-Arabic query pipeline
 
 ## How It Works
 
 ### Query Processing Flow
 
-```
+```text
 User Query: "truth verity"
     ↓
 Split into tokens: ["truth", "verity"]
@@ -66,7 +69,8 @@ Library automatically finds:
 
 ### Integration Point
 
-The English→Arabic translation is integrated at [search.ts#L158](file:///src/core/search.ts#L158), right before the existing phonetic lookup:
+The English→Arabic translation is integrated at [search.ts#L158](file:///src/core/search.ts#L158), right before the
+existing phonetic lookup:
 
 ```typescript
 if (!isArabic(token)) {

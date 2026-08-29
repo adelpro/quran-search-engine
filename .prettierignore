@@ -3,3 +3,7 @@ dist/
 .agent/
 .yarn/
 .pnp.*
+
+# Prettier collapses the hand-aligned trailing comments in this file's
+# code samples, which are deliberate. See #105.
+docs/migration-guide.md
