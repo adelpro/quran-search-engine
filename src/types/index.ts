@@ -88,6 +88,15 @@ export type AdvancedSearchOptions = {
 
 export type SearchOptions = AdvancedSearchOptions;
 
+/**
+ * Per-layer match counts for a search response.
+ *
+ * Each field counts verses whose `matchType` equals the corresponding layer
+ * (`simple` counts `'exact'`). `fuzzy` counts only genuine fuzzy matches:
+ * verses that reached the result set without any layer claiming them
+ * (`matchType: 'none'`) appear in `total` only, so the per-type fields do not
+ * necessarily sum to `total`.
+ */
 export type SearchCounts = {
   simple: number;
   lemma: number;

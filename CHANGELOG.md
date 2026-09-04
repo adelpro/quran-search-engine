@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Search counts**: `counts.fuzzy` no longer includes unscored matches (`matchType: 'none'`) —
+  it counts genuine fuzzy matches only, in both `search()` and multi-term search. Unscored
+  matches are still reported in `counts.total`. The per-type breakdown in the CLI footer
+  inherits the corrected grouping.
+
 ### Added
 
 - **CLI**: New `quran-search-engine` command for searching the Quran from a terminal, runnable via
