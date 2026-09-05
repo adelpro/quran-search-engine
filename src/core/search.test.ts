@@ -169,4 +169,16 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results.length).toBeLessThanOrEqual(limit);
     expect(result.pagination.limit).toBe(limit);
   });
+
+  it('should keep counts.fuzzy consistent with the actual fuzzy results (refs #102)', () => {
+    const result = search('الله', {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+    });
+    const fuzzyResults = result.results.filter((v) => v.matchType === 'fuzzy');
+    const exactResults = result.results.filter((v) => v.matchType === 'exact');
+    expect(result.counts.fuzzy).toBe(fuzzyResults.length);
+    expect(result.counts.simple).toBe(exactResults.length);
+  });
 });

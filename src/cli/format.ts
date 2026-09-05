@@ -71,8 +71,9 @@ and continues: pattern matching runs on its own and ignores them.
  * Summarises which layers produced the matches, skipping the ones that produced none.
  *
  * `counts.simple` is reported as "exact" to match the `matchType` a reader sees, and
- * `counts.fuzzy` covers both fuzzy and unscored matches, which is the library's own
- * grouping. A range or regex query populates only its own field, so the zeros would be
+ * `counts.fuzzy` reports genuine fuzzy matches only — unscored matches, if any,
+ * are counted in the totals but not attributed to any layer (see `SearchCounts`).
+ * A range or regex query populates only its own field, so the zeros would be
  * noise rather than information.
  *
  * @param counts - The counts block from the search response.
