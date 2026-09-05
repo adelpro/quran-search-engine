@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-term search**: `search()` now also accepts an array of terms (`search(['محمد', 'يونس'], ...)`),
   searching each independently and merging results by `gid` with score/coverage/frequency ranking.
   The existing string-query (AND-logic) behavior is unchanged.
+- **CLI multi-term search**: a single argument wrapped in `[ ... ]` (e.g.
+  `quran-search-engine "[محمد, يونس]"`, ASCII or Arabic comma) now runs the array overload above,
+  with a `--rank-by score|coverage|frequency` option and merged-result details (matched-term and
+  hit counts) in the table and `json` output. Bare positional arguments (`quran-search-engine محمد
+  رسول`) instead combine into a single query, identical to quoting them together.
 
 ## [0.3.2]
 
