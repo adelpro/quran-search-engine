@@ -1,44 +1,56 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from './loader';
 import type { QuranText, MorphologyAya } from '../types';
 import fs from 'fs';
 
 describe('Loader Functions', () => {
-  // Add test case for corrupted/invalid JSON data
+  // Regression test for #98: the old version copied ~8.6 MB of real data, passed paths
+  // the loaders ignore, asserted success, and timed out. The loaders intentionally use
+  // static bundler-analyzable JSON imports (see loader.ts), so corrupted files are
+  // simulated by mocking the data modules instead — fast and hermetic.
   it('should throw an error if JSON files are corrupted', async () => {
-    // Temporarily rename the morphology.json file to simulate corrupted file
-    const morphologyOriginalPath = __dirname + '/../data/morphology.json';
-    const quranDataOriginalPath = __dirname + '/../data/quran.json';
-    const wordMapOriginalPath = __dirname + '/../data/word-map.json';
-    const morphologyBackupPath = morphologyOriginalPath + '.backup';
-    const quranDataBackupPath = quranDataOriginalPath + '.backup';
-    const wordMapBackupPath = wordMapOriginalPath + '.backup';
+    vi.resetModules();
+    vi.doMock('../data/morphology.json', () => {
+      throw new SyntaxError(`"This is not valid JSON" is not valid JSON`);
+    });
+    vi.doMock('../data/quran.json', () => {
+      throw new SyntaxError(`"This is not valid JSON" is not valid JSON`);
+    });
+    vi.doMock('../data/word-map.json', () => {
+      throw new SyntaxError(`"This is not valid JSON" is not valid JSON`);
+    });
 
     try {
-      // Backup the original file
-      await fs.promises.copyFile(morphologyOriginalPath, morphologyBackupPath);
-      await fs.promises.copyFile(quranDataOriginalPath, quranDataBackupPath);
-      await fs.promises.copyFile(wordMapOriginalPath, wordMapBackupPath);
+      // NOTE: both modules are imported dynamically *after* resetModules so the
+      // error classes share a module realm with the loader under test —
+      // otherwise `instanceof` fails across the two module instances.
+      const freshLoader = await import('./loader');
+      const freshErrors = await import('../errors');
 
-      // Write invalid JSON to the backup file
-      await fs.promises.writeFile(morphologyBackupPath, 'This is not valid JSON');
-      await fs.promises.writeFile(quranDataBackupPath, 'This is not valid JSON');
-      await fs.promises.writeFile(wordMapBackupPath, 'This is not valid JSON');
-
-      const morphology = await loadMorphology(morphologyBackupPath);
-      const quranData = await loadQuranData(quranDataBackupPath);
-      const wordMap = await loadWordMap(wordMapBackupPath);
-
-      expect(morphology).toBeInstanceOf(Map);
-      expect(quranData).toBeInstanceOf(Array);
-      expect(wordMap).toBeInstanceOf(Object);
-    } catch (error: unknown) {
-      expect(error).toBeInstanceOf(Error);
+      await expect(freshLoader.loadMorphology()).rejects.toThrow(freshErrors.DataParseError);
+      await expect(freshLoader.loadQuranData()).rejects.toThrow(freshErrors.DataParseError);
+      await expect(freshLoader.loadWordMap()).rejects.toThrow(freshErrors.DataParseError);
     } finally {
-      // Delete the corrupted file
-      await fs.promises.unlink(morphologyBackupPath);
-      await fs.promises.unlink(quranDataBackupPath);
-      await fs.promises.unlink(wordMapBackupPath);
+      vi.doUnmock('../data/morphology.json');
+      vi.doUnmock('../data/quran.json');
+      vi.doUnmock('../data/word-map.json');
+      vi.resetModules();
+    }
+  });
+
+  it('should throw a schema error if JSON files have an unexpected shape', async () => {
+    vi.resetModules();
+    vi.doMock('../data/quran.json', () => ({ default: { not: 'an array' } }));
+
+    try {
+      // Same module-realm note as above: import both dynamically after resetModules.
+      const freshLoader = await import('./loader');
+      const freshErrors = await import('../errors');
+
+      await expect(freshLoader.loadQuranData()).rejects.toThrow(freshErrors.DataSchemaInvalidError);
+    } finally {
+      vi.doUnmock('../data/quran.json');
+      vi.resetModules();
     }
   });
 

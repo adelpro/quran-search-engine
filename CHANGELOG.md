@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Loader corrupted-JSON test**: rewrote the test to simulate corrupted data files by mocking
+  the data modules instead of copying ~8.6 MB of real data (the loaders ignore file-path
+  arguments by design — they use static bundler-analyzable JSON imports). The test now asserts
+  `DataParseError`/`DataSchemaInvalidError` precisely and runs in milliseconds instead of
+  timing out.
 - **Search counts**: `counts.fuzzy` no longer includes unscored matches (`matchType: 'none'`) —
   it counts genuine fuzzy matches only, in both `search()` and multi-term search. Unscored
   matches are still reported in `counts.total`. The per-type breakdown in the CLI footer
