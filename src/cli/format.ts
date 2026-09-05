@@ -1,4 +1,4 @@
-import type { QuranText, SearchCounts, SearchResponse } from '../types';
+import type { MultiTermResponse, QuranText, SearchCounts, SearchResponse } from '../types';
 import { exportResults } from '../utils/export';
 import type { OutputFormat } from './args';
 
@@ -28,6 +28,7 @@ Scope:
 Results:
   --page <n>               Which page of results                   (default: 1)
   --limit <n>              Results per page                        (default: 20)
+  --rank-by <mode>         Multi-term ranking: score|coverage|frequency (default: score)
 
 Output:
   --format <json|csv|tsv>  Machine-readable output       (default: readable table)
@@ -42,12 +43,20 @@ No flag is needed for these — they are recognised from the query itself:
   Logical operators        "الله AND (الرحمن OR الرحيم)", "الله NOT الرحمن"
   Transliteration          "rahman" (single words; "bismi allah", not "bismillah")
 
+Two or more bare arguments rejoin into one multi-word query, same as quoting them together:
+  quran-search-engine محمد رسول             same as quran-search-engine "محمد رسول"
+
+A single argument wrapped in [ ... ] searches each term independently and merges by verse,
+instead of one combined query — the array form of search():
+  quran-search-engine "[محمد, يونس, ابراهيم]"
+
 Examples:
   quran-search-engine "رحم"
   quran-search-engine "رحمة" --format json | jq .
   quran-search-engine "الله" --page 3 --limit 50
   quran-search-engine "رحم" --sura 2 --no-fuzzy
   quran-search-engine "^.*ون$" --regex
+  quran-search-engine "[الرحمن, الرحيم]" --rank-by coverage
 
 Exit codes:
   0  completed (including when nothing matched)
@@ -62,8 +71,9 @@ and continues: pattern matching runs on its own and ignores them.
  * Summarises which layers produced the matches, skipping the ones that produced none.
  *
  * `counts.simple` is reported as "exact" to match the `matchType` a reader sees, and
- * `counts.fuzzy` covers both fuzzy and unscored matches, which is the library's own
- * grouping. A range or regex query populates only its own field, so the zeros would be
+ * `counts.fuzzy` reports genuine fuzzy matches only — unscored matches, if any,
+ * are counted in the totals but not attributed to any layer (see `SearchCounts`).
+ * A range or regex query populates only its own field, so the zeros would be
  * noise rather than information.
  *
  * @param counts - The counts block from the search response.
@@ -90,18 +100,34 @@ const formatCounts = (counts: SearchCounts): string => {
  * Renders results for a terminal reader: one line per verse, then the totals so the
  * reader knows what they have not yet seen.
  *
+ * Multi-term results (`MultiTermResponse`) carry `matchedTerms`/`distinctTermCount`/
+ * `totalFrequency` alongside the same fields a single-term `ScoredVerse` has, so each row
+ * checks for them and appends a coverage summary when present — mirroring the badge the
+ * React example shows for the same data (see `examples/vite-react/src/components/VerseItem.tsx`).
+ *
  * @param response - The search response to render.
- * @param query - The original query, quoted back in the no-results message.
+ * @param query - The original query (terms joined with a space, for multi-term), quoted back
+ * in the no-results message.
  * @returns A printable string, always newline-terminated.
  */
-export const formatTable = (response: SearchResponse<QuranText>, query: string): string => {
+export const formatTable = (
+  response: SearchResponse<QuranText> | MultiTermResponse<QuranText>,
+  query: string,
+): string => {
   const { results, pagination } = response;
 
   if (results.length === 0) {
     return `No results for "${query}".\n`;
   }
 
-  const rows = results.map((verse) => `${verse.sura_id}:${verse.aya_id}  ${verse.standard}`);
+  const rows = results.map((verse) => {
+    const base = `${verse.sura_id}:${verse.aya_id}  ${verse.standard}`;
+    if (!('matchedTerms' in verse)) return base;
+
+    const termWord = verse.distinctTermCount === 1 ? 'term' : 'terms';
+    const hitWord = verse.totalFrequency === 1 ? 'hit' : 'hits';
+    return `${base}  (${verse.distinctTermCount} ${termWord} · ${verse.totalFrequency} ${hitWord})`;
+  });
 
   const summary =
     `\nShowing ${results.length} of ${pagination.totalResults} ` +
@@ -125,7 +151,7 @@ export const formatTable = (response: SearchResponse<QuranText>, query: string):
  * @returns A printable string.
  */
 export const formatResults = (
-  response: SearchResponse<QuranText>,
+  response: SearchResponse<QuranText> | MultiTermResponse<QuranText>,
   format: OutputFormat,
   query: string,
 ): string => {

@@ -333,6 +333,108 @@ describe('run', () => {
     });
   });
 
+  describe('bare multiple positionals (combined query)', () => {
+    it('requires every term to be present, like a quoted multi-word phrase', async () => {
+      // gid 1 and 3 contain both 'الرحمن' and 'الرحيم'; gid 4 and 5 contain only 'الرحمن'.
+      // A combined query should keep only the verses matching every term.
+      const { code, out } = await invoke(['الرحمن', 'الرحيم', '--no-fuzzy', '--limit', '10']);
+
+      expect(code).toBe(0);
+      expect(out).toContain('1:1');
+      expect(out).toContain('1:3');
+      expect(out).not.toContain('2:1');
+      expect(out).not.toContain('2:2');
+    });
+
+    it('behaves exactly like quoting the same words together', async () => {
+      const bare = await invoke(['الرحمن', 'الرحيم', '--no-fuzzy']);
+      const quoted = await invoke(['الرحمن الرحيم', '--no-fuzzy']);
+
+      expect(bare.out).toBe(quoted.out);
+    });
+
+    it('rejects a blank argument among several, as a usage error', async () => {
+      const { code, err } = await invoke(['الرحمن', '   ']);
+
+      expect(code).toBe(2);
+      expect(err).toMatch(/argument 2/i);
+    });
+
+    it('does not show multi-term details, since results are plain ScoredVerse', async () => {
+      const { out } = await invoke(['الرحمن', 'الرحيم', '--no-fuzzy']);
+
+      expect(out).not.toMatch(/\(\d+ terms? · \d+ hits?\)/);
+    });
+  });
+
+  describe('array-form queries ([term, term])', () => {
+    it('searches each term independently and merges by verse', async () => {
+      // '[الرحمن, الرحيم]' matches gids 1, 3, 4, 5 — unlike the bare (AND) form above, gid 4
+      // and 5 (only 'الرحمن') are included too, proving the terms ran independently.
+      const { code, out } = await invoke(['[الرحمن, الرحيم]', '--no-fuzzy', '--limit', '10']);
+
+      expect(code).toBe(0);
+      expect(out).toContain('1:1');
+      expect(out).toContain('1:3');
+      expect(out).toContain('2:1');
+      expect(out).toContain('2:2');
+    });
+
+    it('shows the matched-term count and hit count per result', async () => {
+      const { out } = await invoke(['[الرحمن, الرحيم]', '--no-fuzzy', '--limit', '10']);
+
+      expect(out).toMatch(/\(\d+ terms? · \d+ hits?\)/);
+    });
+
+    it.each(['score', 'coverage', 'frequency'] as const)(
+      // Ranking-mode correctness (tiebreaks etc.) is the core layer's job and is already
+      // covered in src/core/layers/search-many.test.ts. This just proves --rank-by %s
+      // reaches search() without erroring and still renders the merged output.
+      'accepts --rank-by %s and still renders merged results',
+      async (mode) => {
+        const { code, out } = await invoke([
+          '[الرحمن, الرحيم]',
+          '--rank-by',
+          mode,
+          '--no-fuzzy',
+          '--limit',
+          '10',
+        ]);
+
+        expect(code).toBe(0);
+        expect(out).toMatch(/\(\d+ terms? · \d+ hits?\)/);
+      },
+    );
+
+    it('rejects a blank term inside the brackets, as a usage error', async () => {
+      const { code, err } = await invoke(['[الرحمن,   ]']);
+
+      expect(code).toBe(2);
+      expect(err).toMatch(/term 2/i);
+    });
+
+    it('includes matchedTerms in json output', async () => {
+      const { out } = await invoke(['[الرحمن, الرحيم]', '--no-fuzzy', '--format', 'json']);
+      const parsed = JSON.parse(out) as { matchedTerms: string[] }[];
+
+      expect(parsed[0]?.matchedTerms).toBeDefined();
+    });
+
+    it('reports no results for an empty array, same as no match', async () => {
+      const { code, out } = await invoke(['[]']);
+
+      expect(code).toBe(0);
+      expect(out).toMatch(/no results/i);
+    });
+
+    it('does not affect --rank-by unless used', async () => {
+      const { code, err } = await invoke(['الرحمن', '--rank-by', 'coverage']);
+
+      expect(code).toBe(0);
+      expect(err).toMatch(/array form/i);
+    });
+  });
+
   describe('stream discipline', () => {
     it('keeps results on stdout and diagnostics on stderr', async () => {
       const ok = await invoke(['الرحمن', '--format', 'json']);

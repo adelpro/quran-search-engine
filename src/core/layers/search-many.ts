@@ -1,6 +1,7 @@
 import type Fuse from 'fuse.js';
 import type { LRUCache } from '../../utils/lru-cache';
 import { InvalidPaginationError } from '../../errors';
+import { buildSearchCounts } from '../../utils/search-counts';
 import type {
   AdvancedSearchOptions,
   MergedSearchResult,
@@ -142,20 +143,11 @@ export const searchManyImpl = <TVerse extends VerseInput>(
   const totalResults = mergedResults.length;
   const totalPages = Math.ceil(totalResults / limit);
 
-  const counts: SearchCounts = {
-    simple: mergedResults.filter((v) => v.matchType === 'exact').length,
-    lemma: mergedResults.filter((v) => v.matchType === 'lemma').length,
-    root: mergedResults.filter((v) => v.matchType === 'root').length,
-    fuzzy: mergedResults.filter((v) => v.matchType === 'none' || v.matchType === 'fuzzy').length,
-    semantic: mergedResults.filter((v) => v.matchType === 'semantic').length,
-    // Unlike search()'s own counts (reached only after range/regex short-circuit,
-    // so those matchTypes can never appear there), mergedResults comes from N
-    // independent per-term search() calls — any one of them could have taken the
-    // range/regex early-return path, so those matchTypes genuinely can show up here.
-    regex: mergedResults.filter((v) => v.matchType === 'regex').length,
-    range: mergedResults.filter((v) => v.matchType === 'range').length,
-    total: mergedResults.length,
-  };
+  // Unlike search()'s own counts (reached only after range/regex short-circuit,
+  // so those matchTypes can never appear there), mergedResults comes from N
+  // independent per-term search() calls — any one of them could have taken the
+  // range/regex early-return path, so those matchTypes genuinely can show up here.
+  const counts: SearchCounts = buildSearchCounts(mergedResults);
 
   return {
     results,
