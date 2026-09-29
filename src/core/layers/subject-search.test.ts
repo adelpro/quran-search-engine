@@ -182,6 +182,85 @@ describe('Subject Search', () => {
   });
 });
 
+describe('Subject Search — fuzzy English fallback (#119)', () => {
+  const searchSubject = (query: string) =>
+    search(
+      query,
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMap,
+        subjectMap: mockSubjectMap,
+      },
+      { lemma: false, root: false, subject: true },
+    ).results.filter((r: ScoredVerse) => r.matchType === 'subject');
+
+  it('resolves a misspelled English key to the same theme as the correct spelling', () => {
+    const correct = searchSubject('rain')
+      .map((r) => r.gid)
+      .sort();
+    const typo = searchSubject('rrain')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(typo).toEqual(correct);
+    expect(typo.length).toBeGreaterThan(0);
+  });
+
+  it('resolves a second misspelling to its own theme (climte → climate)', () => {
+    const correct = searchSubject('climate')
+      .map((r) => r.gid)
+      .sort();
+    const typo = searchSubject('climte')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(typo).toEqual(correct);
+    expect(typo.length).toBeGreaterThan(0);
+  });
+
+  it('leaves exact matches untouched', () => {
+    // Same assertions the original exact-match test made — fuzzy is a fallback, not a
+    // replacement, so an exact key must still resolve without going anywhere near Fuse.
+    expect(searchSubject('rain').length).toBeGreaterThan(0);
+  });
+
+  it('does not fuzzy-match a word unrelated to any theme', () => {
+    expect(searchSubject('xyzabc')).toHaveLength(0);
+  });
+
+  it('keeps indexed and scan paths identical for a misspelled query', () => {
+    const invertedIndex = buildInvertedIndex(
+      mockMorphologyMap,
+      mockQuranDataMap,
+      undefined,
+      mockSubjectMap,
+      mockWordMap,
+    );
+
+    const withIndex = search(
+      'rrain',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMap,
+        subjectMap: mockSubjectMap,
+        invertedIndex,
+      },
+      { lemma: false, root: false, subject: true },
+    )
+      .results.filter((r: ScoredVerse) => r.matchType === 'subject')
+      .map((r) => r.gid)
+      .sort();
+
+    const withoutIndex = searchSubject('rrain')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(withIndex).toEqual(withoutIndex);
+  });
+});
+
 // gid 4 carries the prefixed form وامطرنا — a different whitespace-delimited token than the
 // bare subject word مطر, and reachable only through the root they share. It is the case
 // where an exact wordIndex lookup and a substring scan used to disagree.
