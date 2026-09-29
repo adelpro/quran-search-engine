@@ -19,6 +19,7 @@ Matching (defaults match the library's own defaults):
   --root, --no-root        Word-root matching                      (default: on)
   --fuzzy, --no-fuzzy      Approximate matching                    (default: on)
   --semantic               Related-concept matching                (default: off)
+  --subject                Thematic matching (concept → Arabic theme) (default: off)
   --regex                  Treat the query as a pattern            (default: off)
 
 Scope:
@@ -63,7 +64,7 @@ Exit codes:
   1  runtime error (data could not be loaded, file could not be written)
   2  invalid usage (unknown option, missing or blank query, bad value, unsafe pattern)
 
-Combining --regex with --lemma, --root, --fuzzy or --semantic prints a warning on stderr
+Combining --regex with --lemma, --root, --fuzzy, --semantic or --subject prints a warning on stderr
 and continues: pattern matching runs on its own and ignores them.
 `;
 
@@ -86,6 +87,7 @@ const formatCounts = (counts: SearchCounts): string => {
     ['root', counts.root],
     ['fuzzy', counts.fuzzy],
     ['semantic', counts.semantic],
+    ['subject', counts.subject],
     ['regex', counts.regex],
     ['range', counts.range],
   ];
