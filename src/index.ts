@@ -22,6 +22,8 @@ export {
   validateMorphologyData,
   validateWordMapData,
   validateSemanticData,
+  validateSubjectData,
+  validatePhoneticData,
   formatSchemaErrors,
   type SchemaError,
   type ValidationResult,
