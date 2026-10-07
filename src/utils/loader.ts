@@ -489,6 +489,13 @@ const buildSubjectMap = (subjectData: SubjectConcept[]): Map<string, string[]> =
         addWords(cleanWord, normalizedArabic);
       }
     }
+    // Register each Arabic word as a key too, so looking it up directly opens its whole
+    // theme instead of falling through to a plain root/lemma match. A word shared by
+    // multiple themes (e.g. ماء in both creation and food) unions both word lists for free,
+    // since addWords merges into any existing entry for that key.
+    for (const arWord of normalizedArabic) {
+      addWords(arWord, normalizedArabic);
+    }
   }
   return map;
 };

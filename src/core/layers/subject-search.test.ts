@@ -271,6 +271,74 @@ describe('Subject Search — indexed/scan parity (layer)', () => {
   );
 });
 
+// Issue #117: buildSubjectMap now registers each Arabic word as a key resolving to its own
+// theme's word list (see src/utils/loader.ts), not just English aliases. This mirrors that
+// shape by pointing مطر/غيث at the same group as their English alias 'rain', and ريح at the
+// same group as 'wind' — exactly what addWords(arWord, normalizedArabic) produces in loader.ts.
+const mockSubjectMapV2 = new Map(mockSubjectMap);
+mockSubjectMapV2.set('مطر', mockSubjectMap.get('rain')!);
+mockSubjectMapV2.set('غيث', mockSubjectMap.get('rain')!);
+mockSubjectMapV2.set('ريح', mockSubjectMap.get('wind')!);
+
+const v2InvertedIndex = buildInvertedIndex(
+  mockMorphologyMap,
+  parityData,
+  undefined,
+  mockSubjectMapV2,
+  mockWordMap,
+);
+
+describe('Subject Search v2 — Arabic word opens its theme', () => {
+  it('resolves an Arabic theme word the same as its English alias', () => {
+    const arabicHits = performSubjectSearch(
+      'مطر',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'مطر',
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    const englishHits = performSubjectSearch(
+      'rain',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'rain',
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    expect(arabicHits).toEqual(englishHits);
+    expect(arabicHits.length).toBeGreaterThan(0);
+  });
+
+  // subjectIndex is a projection of subjectMap — it should reflect the new Arabic keys with
+  // no extra build step, so a direct lookup agrees with running the layer's own resolution.
+  it('keeps subjectIndex in sync with the layer for a newly-registered Arabic key', () => {
+    const layerHits = performSubjectSearch(
+      'مطر',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'مطر',
+      v2InvertedIndex,
+      mockWordMap,
+      mockMorphologyMap,
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    const indexedGids = Array.from(v2InvertedIndex.subjectIndex?.get('مطر') ?? []).sort(
+      (a, b) => a - b,
+    );
+
+    expect(indexedGids).toEqual(layerHits);
+    expect(indexedGids.length).toBeGreaterThan(0);
+  });
+});
+
 describe('Subject Search — stem precision', () => {
   // Substring containment used to be the matching rule, which meant a subject word matched
   // anywhere inside a longer, unrelated stem. These are the cases that regressed worst.
