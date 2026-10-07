@@ -121,6 +121,7 @@ describe('helpText', () => {
       '--fuzzy',
       '--no-fuzzy',
       '--semantic',
+      '--subject',
       '--regex',
       '--sura',
       '--juz',

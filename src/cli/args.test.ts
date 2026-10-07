@@ -31,6 +31,7 @@ describe('parseArgs', () => {
         root: true,
         fuzzy: true,
         semantic: false,
+        subject: false,
         isRegex: false,
       });
       expect(parsed.pagination).toEqual({ page: 1, limit: 20, rankBy: 'score' });
@@ -194,6 +195,7 @@ describe('parseArgs', () => {
 
     it.each([
       ['--semantic', 'semantic'],
+      ['--subject', 'subject'],
       ['--regex', 'isRegex'],
     ] as const)('%s turns on %s', (flag, key) => {
       expect(parseOk(['رحم', flag]).options[key]).toBe(true);
@@ -300,7 +302,7 @@ describe('parseArgs', () => {
   });
 
   describe('regex warnings', () => {
-    it.each(['--lemma', '--root', '--fuzzy', '--semantic'])(
+    it.each(['--lemma', '--root', '--fuzzy', '--semantic', '--subject'])(
       'warns that %s has no effect with --regex',
       (flag) => {
         const parsed = parseOk(['رحم', '--regex', flag]);
@@ -311,11 +313,12 @@ describe('parseArgs', () => {
     );
 
     it('collects one warning listing every ignored option', () => {
-      const parsed = parseOk(['رحم', '--regex', '--lemma', '--semantic']);
+      const parsed = parseOk(['رحم', '--regex', '--lemma', '--semantic', '--subject']);
 
       expect(parsed.warnings).toHaveLength(1);
       expect(parsed.warnings[0]).toContain('--lemma');
       expect(parsed.warnings[0]).toContain('--semantic');
+      expect(parsed.warnings[0]).toContain('--subject');
     });
 
     it('does not warn when --regex is used alone', () => {
