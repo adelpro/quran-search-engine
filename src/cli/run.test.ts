@@ -40,6 +40,7 @@ const testDeps = (overrides: CliDeps = {}): CliDeps => ({
   loadMorphology: () => Promise.resolve(MORPHOLOGY),
   loadWordMap: () => Promise.resolve(new Map() as WordMap),
   loadSemanticData: () => Promise.resolve(new Map<string, string[]>()),
+  loadSubjectData: () => Promise.resolve(new Map<string, string[]>()),
   loadPhoneticData: () => Promise.resolve(new Map<string, string[]>()),
   version: '9.9.9',
   ...overrides,
@@ -319,6 +320,36 @@ describe('run', () => {
       const { out } = await invoke(['الرحمن', '--format', 'json']);
 
       expect(out).not.toMatch(/Matches: /);
+    });
+  });
+
+  describe('subject flag (#121)', () => {
+    // "book" → كتاب, a word only gid 4 ("ذلك الكتاب الرحمن ...") contains. lemmas/roots are
+    // empty in MORPHOLOGY, so this only matches through the subject layer's affix-variant
+    // path — proof the flag actually wires subjectMap into the search, not a coincidental
+    // hit from another layer.
+    const subjectDeps = {
+      loadSubjectData: () => Promise.resolve(new Map([['book', ['كتاب']]])),
+    };
+
+    it('finds subject matches when --subject is passed', async () => {
+      const { code, out } = await invoke(['book', '--subject'], subjectDeps);
+
+      expect(code).toBe(0);
+      expect(out).toContain('2:1');
+    });
+
+    it('leaves behavior unchanged without --subject, even if subject data is available', async () => {
+      const { code, out } = await invoke(['book'], subjectDeps);
+
+      expect(code).toBe(0);
+      expect(out).toMatch(/no results/i);
+    });
+
+    it('warns that --subject has no effect with --regex', async () => {
+      const { err } = await invoke(['book', '--regex', '--subject'], subjectDeps);
+
+      expect(err).toContain('--subject');
     });
   });
 
