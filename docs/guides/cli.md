@@ -48,6 +48,7 @@ Defaults are the library's own defaults, not choices made for the terminal.
 | `--root` / `--no-root`      | —                        | on             | Word-root matching           |
 | `--fuzzy` / `--no-fuzzy`    | —                        | on             | Approximate matching         |
 | `--semantic`                | —                        | off            | Related-concept matching     |
+| `--subject`                 | —                        | off            | Thematic (concept → theme)   |
 | `--regex`                   | —                        | off            | Treat the query as a pattern |
 | `--sura <n>`                | 1 to 114                 | all            | Restrict to one sura         |
 | `--juz <n>`                 | 1 to 30                  | all            | Restrict to one juz          |
@@ -103,7 +104,7 @@ quran-search-engine "محمد رسول"
 
 **A single argument wrapped in `[ ... ]`** is the array form — the CLI's way of calling
 `search()`'s `string[]` overload directly. Each term runs through the full search pipeline
-independently (lemma/root/fuzzy/semantic all still apply per term), and results are merged
+independently (lemma/root/fuzzy/semantic/subject all still apply per term), and results are merged
 by verse `gid` instead of intersected:
 
 ```bash

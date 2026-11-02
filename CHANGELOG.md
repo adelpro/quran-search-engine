@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fourth argument to `buildInvertedIndex()` to get a pre-built `subjectIndex`. Matches are tagged
   `matchType: 'subject'` and tallied in `counts.subject`. The shipped dataset seeds 20 themes and
   is meant to be expanded by contributors.
+- **CLI subject search**: `quran-search-engine "<query>" --subject` exposes the thematic layer from
+  the terminal. Mirrors `--semantic`: off by default, ignored (with a warning) under `--regex`,
+  and reported in the match breakdown footer. Subject data loads lazily, only when the flag is
+  passed.
 
 ### Changed
 
