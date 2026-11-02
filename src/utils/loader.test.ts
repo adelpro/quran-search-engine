@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { loadQuranData, loadMorphology, loadWordMap, buildInvertedIndex } from './loader';
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSubjectData,
+  buildInvertedIndex,
+} from './loader';
+import { normalizeArabic } from './normalization';
 import type { QuranText, MorphologyAya } from '../types';
 import fs from 'fs';
 
@@ -171,6 +178,43 @@ describe('Loader Functions', () => {
     expect(quranData).toBeInstanceOf(Map);
     expect(morphology).toBeInstanceOf(Map);
     expect(wordMap).toBeInstanceOf(Map);
+  });
+});
+
+describe('loadSubjectData', () => {
+  // Issue #117: an Arabic theme word (e.g. مطر) was only ever a *value* in the subject map,
+  // never a *key*, so looking it up directly fell through to a plain root/lemma match instead
+  // of opening its whole theme. buildSubjectMap now registers each Arabic word as a key too.
+  it('registers each Arabic word as a key resolving to its theme', async () => {
+    const subjectMap = await loadSubjectData();
+
+    const rainGroup = subjectMap.get('rain');
+    const arabicKeyGroup = subjectMap.get(normalizeArabic('مطر'));
+
+    expect(rainGroup).toBeDefined();
+    expect(arabicKeyGroup).toBeDefined();
+    expect(new Set(arabicKeyGroup)).toEqual(new Set(rainGroup));
+    // The theme also covers itself: مطر resolves to a list that includes مطر.
+    expect(arabicKeyGroup).toContain(normalizeArabic('مطر'));
+  });
+
+  it('unions every theme a shared Arabic word belongs to', async () => {
+    // ماء appears in both the "creation" and "food" themes in subjects.json.
+    const subjectMap = await loadSubjectData();
+    const group = subjectMap.get(normalizeArabic('ماء'));
+
+    expect(group).toBeDefined();
+    expect(group).toEqual(expect.arrayContaining([normalizeArabic('خلق')])); // from creation
+    expect(group).toEqual(expect.arrayContaining([normalizeArabic('طعام')])); // from food
+  });
+
+  it('leaves English key lookups and non-key words unaffected', async () => {
+    const subjectMap = await loadSubjectData();
+
+    // A word absent from every theme's arabic[] list must not have been given a key.
+    expect(subjectMap.has(normalizeArabic('حاسوب'))).toBe(false);
+    // English keys still resolve exactly as before.
+    expect(subjectMap.get('climate')).toEqual(subjectMap.get('rain'));
   });
 });
 

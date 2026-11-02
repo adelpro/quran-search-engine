@@ -182,6 +182,85 @@ describe('Subject Search', () => {
   });
 });
 
+describe('Subject Search — fuzzy English fallback (#119)', () => {
+  const searchSubject = (query: string) =>
+    search(
+      query,
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMap,
+        subjectMap: mockSubjectMap,
+      },
+      { lemma: false, root: false, subject: true },
+    ).results.filter((r: ScoredVerse) => r.matchType === 'subject');
+
+  it('resolves a misspelled English key to the same theme as the correct spelling', () => {
+    const correct = searchSubject('rain')
+      .map((r) => r.gid)
+      .sort();
+    const typo = searchSubject('rrain')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(typo).toEqual(correct);
+    expect(typo.length).toBeGreaterThan(0);
+  });
+
+  it('resolves a second misspelling to its own theme (climte → climate)', () => {
+    const correct = searchSubject('climate')
+      .map((r) => r.gid)
+      .sort();
+    const typo = searchSubject('climte')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(typo).toEqual(correct);
+    expect(typo.length).toBeGreaterThan(0);
+  });
+
+  it('leaves exact matches untouched', () => {
+    // Same assertions the original exact-match test made — fuzzy is a fallback, not a
+    // replacement, so an exact key must still resolve without going anywhere near Fuse.
+    expect(searchSubject('rain').length).toBeGreaterThan(0);
+  });
+
+  it('does not fuzzy-match a word unrelated to any theme', () => {
+    expect(searchSubject('xyzabc')).toHaveLength(0);
+  });
+
+  it('keeps indexed and scan paths identical for a misspelled query', () => {
+    const invertedIndex = buildInvertedIndex(
+      mockMorphologyMap,
+      mockQuranDataMap,
+      undefined,
+      mockSubjectMap,
+      mockWordMap,
+    );
+
+    const withIndex = search(
+      'rrain',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMap,
+        subjectMap: mockSubjectMap,
+        invertedIndex,
+      },
+      { lemma: false, root: false, subject: true },
+    )
+      .results.filter((r: ScoredVerse) => r.matchType === 'subject')
+      .map((r) => r.gid)
+      .sort();
+
+    const withoutIndex = searchSubject('rrain')
+      .map((r) => r.gid)
+      .sort();
+
+    expect(withIndex).toEqual(withoutIndex);
+  });
+});
+
 // gid 4 carries the prefixed form وامطرنا — a different whitespace-delimited token than the
 // bare subject word مطر, and reachable only through the root they share. It is the case
 // where an exact wordIndex lookup and a substring scan used to disagree.
@@ -269,6 +348,74 @@ describe('Subject Search — indexed/scan parity (layer)', () => {
       expect(layerGids(query, true)).toEqual(layerGids(query, false));
     },
   );
+});
+
+// Issue #117: buildSubjectMap now registers each Arabic word as a key resolving to its own
+// theme's word list (see src/utils/loader.ts), not just English aliases. This mirrors that
+// shape by pointing مطر/غيث at the same group as their English alias 'rain', and ريح at the
+// same group as 'wind' — exactly what addWords(arWord, normalizedArabic) produces in loader.ts.
+const mockSubjectMapV2 = new Map(mockSubjectMap);
+mockSubjectMapV2.set('مطر', mockSubjectMap.get('rain')!);
+mockSubjectMapV2.set('غيث', mockSubjectMap.get('rain')!);
+mockSubjectMapV2.set('ريح', mockSubjectMap.get('wind')!);
+
+const v2InvertedIndex = buildInvertedIndex(
+  mockMorphologyMap,
+  parityData,
+  undefined,
+  mockSubjectMapV2,
+  mockWordMap,
+);
+
+describe('Subject Search v2 — Arabic word opens its theme', () => {
+  it('resolves an Arabic theme word the same as its English alias', () => {
+    const arabicHits = performSubjectSearch(
+      'مطر',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'مطر',
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    const englishHits = performSubjectSearch(
+      'rain',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'rain',
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    expect(arabicHits).toEqual(englishHits);
+    expect(arabicHits.length).toBeGreaterThan(0);
+  });
+
+  // subjectIndex is a projection of subjectMap — it should reflect the new Arabic keys with
+  // no extra build step, so a direct lookup agrees with running the layer's own resolution.
+  it('keeps subjectIndex in sync with the layer for a newly-registered Arabic key', () => {
+    const layerHits = performSubjectSearch(
+      'مطر',
+      parityData,
+      { lemma: false, root: false, subject: true },
+      mockSubjectMapV2,
+      'مطر',
+      v2InvertedIndex,
+      mockWordMap,
+      mockMorphologyMap,
+    )
+      .map((r) => r.gid)
+      .sort((a, b) => a - b);
+
+    const indexedGids = Array.from(v2InvertedIndex.subjectIndex?.get('مطر') ?? []).sort(
+      (a, b) => a - b,
+    );
+
+    expect(indexedGids).toEqual(layerHits);
+    expect(indexedGids.length).toBeGreaterThan(0);
+  });
 });
 
 describe('Subject Search — stem precision', () => {

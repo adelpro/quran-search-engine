@@ -3,8 +3,10 @@ import { describe, it, expect } from 'vitest';
 import {
   formatSchemaErrors,
   validateMorphologyData,
+  validatePhoneticData,
   validateQuranData,
   validateSemanticData,
+  validateSubjectData,
   validateWordMapData,
 } from './schema';
 
@@ -231,6 +233,120 @@ describe('validateSemanticData', () => {
   it('respects the error limit', () => {
     const bad = Array.from({ length: 100 }, () => ({}));
     const result = validateSemanticData(bad, 5);
+    expect(result.errors.length).toBeLessThanOrEqual(5);
+  });
+});
+
+// ─── validateSubjectData ───────────────────────────────────────────────────
+
+describe('validateSubjectData', () => {
+  const validEntry = {
+    subject: 'weather',
+    english: ['weather', 'climate', 'rain'],
+    arabic: ['مطر', 'رياح', 'سحاب'],
+  };
+
+  it('accepts a valid subject data array', () => {
+    const result = validateSubjectData([validEntry]);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('rejects non-array input', () => {
+    const result = validateSubjectData('not an array');
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('array');
+  });
+
+  it('rejects an empty array', () => {
+    const result = validateSubjectData([]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('empty');
+  });
+
+  it('reports a missing subject field', () => {
+    const data = [{ english: ['weather'], arabic: ['مطر'] }];
+    const result = validateSubjectData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.path === 'subjects[0].subject')).toBe(true);
+  });
+
+  it('reports missing english field', () => {
+    const data = [{ subject: 'weather', arabic: ['مطر'] }];
+    const result = validateSubjectData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('subjects[0].english');
+  });
+
+  it('reports missing arabic field', () => {
+    const data = [{ subject: 'weather', english: ['weather'] }];
+    const result = validateSubjectData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('subjects[0].arabic');
+  });
+
+  it('reports non-string items in arabic array', () => {
+    const data = [{ subject: 'weather', english: ['weather'], arabic: [42] }];
+    const result = validateSubjectData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toBe('subjects[0].arabic');
+  });
+
+  it('handles null items in the array', () => {
+    const result = validateSubjectData([null]);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('object');
+  });
+
+  it('respects the error limit', () => {
+    const bad = Array.from({ length: 100 }, () => ({}));
+    const result = validateSubjectData(bad, 5);
+    expect(result.errors.length).toBeLessThanOrEqual(5);
+  });
+});
+
+// ─── validatePhoneticData ──────────────────────────────────────────────────
+
+describe('validatePhoneticData', () => {
+  it('accepts a valid phonetic map', () => {
+    const data = {
+      rahman: ['رحمن'],
+      rahim: ['رحيم', 'رحمن'],
+    };
+    expect(validatePhoneticData(data).valid).toBe(true);
+  });
+
+  it('rejects array input', () => {
+    expect(validatePhoneticData([]).valid).toBe(false);
+  });
+
+  it('rejects null', () => {
+    expect(validatePhoneticData(null).valid).toBe(false);
+  });
+
+  it('rejects an empty object', () => {
+    const result = validatePhoneticData({});
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('empty');
+  });
+
+  it('reports a value that is a string instead of an array (issue #118 example)', () => {
+    const data = { rain: 'مطر' };
+    const result = validatePhoneticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].path).toContain('rain');
+  });
+
+  it('reports non-string items inside the array', () => {
+    const data = { rain: [42] };
+    const result = validatePhoneticData(data);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('strings');
+  });
+
+  it('respects the error limit', () => {
+    const bad = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`k${i}`, 'not array']));
+    const result = validatePhoneticData(bad, 5);
     expect(result.errors.length).toBeLessThanOrEqual(5);
   });
 });

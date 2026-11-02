@@ -1,3 +1,4 @@
+import Fuse from 'fuse.js';
 import { normalizeArabic, isArabic } from '../../utils/normalization';
 import { expandAffixVariants } from '../../utils/arabic-affixes';
 import type {
@@ -8,6 +9,32 @@ import type {
   MorphologyAya,
   WordMap,
 } from '../../types';
+
+// subjectMap is loaded dynamically (loadSubjectData()) rather than held in one module-level
+// constant, so — unlike getPhoneticFuse's single cached instance — a single global Fuse
+// index would silently serve stale results once a second, different subjectMap appeared
+// (e.g. each test file builds its own). A WeakMap keys the cache on the subjectMap instance
+// itself: each distinct map gets its own fuzzy index, built once, with no manual cleanup
+// once that subjectMap is no longer referenced anywhere.
+const subjectFuseCache = new WeakMap<Map<string, string[]>, Fuse<string>>();
+
+const getSubjectFuse = (subjectMap: Map<string, string[]>): Fuse<string> => {
+  let fuse = subjectFuseCache.get(subjectMap);
+  if (!fuse) {
+    // English keys only — Arabic theme keys (registered in loader.ts for #117) would never
+    // meaningfully fuzzy-match a Latin token, so excluding them keeps the index smaller and
+    // the intent explicit.
+    const englishKeys = Array.from(subjectMap.keys()).filter((key) => /^[a-z\s]+$/.test(key));
+    fuse = new Fuse(englishKeys, {
+      threshold: 0.3,
+      distance: 100,
+      minMatchCharLength: 3,
+      includeScore: true,
+    });
+    subjectFuseCache.set(subjectMap, fuse);
+  }
+  return fuse;
+};
 
 /** Resolve a raw query string to the set of Arabic words it stands for. */
 const resolveQuery = (rawQuery: string, subjectMap: Map<string, string[]>): Set<string> => {
@@ -44,6 +71,13 @@ const resolveQuery = (rawQuery: string, subjectMap: Map<string, string[]>): Set<
     const subjectWords = subjectMap.get(cleanToken);
     if (subjectWords) {
       subjectWords.forEach((w) => matchedArabicWords.add(w));
+    } else {
+      // Exact match failed — fall back to a strict fuzzy match against the English keys,
+      // so a typo like "rrain" or "climte" still resolves instead of being dropped silently.
+      const [fuzzyMatch] = getSubjectFuse(subjectMap).search(cleanToken);
+      if (fuzzyMatch) {
+        subjectMap.get(fuzzyMatch.item)?.forEach((w) => matchedArabicWords.add(w));
+      }
     }
   }
 
