@@ -1,6 +1,6 @@
 # Performance Guide
 
-> 📍 This guide is located at `docs/performance.md`.
+> 📍 This guide is located at `docs/reference/performance.md`.
 
 This guide explains how to **measure** and **optimize** the performance of `quran-search-engine`. It covers
 benchmarking, caching, inverted indices, and worker offloading.
@@ -43,7 +43,7 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
 const loadTime = performance.now() - start;
 
 console.log(`Data loading: ${loadTime.toFixed(2)}ms`);
-console.log(`  Verses: ${quranData.length}`);
+console.log(`  Verses: ${quranData.size}`);
 ```
 
 > **Node.js:** Use `performance.now()` (available globally in Node 16+). For older Node, use
@@ -54,17 +54,17 @@ console.log(`  Verses: ${quranData.length}`);
 Measure how long it takes to build or load the inverted index:
 
 ```typescript
-import { buildInvertedIndex, loadInvertedIndex } from 'quran-search-engine';
+import { buildInvertedIndex } from 'quran-search-engine';
 
-// Option A: Build at runtime (CPU cost)
 const t0 = performance.now();
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
 console.log(`buildInvertedIndex: ${(performance.now() - t0).toFixed(2)}ms`);
-
-// Option B: Load pre-built index (faster startup)
-const t1 = performance.now();
-const invertedIndexLoaded = await loadInvertedIndex();
-console.log(`loadInvertedIndex: ${(performance.now() - t1).toFixed(2)}ms`);
 ```
 
 ### Search Latency
@@ -124,7 +124,8 @@ import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
-  loadInvertedIndex,
+  loadSemanticData,
+  loadSubjectData,
   buildInvertedIndex,
   search,
   LRUCache,
@@ -136,10 +137,12 @@ async function main() {
   // --- Data Loading ---
   const mem0 = process.memoryUsage().heapUsed;
   const t0 = performance.now();
-  const [quranData, morphologyMap, wordMap] = await Promise.all([
+  const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
     loadQuranData(),
     loadMorphology(),
     loadWordMap(),
+    loadSemanticData(),
+    loadSubjectData(),
   ]);
   const loadTime = performance.now() - t0;
   const mem1 = process.memoryUsage().heapUsed;
@@ -150,14 +153,20 @@ async function main() {
 
   // --- Inverted Index ---
   const t1 = performance.now();
-  const invertedIndex = await loadInvertedIndex();
+  const invertedIndex = buildInvertedIndex(
+    morphologyMap,
+    quranData,
+    semanticMap,
+    subjectMap,
+    wordMap,
+  );
   const indexTime = performance.now() - t1;
   console.log(`\n=== Inverted Index ===`);
-  console.log(`  loadInvertedIndex: ${indexTime.toFixed(2)}ms`);
+  console.log(`  buildInvertedIndex: ${indexTime.toFixed(2)}ms`);
 
   // --- Search Latency (avg of 5 runs) ---
   const cache = new LRUCache<string, SearchResponse>(100);
-  const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+  const fuseIndex = createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani']);
   const queries = ['الله', 'كتب', 'رحم', 'نار'];
   const runs = 5;
 
@@ -247,26 +256,28 @@ flowchart LR
 
 ### Build vs Load
 
-| Method                 | Use Case                         | Startup Cost | Memory           |
-| ---------------------- | -------------------------------- | ------------ | ---------------- |
-| `buildInvertedIndex()` | You already have morphology/data | ~50–200 ms   | +5–15 MB         |
-| `loadInvertedIndex()`  | Production, pre-built index      | Lower        | Loaded from JSON |
+| Method                 | Use Case                         | Startup Cost | Memory   |
+| ---------------------- | -------------------------------- | ------------ | -------- |
+| `buildInvertedIndex()` | You already have morphology/data | ~50–200 ms   | +5–15 MB |
 
 ### Usage
 
 ```typescript
-import { buildInvertedIndex, loadInvertedIndex, search } from 'quran-search-engine';
+import { buildInvertedIndex, search } from 'quran-search-engine';
 
-// Option 1: Build from loaded data
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
-
-// Option 2: Load pre-built (recommended for production)
-const invertedIndex = await loadInvertedIndex();
+// Build once from the loaded datasets
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
 
 // Pass via context object
 const result = search(
   query,
-  { quranData, morphologyMap, wordMap, invertedIndex },
+  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex },
   options,
   pagination,
   fuseIndex,
@@ -285,7 +296,7 @@ parameter** to reuse it.
 import { createArabicFuseSearch, search } from 'quran-search-engine';
 
 // Build once at startup
-const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+const fuseIndex = createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani']);
 
 // Reuse across searches
 const result = search(

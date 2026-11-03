@@ -13,10 +13,11 @@ The engine intersects matches **per token**. This guarantees all returned result
 term either by exact match, lemma fallback, root fallback, or fuzzy match fallback conditionally based on configuration.
 
 ```typescript
-const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true,
-});
+const response = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap, invertedIndex },
+  { lemma: true, root: true },
+);
 // Internally:
 // Token 1 => Matches 'الله'
 // AND
@@ -37,15 +38,17 @@ Beyond multi-word string queries, the engine supports multiple alternative synta
   filtered subset.
 
 ```typescript
+const context = { quranData, morphologyMap, wordMap, invertedIndex };
+
 // Find all verses ending with "ون"
-const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+const response = search('^.*ون$', context, {
   lemma: false,
   root: false,
   isRegex: true,
 });
 
 // Find verses containing "الله" followed by "الرحمن" with any text between them
-const response2 = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
+const response2 = search('الله.*الرحمن', context, {
   lemma: false,
   root: false,
   isRegex: true,
@@ -54,13 +57,20 @@ const response2 = search('الله.*الرحمن', quranData, morphologyMap, wor
 
 - **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse
   targets efficiently without iterating.
-- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser.
-  This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like
-  `(الله OR رب) AND (الرحمن NOT الرحيم)`.
-  - **AND**: Intersection of results. Both terms must match.
-  - **OR**: Union of results. Either term can match.
-  - **NOT**: Exclusion of results. The term must not match.
-  - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
+- **Boolean Search:** Boolean querying is detected automatically from the query itself — no
+  option is needed. It supports three operators:
+  - `+term` (**AND / MUST**): the term must appear in the verse.
+  - `-term` (**NOT / EXCLUDE**): the term must not appear in the verse.
+  - `term | term` (**OR / EITHER**): at least one of the terms must appear. Bare terms without
+    an operator are treated as `EITHER` terms as well.
+
+  The operators are prefix/infix symbols, not the words `AND`, `OR`, or `NOT`. A query such as
+  `'الله AND الرحمن'` is treated as ordinary text, not as boolean syntax.
+
+  ```typescript
+  // Verses containing الله but not الرحمن, and either الرحيم or العليم
+  search('+الله -الرحمن الرحيم | العليم', context, { lemma: true, root: true });
+  ```
 
 ### Boolean Search Helper Functions
 

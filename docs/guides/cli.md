@@ -71,17 +71,21 @@ The same list, with defaults, is printed by `quran-search-engine --help`.
 
 These are detected from the query itself, so no option enables them:
 
-| Shape                 | Example                                          | Behaviour                     |
-| --------------------- | ------------------------------------------------ | ----------------------------- |
-| Verse coordinates     | `2:255`, `1:1-7`, `2:`                           | Returns those verses directly |
-| Logical operators     | `الله AND (الرحمن OR الرحيم)`, `الله NOT الرحمن` | Operators are honoured        |
-| Latin transliteration | `rahman`, `bismi allah`                          | Treated as a transliteration  |
+| Shape                 | Example                             | Behaviour                     |
+| --------------------- | ----------------------------------- | ----------------------------- |
+| Verse coordinates     | `2:255`, `1:1-7`, `2:`              | Returns those verses directly |
+| Boolean operators     | `+الله -الرحمن`, `الرحيم \| العليم` | Operators are honoured        |
+| Latin transliteration | `rahman`, `bismi allah`             | Treated as a transliteration  |
 
 ```bash
 quran-search-engine "2:255"
-quran-search-engine "الله NOT الرحمن"
+quran-search-engine "+الله -الرحمن"
+quran-search-engine "الرحيم | العليم"
 quran-search-engine "rahman"
 ```
+
+Boolean operators are symbols, not words: `+term` must appear, `-term` must not appear, and
+`term | term` is an OR group. A query containing the word `AND` is treated as ordinary text.
 
 Transliteration is matched word by word, so write each word separately: `bismi allah` rather
 than `bismillah`.
@@ -141,9 +145,9 @@ Showing 2 of 313 results (page 1 of 157)
 Matches: exact 201 · fuzzy 112
 ```
 
-Note that `fuzzy` currently includes unscored matches, which is a quirk of the library's own
-counts rather than of the CLI. Tracked in
-[#102](https://github.com/adelpro/quran-search-engine/issues/102).
+`fuzzy` counts genuine fuzzy matches only. Verses that reached the results without any layer
+claiming them (`matchType: 'none'`) are included in the totals but not in the fuzzy count, so
+the per-kind numbers do not necessarily add up to the total.
 
 Multi-term results carry an extra `(N terms · M hits)` suffix per row:
 

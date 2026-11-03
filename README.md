@@ -17,14 +17,16 @@
 
 Stateless, UI-agnostic Quran (Qur'an) search engine for Arabic text in pure TypeScript:
 
-- **Boolean Search**: logic operators (`AND`, `OR`, `NOT`) and grouping `(...)` to create complex queries
+- **Boolean Search**: `+term` (must), `-term` (must not), and `term | term` (either), auto-detected from the query
 - Arabic normalization
 - Exact text search
 - Lemma + root matching (via morphology + word map)
-- Inverted index for O(1) lemma/root lookups (`buildInvertedIndex` / `loadInvertedIndex`)
+- Inverted index for O(1) lemma/root lookups (`buildInvertedIndex`)
 - Semantic search (concept-based mapping)
 - **Subject-based thematic search** — map English concept words (e.g. `"climate"`,
   `"worship"`) to curated Arabic lemmas via `loadSubjectData()`
+- **Independent multi-term search** — pass an array of terms and merge/rank by score, coverage, or frequency
+- **CLI** — `npx quran-search-engine "..."` for terminal and scripted use
 - Phonetic search with fuzzy fallback (e.g. "Bismillah" -> "بسم الله")
 - Regex search with ReDoS safety validation (`validateRegex` for UI-side input checking)
 - Range search by sura/aya coordinates (e.g. `2:255`, `1:1-7`, `2:`)
@@ -127,18 +129,23 @@ import {
   loadMorphology,
   loadQuranData,
   loadWordMap,
+  loadSemanticData,
+  buildInvertedIndex,
   type SearchResponse,
 } from 'quran-search-engine';
 
-const [quranData, morphologyMap, wordMap] = await Promise.all([
+const [quranData, morphologyMap, wordMap, semanticMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
+  loadSemanticData(),
 ]);
+
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
 
 const response: SearchResponse = search(
   'الله الرحمن',
-  { quranData, morphologyMap, wordMap },
+  { quranData, morphologyMap, wordMap, semanticMap, invertedIndex },
   {
     lemma: true,
     root: true,
@@ -194,7 +201,13 @@ console.log(result1 === result2); // true — cache hit
 JavaScript (Node / ESM):
 
 ```js
-import { search, loadMorphology, loadQuranData, loadWordMap } from 'quran-search-engine';
+import {
+  search,
+  loadMorphology,
+  loadQuranData,
+  loadWordMap,
+  buildInvertedIndex,
+} from 'quran-search-engine';
 
 const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadQuranData(),
@@ -202,13 +215,14 @@ const [quranData, morphologyMap, wordMap] = await Promise.all([
   loadWordMap(),
 ]);
 
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+
 const response = search(
   'الله الرحمن',
-  { quranData, morphologyMap, wordMap },
+  { quranData, morphologyMap, wordMap, invertedIndex },
   {
     lemma: true,
     root: true,
-    semantic: true,
   },
 );
 
@@ -258,9 +272,9 @@ Use case: load the Quran dataset once at app startup (browser or Node), then reu
 ```ts
 import { loadQuranData, type QuranText } from 'quran-search-engine';
 
-const quranData: QuranText[] = await loadQuranData();
+const quranData: Map<number, QuranText> = await loadQuranData();
 // Example output:
-// quranData[0] => { gid: 1, uthmani: '...', standard: '...', sura_id: 1, aya_id: 1, ... }
+// quranData.get(1) => { gid: 1, uthmani: '...', standard: '...', sura_id: 1, aya_id: 1, ... }
 ```
 
 #### `loadMorphology()`
@@ -395,19 +409,25 @@ const result = search(
 );
 ```
 
-#### `loadInvertedIndex()`
+#### Pre-built inverted index?
 
-Loads the pre-built inverted index from the bundled static JSON files (`lemma-index.json`, `root-index.json`,
-`word-index.json`) and reconstructs them as `Map<string, Set<number>>` structures.
-
-Use case: avoid the CPU cost of `buildInvertedIndex` by loading the pre-computed index from disk instead.
+There is no bundled pre-built index in v0.4.0, so there is no `loadInvertedIndex()` to call.
+Build it once from the datasets and reuse the result:
 
 ```ts
-import { loadInvertedIndex } from 'quran-search-engine';
+import { buildInvertedIndex } from 'quran-search-engine';
 
-// Load the pre-built index — no CPU build cost
-const invertedIndex = await loadInvertedIndex();
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
 ```
+
+The build is a single CPU pass (typically well under a second) and replaces the linear scans
+used on every lemma/root lookup.
 
 ### Normalization
 
@@ -426,10 +446,14 @@ const out = removeTashkeel('بِسْمِ ٱللَّهِ');
 
 Use case: preparing user input for searching (unifies alef variants, removes tashkeel, etc).
 
-````ts
+```ts
 import { normalizeArabic } from 'quran-search-engine';
 
-const#### `search(query, context, options?, pagination?, fuseIndex?, cache?)`
+const normalized = normalizeArabic('ٱلرَّحْمَٰن');
+// normalized => 'الرحمن'
+```
+
+#### `search(query, context, options?, pagination?, fuseIndex?, cache?)`
 
 Main entry point. Combines:
 
@@ -437,22 +461,25 @@ Main entry point. Combines:
 - Lemma/root matching (when enabled and available)
 - Fuzzy fallback (Fuse) per token
 - Semantic concept expansion (when `options.semantic = true`)
+- Subject/theme expansion (when `options.subject = true`)
 - Range lookups (`2:255`, `1:1-7`, `2:`)
 - Regex pattern matching (when `options.isRegex = true`)
 
 Use case: your primary API for Quran search results + scoring + pagination.
 
-| Argument     | Type                    | Description                                                                    |
-| ------------ | ----------------------- | ------------------------------------------------------------------------------ |
-| `query`      | `string`                | Search query (Arabic text or range like `2:255`)                               |
-| `context`    | `SearchContext`         | Object containing `quranData`, `morphologyMap`, `wordMap`, etc.                |
-| `options`    | `AdvancedSearchOptions` | Toggles for lemma/root/fuzzy/semantic (default: `{ lemma: true, root: true }`) |
-| `pagination` | `PaginationOptions`     | Page and limit (default: `{ page: 1, limit: 20 }`)                             |
-| `fuseIndex`  | `Fuse<TVerse>`          | Pre-built Fuse index — skips rebuild on every call                             |
-| `cache`      | `LRUCache`              | LRU cache — returns cached result for identical calls                          |
+| Argument     | Type                    | Description                                                                            |
+| ------------ | ----------------------- | -------------------------------------------------------------------------------------- |
+| `query`      | `string \| string[]`    | One query string, or an array of independent terms                                     |
+| `context`    | `SearchContext`         | Object containing `quranData`, `morphologyMap`, `wordMap`, etc.                        |
+| `options`    | `AdvancedSearchOptions` | Toggles for lemma/root/fuzzy/semantic/subject (default: `{ lemma: true, root: true }`) |
+| `pagination` | `PaginationOptions`     | Page and limit (default: `{ page: 1, limit: 20 }`); arrays also accept `rankBy`        |
+| `fuseIndex`  | `Fuse<TVerse>`          | Pre-built Fuse index — skips rebuild on every call                                     |
+| `cache`      | `LRUCache`              | LRU cache — returns cached result for identical calls                                  |
 
-**Optimization**: Include a `fuseIndex` (from `createArabicFuseSearch`) or an `invertedIndex` within the `context` to skip recalculations. Pass an `LRUCache` instance to cache results.
-nt to skip index rebuilding on every search. Pass an `LRUCache` instance as the 8th argument to cache results.
+Passing an array returns a `MultiTermResponse`; passing a string returns `SearchResponse`.
+
+**Optimization**: Include a `fuseIndex` (from `createArabicFuseSearch`) or an `invertedIndex`
+within the `context` to skip recalculations. Pass an `LRUCache` instance to cache results.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -461,35 +488,38 @@ const response = search(
   'الله الرحمن',
   { quranData, morphologyMap, wordMap, semanticMap },
   { lemma: true, root: true, semantic: true }, // options
-  { page: 1, limit: 10 } // pagination
+  { page: 1, limit: 10 }, // pagination
 );
 // Example output:
 // response.pagination => { totalResults: 42, totalPages: 5, currentPage: 1, limit: 10 }
-// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, semantic: 0, total: 42 }
+// response.counts => { simple: 10, lemma: 18, root: 9, fuzzy: 5, semantic: 0, subject: 0, regex: 0, range: 0, total: 42 }
 // response.results[0] => { gid: 123, matchType: 'exact', matchScore: 9, matchedTokens: ['...'], ... }
-````
+```
 
-| Match type | Score per hit        |
-| ---------- | -------------------- |
-| Exact      | +3                   |
-| Lemma      | +2                   |
-| Semantic   | +0.8                 |
-| Root       | +1                   |
-| Fuzzy      | +0.5 (fallback only) |
-| Range      | 1 (direct lookup)    |
-| Regex      | 1                    |
+| Match type | Score per hit               |
+| ---------- | --------------------------- |
+| Exact      | +3                          |
+| Lemma      | +2                          |
+| Root       | +1                          |
+| Fuzzy      | +0.5 (fallback only)        |
+| Semantic   | +5 per matched keyword      |
+| Subject    | +4 per matched subject word |
+| Range      | 1 (direct lookup)           |
+| Regex      | 1                           |
 
 The search engine processes queries through a series of architectural layers, each handling a specific type of search
 logic. This layered approach allows for efficient short-circuiting and specialized processing:
 
 1. **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
-2. **Boolean layer** — Complex logic (`AND`, `OR`, `NOT`, `()`) handled via an AST-based parser when `isBoolean: true`.
+2. **Boolean filter** — Queries containing `+`, `-`, or `|` are parsed and used to filter the combined results.
 3. **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
 4. **Simple layer** — Exact token matching in normalized Arabic text.
 5. **Linguistic layer** — Lemma and root matching via morphology data.
 6. **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
 7. **Semantic layer** — Concept expansion (when `semantic: true`).
-8. **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
+8. **Subject layer** — Thematic expansion (when `subject: true`).
+9. **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
+10. **Multi-term merge** — `search(string[])` runs every term independently and merges by `gid`.
 
 #### Regex Search
 
@@ -529,30 +559,27 @@ const filtered = search(
 
 #### Boolean Search
 
-`search` supports complex boolean logic when `{ isBoolean: true }` is enabled. This allows combining multiple terms with
-`AND`, `OR`, `NOT` operators and grouping them with parentheses.
+Boolean operators are detected automatically — no option is required. The syntax uses
+symbols, not words:
 
-- **Operators**: `AND` (intersection), `OR` (union), `NOT` (exclusion).
-- **Grouping**: Use `(` and `)` to control operator precedence.
-- **Implicit AND**: Terms separated by spaces without operators are treated as `AND`.
+- `+term` (**MUST**) — the term must appear.
+- `-term` (**EXCLUDE**) — the term must not appear.
+- `term | term` (**EITHER/OR**) — at least one term must appear. Bare terms are also treated as
+  `EITHER` terms.
 
 ```ts
 import { search } from 'quran-search-engine';
 
-// Find verses containing "الله" AND ("الرحمن" OR "الرحيم")
+// Verses containing الله but not الرحمن, and either الرحيم or العليم
 const response = search(
-  'الله AND (الرحمن OR الرحيم)',
+  '+الله -الرحمن الرحيم | العليم',
   { quranData, morphologyMap, wordMap },
-  { isBoolean: true },
-);
-
-// Find verses containing "الله" but NOT "الرحمن"
-const response2 = search(
-  'الله NOT الرحمن',
-  { quranData, morphologyMap, wordMap },
-  { isBoolean: true },
+  { lemma: true, root: true },
 );
 ```
+
+> The words `AND`, `OR`, `NOT`, and parentheses are not boolean syntax in v0.4.0. A query like
+> `'الله AND الرحمن'` is searched as ordinary text.
 
 #### Range search
 
@@ -637,7 +664,7 @@ Use case: pre-compute the Fuse.js index for performance (see [Performance Optimi
 ```ts
 import { createArabicFuseSearch } from 'quran-search-engine';
 
-const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+const fuseIndex = createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani']);
 ```
 
 #### Custom datasets
@@ -907,13 +934,10 @@ identical queries. The cache uses JavaScript `Map` internally for **O(1)** `get`
 ### Why use it?
 
 - **Instant repeat lookups** — paginating through pages 2, 3, … of the same query won't re-run the search pipeline.
-- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse
-  targets efficiently without iterating.
-- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser.
-  This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like
-  `(الله OR رب) AND (الرحمن NOT الرحيم)`.
-- **Semantic Filtering:** For integrations with LLM and embeddings, boolean flags allow the engine to return
-  `matchType: semantic` metadata gracefully.
+- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) and returns matched
+  verses directly.
+- **Semantic and subject search:** enable `{ semantic: true }` or `{ subject: true }` with the matching map in the
+  context to get `matchType: 'semantic'` / `matchType: 'subject'` results.
 - **Configurable capacity** — set the max number of cached results to control memory.
 - **Zero setup** — create the cache once, pass it to every `search()` call.
 
@@ -990,7 +1014,7 @@ The cache parameter is fully optional. Omit it and `search()` works exactly as b
 
 ```ts
 // No cache — works the same as always
-const result = search('الله', quranData, morphologyMap, wordMap);
+const result = search('الله', { quranData, morphologyMap, wordMap });
 ```
 
 ## Core types
@@ -1066,14 +1090,15 @@ Toggles for linguistic matching:
 export type SearchOptions = {
   lemma: boolean;
   root: boolean;
-  fuzzy?: boolean;
+  fuzzy?: boolean; // default: true
   semantic?: boolean;
   subject?: boolean;
   isRegex?: boolean;
-  isBoolean?: boolean;
   suraId?: number;
-  juz_id?: number;
-  sura_name?: string;
+  juzId?: number;
+  suraName?: string;
+  sura_name_en?: string;
+  sura_name_romanization?: string;
 };
 ```
 
@@ -1150,7 +1175,7 @@ export type HighlightRange = {
 
 ### `InvertedIndex`
 
-Container for the three pre-built lookup maps returned by `buildInvertedIndex()` and `loadInvertedIndex()`:
+Container for the pre-built lookup maps returned by `buildInvertedIndex()`:
 
 ```ts
 import type { InvertedIndex, LemmaIndex, RootIndex, WordIndex } from 'quran-search-engine';
@@ -1287,9 +1312,7 @@ This script performs **integration testing** that validates the complete search 
 ### Pre-building the Inverted Index
 
 By default, `search()` performs O(n) linear scans through all morphology entries on every lemma/root lookup. For
-production apps, pre-build the inverted index once and pass it to every `search()` call for O(1) lookups.
-
-**Option A — Build from loaded data** (no extra I/O, costs one CPU pass at startup):
+production apps, build the inverted index once and pass it through the context for O(1) lookups.
 
 ```ts
 import {
@@ -1297,51 +1320,39 @@ import {
   loadMorphology,
   loadQuranData,
   loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
   search,
 } from 'quran-search-engine';
 
-const [quranData, morphologyMap, wordMap] = await Promise.all([
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(),
 ]);
 
 // Build once — replaces O(n) scans with O(1) lookups
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
 
-// Pass as 9th argument on every search
+// Pass it through the context on every search
 const result = search(
   'الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
+  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex },
   { lemma: true, root: true },
   { page: 1, limit: 20 },
-  undefined, // preComputedFuseIndex
-  undefined, // cache
-  invertedIndex, // <--- 9th parameter
 );
 ```
 
-**Option B — Load from bundled static files** (zero CPU build cost):
-
-```ts
-import { loadInvertedIndex, search } from 'quran-search-engine';
-
-const invertedIndex = await loadInvertedIndex();
-
-const result = search(
-  'الرحمن',
-  quranData,
-  morphologyMap,
-  wordMap,
-  { lemma: true, root: true },
-  { page: 1, limit: 20 },
-  undefined,
-  undefined,
-  invertedIndex,
-);
-```
+There is no bundled pre-built index to load in v0.4.0; build it from the datasets once at
+startup and reuse the result.
 
 **Combining all optimizations** (recommended for production):
 
@@ -1350,7 +1361,9 @@ import {
   loadQuranData,
   loadMorphology,
   loadWordMap,
-  loadInvertedIndex,
+  loadSemanticData,
+  loadSubjectData,
+  buildInvertedIndex,
   createArabicFuseSearch,
   LRUCache,
   search,
@@ -1358,15 +1371,24 @@ import {
 import type { SearchResponse, QuranText } from 'quran-search-engine';
 
 // Load everything in parallel
-const [quranData, morphologyMap, wordMap, invertedIndex] = await Promise.all([
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
-  loadInvertedIndex(),
+  loadSemanticData(),
+  loadSubjectData(),
 ]);
 
-// Pre-compute Fuse index (skips ~5-20ms rebuild per keystroke)
-const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
+
+// Pre-compute Fuse index (skips the ~5-20ms rebuild per keystroke)
+const fuseIndex = createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani']);
 
 // Shared LRU cache (instant repeat queries)
 const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
@@ -1374,7 +1396,7 @@ const cache = new LRUCache<string, SearchResponse<QuranText>>(50);
 // All optimizations active
 const result = search(
   query,
-  { quranData, morphologyMap, wordMap, invertedIndex },
+  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex },
   { lemma: true, root: true, fuzzy: true },
   { page: 1, limit: 20 },
   fuseIndex, // skip Fuse rebuild
@@ -1391,7 +1413,7 @@ applications (e.g., real-time search as you type), you can pre-compute the index
 import { search, createArabicFuseSearch } from 'quran-search-engine';
 
 // 1. Create the index once (e.g., in useMemo or at app startup)
-const fuseIndex = createArabicFuseSearch(quranData, ['standard', 'uthmani']);
+const fuseIndex = createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani']);
 
 // 2. Pass it to search
 const results = search(
@@ -1406,7 +1428,7 @@ const results = search(
 
 This avoids rebuilding the index (~5-20ms) on every keystroke.
 
-For benchmarking, memory profiling, worker offloading, and runnable benchmark scripts, see the [Performance Guide](docs/performance.md).
+For benchmarking, memory profiling, worker offloading, and runnable benchmark scripts, see the [Performance Guide](docs/reference/performance.md).
 
 **Key Differences from Unit Tests:**
 

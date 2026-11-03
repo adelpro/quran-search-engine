@@ -39,9 +39,25 @@ optimizes lookup speeds over `O(1)` Set checks bypassing String RegEx matchings.
 - **`WordIndex`**: (`Map<string, Set<number>>`) Maps normalized exact text tokens directly to a Set of matching Verse `gid`s.
 - **`LemmaIndex`**: (`Map<string, Set<number>>`) Maps morphological lemma strings directly to matching Verse `gid`s.
 - **`RootIndex`**: (`Map<string, Set<number>>`) Maps Canonical roots directly to matching Verse `gid`s.
+- **`SemanticIndex`**: (`Map<string, Set<number>>`, optional) Maps semantic concepts to
+  matching Verse `gid`s. Built when a `semanticMap` is passed to `buildInvertedIndex()`.
+- **`SubjectIndex`**: (`Map<string, Set<number>>`, optional) Maps subject/theme keys to
+  matching Verse `gid`s. Built when a `subjectMap` is passed to `buildInvertedIndex()`.
 
-By preloading these structures via `loadInvertedIndex()`, the `search` engine eliminates iteration layers for simple
-keyword validation logic and behaves remarkably fast in completely detached client-side or server-side boundaries.
+Build these structures once with `buildInvertedIndex()` and pass the result as
+`context.invertedIndex`. There is no bundled pre-built index to load in v0.4.0 — the engine
+builds them from the loaded datasets at startup (typically well under a second):
+
+```typescript
+import { buildInvertedIndex, loadMorphology, loadQuranData } from 'quran-search-engine';
+
+const [quranData, morphologyMap] = await Promise.all([loadQuranData(), loadMorphology()]);
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
+```
+
+By building these structures, the `search` engine eliminates iteration layers for simple
+keyword validation logic and behaves remarkably fast in completely detached client-side or
+server-side boundaries.
 
 ---
 

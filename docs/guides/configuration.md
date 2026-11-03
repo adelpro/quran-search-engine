@@ -1,7 +1,7 @@
 # Search Configuration
 
-The main `search` function accepts two optional configuration layers allowing fine-tuned control over behavior and
-pagination limits.
+The main `search` function takes a required `SearchContext` plus optional `SearchOptions` and
+pagination layers, giving fine-tuned control over matching behaviour and page limits.
 
 ## `SearchOptions`
 
@@ -53,11 +53,46 @@ export type SearchOptions = AdvancedSearchOptions;
 
 ## `PaginationOptions`
 
-Control bounds limit constraints natively. Omitting these defaults to logical page limits (typically page 1, limit 50).
+Control bounds limit constraints natively. Omitting these defaults to page `1` with `20`
+results per page.
 
 ```typescript
 export type PaginationOptions = {
   page?: number; // Starting return page.
   limit?: number; // Count return offset per page limit.
+};
+```
+
+## `MultiTermOptions`
+
+Used only by `search()`'s array overload. It adds `rankBy` on top of pagination:
+
+```typescript
+export type RankBy = 'score' | 'coverage' | 'frequency';
+
+export type MultiTermOptions = PaginationOptions & {
+  rankBy?: RankBy; // Default: 'score'
+};
+```
+
+| `rankBy`    | Orders by                              |
+| ----------- | -------------------------------------- |
+| `score`     | Accumulated `matchScore` (default)     |
+| `coverage`  | `distinctTermCount`, then `matchScore` |
+| `frequency` | `totalFrequency`, then `matchScore`    |
+
+## `SearchContext`
+
+The second argument to `search()`. Only the first three fields are required:
+
+```typescript
+export type SearchContext<TVerse extends VerseInput = QuranText> = {
+  quranData: Map<number, TVerse>; // required
+  morphologyMap: Map<number, MorphologyAya>; // required
+  wordMap: WordMap; // required
+  invertedIndex?: InvertedIndex; // recommended: O(1) lemma/root/word lookups
+  semanticMap?: Map<string, string[]>; // required for { semantic: true }
+  subjectMap?: Map<string, string[]>; // required for { subject: true }
+  phoneticMap?: Map<string, string[]>; // for Latin transliteration
 };
 ```

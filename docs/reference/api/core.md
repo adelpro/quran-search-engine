@@ -12,12 +12,12 @@ performing searches. Everything documented here is exported from `quran-search-e
 
 **Description:** Loads the primary text dataset for the Quran. This should ideally be called once at application startup.
 
-**Returns:** `Promise<QuranText[]>`
+**Returns:** `Promise<Map<number, QuranText>>` — verses keyed by `gid`.
 
 ```typescript
 import { loadQuranData, type QuranText } from 'quran-search-engine';
 
-const quranData: QuranText[] = await loadQuranData();
+const quranData: Map<number, QuranText> = await loadQuranData();
 ```
 
 ### `loadMorphology()`
@@ -71,6 +71,57 @@ import { loadPhoneticData } from 'quran-search-engine';
 const phoneticMap = await loadPhoneticData();
 ```
 
+### `loadSubjectData()`
+
+**Description:** Loads the subject (thematic) mapping. Maps English concept words and Arabic
+words to curated groups of Arabic lemmas, used by `{ subject: true }`.
+
+**Returns:** `Promise<Map<string, string[]>>`
+
+```typescript
+import { loadSubjectData } from 'quran-search-engine';
+
+const subjectMap = await loadSubjectData();
+// subjectMap.get('climate') => ['مطر', 'رياح', 'عاصفة', 'سحاب', ...]
+```
+
+### `buildInvertedIndex(morphologyMap, quranData, semanticMap?, subjectMap?, wordMap?)`
+
+Builds the `lemmaIndex`, `rootIndex`, and `wordIndex` (plus optional `semanticIndex` and
+`subjectIndex`) used for O(1) lookups.
+
+```typescript
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
+  buildInvertedIndex,
+} from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(),
+]);
+
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
+```
+
+- `subjectMap` (4th) is required for subject search to use the pre-built `subjectIndex`.
+- `wordMap` (5th) lets each subject word resolve through its root, so `مطر` also covers
+  `وأمطرنا`. Without it, subject words resolve by lemma and clitic variants only.
+- Passing `semanticMap` builds `semanticIndex`.
+
 ### Data Validation
 
 To ensure custom datasets map cleanly to `SearchOptions` operations seamlessly, native validators are exposed for
@@ -84,6 +135,8 @@ internal schemas.
 | `validateMorphologyData(data)` | Validates morphology array structure             |
 | `validateWordMapData(data)`    | Validates word map dictionary                    |
 | `validateSemanticData(data)`   | Validates semantic mapping data                  |
+| `validateSubjectData(data)`    | Validates subject/theme data (`subjects.json`)   |
+| `validatePhoneticData(data)`   | Validates phonetic mapping data                  |
 
 **Returns:** `ValidationResult` containing `valid` boolean and `errors` array.
 
@@ -664,12 +717,16 @@ filtering, and pagination automatically:
 ```typescript
 import { search } from 'quran-search-engine';
 
-const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
-  lemma: false,
-  root: false,
-  isRegex: true,
-  suraId: 2, // optional: limit to Al-Baqarah
-});
+const response = search(
+  '^.*ون$',
+  { quranData, morphologyMap, wordMap, invertedIndex },
+  {
+    lemma: false,
+    root: false,
+    isRegex: true,
+    suraId: 2, // optional: limit to Al-Baqarah
+  },
+);
 ```
 
 ---

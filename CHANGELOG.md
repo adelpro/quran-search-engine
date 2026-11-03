@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-03
+
 ### Fixed
 
 - **Subject search precision**: subject words no longer match by bare substring. A word now
@@ -52,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the terminal. Mirrors `--semantic`: off by default, ignored (with a warning) under `--regex`,
   and reported in the match breakdown footer. Subject data loads lazily, only when the flag is
   passed.
+- **Subject lookup resilience**: English subject aliases fall back to a strict fuzzy match, so a
+  typo such as `climte` still resolves. Arabic words are also registered as subject keys, so
+  looking one up opens its whole theme instead of a plain root/lemma match.
+- **Schema validators**: new `validateSubjectData()` and `validatePhoneticData()` exports, joining
+  the existing dataset validators.
 
 ### Changed
 
@@ -66,6 +73,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`SearchCounts.subject`** is a required field, and **`MatchType`** gains a `'subject'` member.
   Code that constructs a `SearchCounts` object literal or exhaustively switches on `MatchType`
   needs updating; see the [Migration Guide](./docs/migration-guide.md).
+- **Documentation**: guides, API reference, README, and the migration guide now match the v0.4.0
+  API. Removed stale references to `loadInvertedIndex()` and `isBoolean`, corrected the
+  `loadQuranData()` return type, documented subject and multi-term search, and fixed the boolean
+  operator syntax (`+term`, `-term`, `term | term`).
 
 ## [0.3.2]
 

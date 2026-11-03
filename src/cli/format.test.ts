@@ -145,7 +145,8 @@ describe('helpText', () => {
     const help = helpText();
 
     expect(help).toMatch(/2:255/);
-    expect(help).toMatch(/Logical operators/i);
+    expect(help).toMatch(/Boolean operators/i);
+    expect(help).toMatch(/\+الله/);
     expect(help).toMatch(/Transliteration/i);
   });
 

@@ -1,132 +1,61 @@
-# English to Arabic Translation Search
+# English → Arabic Search (Removed)
 
-## Overview
+The dedicated English-to-Arabic translation map (`loadEnglishToArabic()` and
+`quran-english-arabic-roots.json`) was **removed in v0.3.0**. It is not part of the v0.4.0
+public API, and the guide that used to live here described code that no longer exists.
 
-This feature adds the ability to search the Quran using English words (and their synonyms), which are translated to
-Arabic roots for searching. The implementation leverages the library's existing root search capability.
+Use one of the supported replacements instead.
 
-## Data Structure
+## For English concept words: subject search
 
-```typescript
-interface EnglishArabicConcept {
-  english: string[]; // All English variants (synonyms) in one field
-  arabic: string[]; // Arabic roots only - library handles the rest
-}
-```
-
-### Example
-
-```json
-{
-  "english": ["truth", "verity", "trueness", "accuracy"],
-  "arabic": ["حق", "صدق"]
-}
-```
-
-### Why This Structure Works
-
-1. **Reduced Data Complexity** - Group all English synonyms in one field instead of duplicating entries
-2. **Leverage Existing Features** - Store only roots in `arabic` field; the library's built-in root search automatically
-   finds all derived words
-3. **Consistent with Phonetic Flow** - English translation lookup runs at the same point as phonetic, creating a unified
-   non-Arabic query pipeline
-
-## How It Works
-
-### Query Processing Flow
-
-```text
-User Query: "truth verity"
-    ↓
-Split into tokens: ["truth", "verity"]
-    ↓
-For each token:
-    ↓
-┌─────────────────────────────────────┐
-│  isArabic(token)?                   │
-├──────────────┬──────────────────────┤
-│   YES        │       NO             │
-│   ↓          │       ↓              │
-│  Pass        │  1. English→Arabic   │
-│  through     │     (NEW)            │
-│  unchanged   │  2. Phonetic         │
-│              │     (existing)       │
-└──────────────┴──────────────────────┘
-    ↓
-If English found in translation map:
-  "truth" → ["حق", "صدق"]
-  "verity" → ["حق", "صدق"]
-    ↓
-Dedupe and combine: ["حق", "صدق"]
-    ↓
-Run search with root:true enabled
-Library automatically finds:
-  - "الحق", "بالحق", "حقا" (from root "حق")
-  - "صدق", "صدقا", "بالصدق" (from root "صدق")
-```
-
-## Implementation Details
-
-### Integration Point
-
-The English→Arabic translation is integrated at [search.ts#L158](file:///src/core/search.ts#L158), right before the
-existing phonetic lookup:
+`loadSubjectData()` maps English concept words and phrases to curated Arabic lemmas grouped by
+theme (`"climate"`, `"worship"`, `"eternal life"`, …):
 
 ```typescript
-if (!isArabic(token)) {
-  const cleanToken = token.toLowerCase().trim();
+import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
 
-  // 1. English → Arabic translation (NEW)
-  let arabicRoots = englishArabicMap.get(cleanToken);
-  if (arabicRoots) {
-    return arabicRoots[0]; // Use roots, library handles rest
-  }
+const subjectMap = await loadSubjectData();
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
 
-  // 2. Phonetic fallback (EXISTING)
-  let arabicPossibilities = phoneticMap.get(cleanToken);
-  // ...
-}
+const context = { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex };
+
+const response = search('truth', context, { lemma: true, root: true, subject: true });
 ```
 
-### When Does Translation Run?
+See [Subject & Multi-Word Search](./subjects-and-multiword.md) for the dataset format and the
+matching rules.
 
-The English translation lookup **only runs when the query is NOT Arabic**:
+## For related Arabic words: semantic search
+
+The semantic map links Arabic words to synonyms and related concepts:
 
 ```typescript
-if (token && !isArabic(token)) {
-  // Translation or Phonetic lookup happens here
-}
+const semanticMap = await loadSemanticData();
+const context = { quranData, morphologyMap, wordMap, semanticMap, invertedIndex };
+
+search('إنسان', context, { lemma: true, root: true, semantic: true });
 ```
 
-This means:
+## For Latin transliteration: phonetic search
 
-- Arabic queries → Direct search (no translation)
-- English/Latin queries → English translation lookup first, then phonetic fallback
-
-## Usage
+The phonetic map still resolves Latin spellings to Arabic (for example `bismillah`). Load it
+with `loadPhoneticData()` and put it in the context as `phoneticMap`:
 
 ```typescript
-import { search } from 'quran-search-engine';
+const phoneticMap = await loadPhoneticData();
+const context = { quranData, morphologyMap, wordMap, invertedIndex, phoneticMap };
 
-// Search using English word
-const result = search('truth', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true, // Important: enables root-based search
-  semantic: true,
-});
-
-// The library will:
-// 1. Look up "truth" in English→Arabic map
-// 2. Find roots ["حق", "صدق"]
-// 3. Search for all words derived from these roots
-// 4. Return matching verses
+search('bismillah', context, { lemma: true, root: true });
 ```
 
-## Comparison: Phonetic vs English Translation
+## Migration note
 
-| Feature | Phonetic                                     | English Translation             |
-| ------- | -------------------------------------------- | ------------------------------- |
-| Input   | Latin letters mimicking Arabic pronunciation | English words                   |
-| Example | "bismillah" → "بسم الله"                     | "truth" → ["حق", "صدق"]         |
-| Type    | Transliteration (sound-based)                | Translation (meaning-based)     |
-| Data    | Pre-computed phonetic mappings               | English synonyms → Arabic roots |
+If your code imported `loadEnglishToArabic()` or read `quran-english-arabic-roots.json`, delete
+that code and choose one of the approaches above. The
+[Migration Guide](../migration-guide.md) covers the rest of the upgrade path.

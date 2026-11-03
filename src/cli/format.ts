@@ -41,7 +41,7 @@ Other:
 
 No flag is needed for these — they are recognised from the query itself:
   Verse coordinates        "2:255", "1:1-7", "2:"
-  Logical operators        "الله AND (الرحمن OR الرحيم)", "الله NOT الرحمن"
+  Boolean operators        "+الله -الرحمن", "الرحيم | العليم"
   Transliteration          "rahman" (single words; "bismi allah", not "bismillah")
 
 Two or more bare arguments rejoin into one multi-word query, same as quoting them together:
