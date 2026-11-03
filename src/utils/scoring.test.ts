@@ -21,7 +21,10 @@ const morphologyMap = new Map<number, MorphologyAya>([
   [1, { gid: 1, lemmas: ['ذلك', 'كتب'], roots: ['ك-ت-ب'] }],
 ]);
 
-const wordMap: WordMap = new Map([['كتب', { lemma: 'كتب', root: 'ك-ت-ب' }]]);
+const wordMap: WordMap = new Map([
+  ['كتب', { lemma: 'كتب', root: 'ك-ت-ب' }],
+  ['الكتاب', { lemma: 'كتب', root: 'ك-ت-ب' }],
+]);
 
 describe('computeScore with a Map word map', () => {
   it('scores a lemma-only match instead of leaving it unscored', () => {
@@ -52,5 +55,38 @@ describe('computeScore with a Map word map', () => {
     });
 
     expect(result.matchType).toBe('exact');
+  });
+
+  it('lets a later exact match override an earlier lemma match', () => {
+    // "كتب" matches by lemma, then "الكتاب" matches the verse text exactly.
+    // Exact must win regardless of token order.
+    const result = computeScore(verse, 'كتب الكتاب', morphologyMap, wordMap, {
+      lemma: true,
+      root: false,
+    });
+
+    expect(result.matchType).toBe('exact');
+  });
+
+  it('lets a later exact match override an earlier root match', () => {
+    const result = computeScore(verse, 'كتب الكتاب', morphologyMap, wordMap, {
+      lemma: false,
+      root: true,
+    });
+
+    expect(result.matchType).toBe('exact');
+  });
+
+  it('passes wordMap to the lemma lookup so matched tokens are verse words', () => {
+    const result = computeScore(verse, 'كتب', morphologyMap, wordMap, {
+      lemma: true,
+      root: false,
+    });
+
+    // Without wordMap the fallback returns the lemma itself ("كتب"); with it,
+    // the actual verse word ("الكتاب") is returned for highlighting.
+    expect(result.matchedTokens).toContain('الكتاب');
+    expect(result.matchedTokens).not.toContain('كتب');
+    expect(result.tokenTypes['الكتاب']).toBe('lemma');
   });
 });
