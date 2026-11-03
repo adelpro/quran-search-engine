@@ -57,7 +57,9 @@ export const computeScore = <TVerse extends VerseInput>(
     }
 
     // 2. Lemma/Root Matches
-    const entry = wordMap[token];
+    // `wordMap` is a Map (see `WordMap`), so property access would always be
+    // undefined and silently leave every lemma/root-only match unscored.
+    const entry = wordMap.get(token);
     if (entry) {
       if (options.lemma && entry.lemma) {
         const lemmaMatches = getPositiveTokens(

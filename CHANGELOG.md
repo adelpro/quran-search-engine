@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Lemma and root matches were never scored**: `computeScore()` read `wordMap[token]` even though
+  `WordMap` is a `Map`, so the lookup was always `undefined`. Every verse found only through the
+  lemma or root layer stayed `matchType: 'none'`, `counts.lemma`/`counts.root` were always `0`,
+  and totals were inflated with unscored results (for example `العلم` reported 728 results but
+  only 29 exact matches). Scoring now uses `wordMap.get(token)`; per-type counts add up to
+  `counts.total` again.
+
 - **`suraName` filtering for English and romanized names**: `normalizeArabic()` stripped Latin
   letters but kept the hyphen, so `suraName: 'Al-Fatiha'` collapsed to `'-'` and matched every
   romanized name containing a hyphen; English names collapsed to `''` and skipped filtering

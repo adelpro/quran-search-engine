@@ -25,7 +25,7 @@ const invertedIndex = buildInvertedIndex(
 
 const context = { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex };
 
-const response = search('truth', context, { lemma: true, root: true, subject: true });
+const response = search('faith', context, { lemma: true, root: true, subject: true });
 ```
 
 See [Subject & Multi-Word Search](./subjects-and-multiword.md) for the dataset format and the

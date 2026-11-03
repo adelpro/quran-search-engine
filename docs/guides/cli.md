@@ -161,12 +161,11 @@ left out.
 1:3  الرحمن الرحيم
 
 Showing 2 of 313 results (page 1 of 157)
-Matches: exact 201 · fuzzy 112
+Matches: exact 201 · root 112
 ```
 
-`fuzzy` counts genuine fuzzy matches only. Verses that reached the results without any layer
-claiming them (`matchType: 'none'`) are included in the totals but not in the fuzzy count, so
-the per-kind numbers do not necessarily add up to the total.
+`fuzzy` counts genuine fuzzy matches only. Each result is claimed by one layer, so the per-kind
+numbers add up to the total.
 
 Multi-term results carry an extra `(N terms · M hits)` suffix per row:
 
