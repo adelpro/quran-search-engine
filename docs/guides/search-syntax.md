@@ -73,6 +73,22 @@ const response2 = search('الله.*الرحمن', context, {
   search('+الله -الرحمن الرحيم | العليم', context, { lemma: true, root: true });
   ```
 
+  Tested against the bundled dataset with `{ lemma: true, root: true, fuzzy: false }`:
+
+  | Query             | Meaning                   | Linear scan | With `invertedIndex` |
+  | ----------------- | ------------------------- | ----------- | -------------------- |
+  | `+الله -الرحمن`   | MUST الله, EXCLUDE الرحمن | 1741        | 1571                 |
+  | `الله \| الرحمن`  | الله OR الرحمن            | 1789        | 1616                 |
+  | `الله AND الرحمن` | not boolean — see below   | 130         | 124                  |
+
+  **Why `AND` / `OR` / `NOT` do nothing:** non-Arabic characters are stripped before searching.
+  `'الله NOT الرحمن'` therefore becomes `'الله الرحمن'`, which is an intersection of the two
+  Arabic words — the same as `'الله AND الرحمن'`.
+
+  **Why the counts differ with an index:** the `invertedIndex` path matches exact normalized
+  tokens, while the linear-scan fallback uses substring matching. A clitic form such as `بالله`
+  is found only by the fallback. Choose one path and keep it consistent across environments.
+
 ### Boolean Search Helper Functions
 
 The library exposes two utility functions for working with boolean queries:

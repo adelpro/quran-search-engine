@@ -578,9 +578,21 @@ const response = search(
 );
 ```
 
-> Boolean search is fully supported in v0.4.0 and is detected automatically. The operators are
-> symbols (`+`, `-`, `|`). The words `AND`, `OR`, and `NOT` are ordinary text, not operators — a
-> query like `'الله AND الرحمن'` is searched as two Arabic words.
+Verified against the bundled dataset with `{ lemma: true, root: true, fuzzy: false }`:
+
+| Query             | Meaning                   | Linear scan | With `invertedIndex` |
+| ----------------- | ------------------------- | ----------- | -------------------- |
+| `+الله -الرحمن`   | MUST الله, EXCLUDE الرحمن | 1741        | 1571                 |
+| `الله \| الرحمن`  | الله OR الرحمن            | 1789        | 1616                 |
+| `الله AND الرحمن` | not boolean — see below   | 130         | 124                  |
+
+> The words `AND`, `OR`, and `NOT` are not operators. Non-Arabic characters are stripped before
+> searching, so `'الله NOT الرحمن'` behaves like `'الله الرحمن'` — an intersection of the two
+> Arabic words — and `'الله AND الرحمن'` returns the same verses.
+
+**Index note:** the `invertedIndex` path matches exact normalized tokens, while the linear-scan
+fallback uses substring matching, so clitic forms such as `بالله` are found only without an
+index. Result counts therefore differ between the two paths; use one path consistently.
 
 #### Range search
 

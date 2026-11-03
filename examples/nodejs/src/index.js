@@ -23,7 +23,7 @@ async function main() {
 
     console.log(`✅ Loaded ${quranData.size} verses`);
     console.log(`✅ Loaded morphology data for ${morphologyMap.size} verses`);
-    console.log(`✅ Loaded word map with ${Object.keys(wordMap).length} entries`);
+    console.log(`✅ Loaded word map with ${wordMap.size} entries`);
     console.log(`✅ Loaded semantic data with ${semanticMap.size} entries`);
     console.log(`✅ Loaded phonetic data with ${phoneticMap.size} entries\n`);
 
@@ -47,6 +47,14 @@ async function main() {
       { query: 'رحم', description: 'Search for root "رحم" (mercy)' },
       { query: 'كتب', description: 'Search for "kataba" (wrote)' },
       { query: 'إنسان', description: 'Semantic search for human (finding "بشر")', semantic: true },
+      {
+        query: '+الله -الرحمن',
+        description: 'Boolean search: verses with "Allah" but not "Al-Rahman"',
+      },
+      {
+        query: 'الرحيم | العليم',
+        description: 'Boolean search: "Al-Rahim" OR "Al-Alim"',
+      },
       { query: 'الله', description: 'Search for "Allah" in Al-Fatiha (Sura 1)', suraId: 1 },
       { query: 'الناس', description: 'Search for "An-Nas" (Sura 114)', suraId: 114 },
     ];
@@ -88,6 +96,7 @@ async function main() {
       console.log(`   - Root: ${results.counts.root}`);
       console.log(`   - Fuzzy: ${results.counts.fuzzy}`);
       console.log(`   - Semantic: ${results.counts.semantic}`);
+      console.log(`   - Subject: ${results.counts.subject}`);
       console.log(`   - Range: ${results.counts.range}`);
       console.log(`   - Regex: ${results.counts.regex}`);
 
@@ -243,6 +252,7 @@ async function main() {
       console.log(`   - Root: ${customResults.counts.root}`);
       console.log(`   - Fuzzy: ${customResults.counts.fuzzy}`);
       console.log(`   - Semantic: ${customResults.counts.semantic}`);
+      console.log(`   - Subject: ${customResults.counts.subject}`);
       console.log(`   - Range: ${customResults.counts.range}`);
       console.log(`   - Regex: ${customResults.counts.regex}\n`);
 
