@@ -578,8 +578,9 @@ const response = search(
 );
 ```
 
-> The words `AND`, `OR`, `NOT`, and parentheses are not boolean syntax in v0.4.0. A query like
-> `'الله AND الرحمن'` is searched as ordinary text.
+> Boolean search is fully supported in v0.4.0 and is detected automatically. The operators are
+> symbols (`+`, `-`, `|`). The words `AND`, `OR`, and `NOT` are ordinary text, not operators — a
+> query like `'الله AND الرحمن'` is searched as two Arabic words.
 
 #### Range search
 

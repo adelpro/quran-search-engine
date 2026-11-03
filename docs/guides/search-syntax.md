@@ -64,8 +64,9 @@ const response2 = search('الله.*الرحمن', context, {
   - `term | term` (**OR / EITHER**): at least one of the terms must appear. Bare terms without
     an operator are treated as `EITHER` terms as well.
 
-  The operators are prefix/infix symbols, not the words `AND`, `OR`, or `NOT`. A query such as
-  `'الله AND الرحمن'` is treated as ordinary text, not as boolean syntax.
+  Boolean search is fully supported and needs no option. The operators are symbols — `+`, `-`,
+  and `|` — not the words `AND`, `OR`, or `NOT`. A query like `'الله AND الرحمن'` is searched as
+  ordinary text rather than as boolean syntax.
 
   ```typescript
   // Verses containing الله but not الرحمن, and either الرحيم or العليم
