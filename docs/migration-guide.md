@@ -208,6 +208,9 @@ const result = validateSubjectData(customSubjectArray);
 if (!result.valid) console.error(formatSchemaErrors(result));
 ```
 
+> The validators expect the **raw JSON shapes** (`subjects.json`, `phonetic.json`, …), not the
+> `Map` instances returned by `loadSubjectData()` / `loadPhoneticData()`.
+
 ---
 
 ## Step-by-step upgrade

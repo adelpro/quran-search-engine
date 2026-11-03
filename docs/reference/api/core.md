@@ -140,6 +140,11 @@ internal schemas.
 
 **Returns:** `ValidationResult` containing `valid` boolean and `errors` array.
 
+> These validators take the **raw JSON shapes** (`quran.json`, `morphology.json`, `word-map.json`,
+> `semantic.json`, `subjects.json`, `phonetic.json`), not the `Map` instances returned by the
+> loaders. For example, `validateSubjectData(subjectsJson)` expects the array from
+> `subjects.json`; passing `await loadSubjectData()` (a `Map`) returns `valid: false`.
+
 ```typescript
 import { validateQuranData, formatSchemaErrors } from 'quran-search-engine';
 

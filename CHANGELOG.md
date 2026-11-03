@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`suraName` filtering for English and romanized names**: `normalizeArabic()` stripped Latin
+  letters but kept the hyphen, so `suraName: 'Al-Fatiha'` collapsed to `'-'` and matched every
+  romanized name containing a hyphen; English names collapsed to `''` and skipped filtering
+  entirely. Arabic, English (`The Opening`), and romanized (`Al-Fatihah`) names now each match
+  only their own sura.
+- **Subject/semantic English queries and phonetic noise**: `--subject climate` and
+  `search('climate', { semantic: true })` used to transliterate the English word through the
+  phonetic map, injecting an unrelated Arabic term and returning thousands of unscored
+  `matchType: 'none'` hits. English concept queries now skip phonetic translation, so
+  `--subject climate` returns the 127 weather-theme verses and `semantic: 'climate'` returns 0
+  when the semantic map has no entry.
 - **Subject search precision**: subject words no longer match by bare substring. A word now
   matches a verse only when it shares the verse's root, is one of its lemmas, or appears as a
   whole token once Arabic clitics are attached (`الرياح` for `رياح`). Substring matching pulled

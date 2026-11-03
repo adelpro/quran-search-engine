@@ -91,6 +91,10 @@ response.results.forEach((v) => {
 });
 ```
 
+> English concept queries skip the phonetic transliteration layer, so `"climate"` is resolved by
+> the subject map rather than fuzzy-matched to an unrelated Arabic word. This keeps
+> `--subject climate` limited to the weather theme instead of returning unscored fuzzy hits.
+
 Any English alias listed under the subject key triggers the same group:
 
 ```ts

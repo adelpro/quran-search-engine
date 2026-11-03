@@ -67,6 +67,12 @@ because they address result pages.
 
 The same list, with defaults, is printed by `quran-search-engine --help`.
 
+`--subject` and `--semantic` are designed for English concept queries (`climate`, `worship`,
+`human`). Those queries skip the phonetic transliteration layer, so the result set is limited to
+the theme or synonym group instead of being fuzzy-matched to an unrelated Arabic word. For
+example, `quran-search-engine "climate" --subject` returns the weather theme (127 verses), not a
+mix of unscored fuzzy hits.
+
 ## Query shapes recognised without a flag
 
 These are detected from the query itself, so no option enables them:

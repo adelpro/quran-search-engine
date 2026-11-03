@@ -50,6 +50,8 @@ export type SearchOptions = AdvancedSearchOptions;
   designed to be expanded by contributors over time; write new entries in their base form
   (`مطر`, not `أمطار`), since the root already covers the derived forms.
 - **Filtering Options:** Narrow searches spatially via explicit `{ suraId: 2, juzId: 3 }` etc.
+  `suraName` accepts the Arabic name (`الفاتحة`), the English name (`The Opening`), or the
+  romanized name (`Al-Fatihah`).
 
 ## `PaginationOptions`
 

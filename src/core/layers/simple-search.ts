@@ -31,19 +31,20 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 2. Priority: suraName
   if (suraName) {
+    const rawQuery = suraName.toLowerCase().trim();
     const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
-    if (normalizedQuery) {
+    const isArabicQuery = /[\u0600-\u06FF]/.test(suraName);
+    if (rawQuery) {
       return iterable.filter((verse) => {
-        const normalizedSuraName = verse['sura_name']
-          ? normalizeArabic(verse['sura_name'] as string)
-          : '';
+        if (isArabicQuery) {
+          const normalizedSuraName = verse['sura_name']
+            ? normalizeArabic(verse['sura_name'] as string).toLowerCase()
+            : '';
+          return normalizedSuraName.includes(normalizedQuery);
+        }
         const enName = ((verse['sura_name_en'] as string) || '').toLowerCase();
         const romName = ((verse['sura_name_romanization'] as string) || '').toLowerCase();
-        return (
-          normalizedSuraName.includes(normalizedQuery) ||
-          enName.includes(normalizedQuery) ||
-          romName.includes(normalizedQuery)
-        );
+        return enName.includes(rawQuery) || romName.includes(rawQuery);
       });
     }
   }

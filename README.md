@@ -973,7 +973,7 @@ When the cache reaches capacity, the **least recently used** entry is automatica
 
 ### Using with `search()`
 
-Pass the cache as the **8th argument** to `search()` (`preComputedFuseIndex` is 7th — pass `undefined` if not using it):
+Pass the cache as the **6th argument** to `search()` (`preComputedFuseIndex` is 5th — pass `undefined` if not using it):
 
 ```ts
 import { search, LRUCache } from 'quran-search-engine';
@@ -989,8 +989,8 @@ function handleSearch(query: string, page: number) {
     { quranData, morphologyMap, wordMap },
     { lemma: true, root: true },
     { page, limit: 20 },
-    undefined, // 7th — preComputedFuseIndex (optional)
-    searchCache, // 8th — cache instance
+    undefined, // 5th — preComputedFuseIndex (optional)
+    searchCache, // 6th — cache instance
   );
 }
 

@@ -105,6 +105,40 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results[0].gid).toBe(1);
   });
 
+  it('should not transliterate an English subject query through the phonetic map', () => {
+    // Regression: `--subject climate` used to translate "climate" phonetically into an
+    // unrelated Arabic word and flood the results with unscored fuzzy candidates.
+    const result = search(
+      'climate',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+        phoneticMap: new Map([['climate', ['الله']]]),
+        subjectMap: new Map([['climate', ['الرحمن']]]),
+      },
+      { lemma: true, root: true, subject: true },
+    );
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((r) => r.matchType === 'subject')).toBe(true);
+  });
+
+  it('should not transliterate an English semantic query through the phonetic map', () => {
+    const result = search(
+      'climate',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+        phoneticMap: new Map([['climate', ['الله']]]),
+        semanticMap: new Map([['climate', ['الرحمن']]]),
+      },
+      { lemma: true, root: true, semantic: true },
+    );
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results.every((r) => r.matchType === 'semantic')).toBe(true);
+  });
+
   it('should handle range queries (e.g. 1:1)', () => {
     const result = search('1:1', {
       quranData: mockQuranDataMap,

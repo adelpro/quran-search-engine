@@ -206,10 +206,17 @@ export function search<TVerse extends VerseInput>(
   const operatorFreeQuery = clearBooleanOperators(query);
 
   // 4. Setup phase: Tokenize and handle phonetic translation
+  // English concept queries (`subject`/`semantic`) are resolved by their own layers.
+  // Transliterating them through the phonetic map would inject an unrelated Arabic word
+  // and flood the results with unscored fuzzy candidates (e.g. `--subject climate`).
+  const conceptQuery =
+    (options.subject === true && subjectMap !== undefined) ||
+    (options.semantic === true && semanticMap !== undefined);
   const tokens = operatorFreeQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
     if (token && !isArabic(token)) {
+      if (conceptQuery) return '';
       const cleanToken = token.toLowerCase().trim();
 
       // TODO: Add Transliteration or direct English-to-Arabic Translation (e.g. "Peace" -> "سلام") here.
