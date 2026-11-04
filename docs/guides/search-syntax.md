@@ -57,17 +57,19 @@ const response2 = search('الله.*الرحمن', context, {
 
 ### Range Queries
 
-A query matching `sura:aya`, `sura:start-end`, or `sura:` is intercepted before any linguistic
-layer and returns verses directly from `quranData` by coordinate. It is a lookup, not a text
-search, so no lemma/root/fuzzy work is performed.
+A query matching `sura:aya`, `sura:start-end`, or `sura:` returns verses directly from
+`quranData` by coordinate. A range followed by text (`1:1-4 العالمين`) scopes the normal search
+pipeline to those verses instead.
 
-| Query       | Meaning                                | Bundled dataset |
-| ----------- | -------------------------------------- | --------------- |
-| `2:255`     | The single verse Al-Baqarah 255        | 1 verse         |
-| `1:1-7`     | Al-Fatihah 1 through 7 (inclusive)     | 7 verses        |
-| `2:`        | Every verse of Al-Baqarah              | 286 verses      |
-| `2:255-260` | Al-Baqarah 255 through 260 (inclusive) | 6 verses        |
-| `114:6`     | An-Nas 6                               | 1 verse         |
+| Query             | Meaning                                       | Bundled dataset |
+| ----------------- | --------------------------------------------- | --------------- |
+| `2:255`           | The single verse Al-Baqarah 255               | 1 verse         |
+| `1:1-7`           | Al-Fatihah 1 through 7 (inclusive)            | 7 verses        |
+| `2:`              | Every verse of Al-Baqarah                     | 286 verses      |
+| `2:255-260`       | Al-Baqarah 255 through 260 (inclusive)        | 6 verses        |
+| `114:6`           | An-Nas 6                                      | 1 verse         |
+| `1:1-4 العالمين`  | Text search for العالمين inside 1:1–1:4       | 1 verse (1:2)   |
+| `2:255-260 +الله` | Text/boolean search inside Al-Baqarah 255–260 | 5 verses        |
 
 - Coordinates are **1-based**. Sura/aya numbers must be positive; `endAya` must be greater
   than or equal to `startAya`. The sura must be `1`–`114`.
@@ -77,10 +79,17 @@ search, so no lemma/root/fuzzy work is performed.
   but matches no verse, so it returns 0; `1:1-300` returns the 7 verses that exist.
 - A malformed range (`0:1`, `115:1`, `2:5-3`, `1:0`) does not throw. It falls through to the
   normal text search and normally returns no results because it contains no Arabic words.
-- Range queries bypass `suraId`, `juzId`, `suraName`, `isRegex`, and the linguistic toggles —
-  the coordinates alone define the scope. Pagination still applies.
-- Results keep dataset order and are marked `matchType: 'range'`, `matchScore: 1`, with empty
-  `matchedTokens`. `counts.range` and `counts.total` both equal the number of matched verses.
+- A **coordinate-only** range bypasses `suraId`, `juzId`, `suraName`, `isRegex`, and the
+  linguistic toggles — the coordinates alone define the scope.
+- A **range-scoped text query** must put the range first, separated from the text by whitespace:
+  `1:1-4 العالمين`. The range is applied first, then the normal layers (lemma/root/fuzzy/
+  phonetic/semantic/subject/regex) run only over those verses. Options such as `suraId` still
+  apply afterwards. Text before the range (`العالمين 1:1-4`) is not treated as a scope.
+- Coordinate-only results keep dataset order and are marked `matchType: 'range'`,
+  `matchScore: 1`, with empty `matchedTokens`; `counts.range` and `counts.total` both equal the
+  match count. Range-scoped text results keep their real `matchType` (e.g. `exact`) and
+  `counts.range` is `0`.
+- Pagination applies in both forms.
 - The dataset must provide `sura_id` and `aya_id` on each verse. Custom data without those
   fields returns 0 for every range query.
 
@@ -88,6 +97,7 @@ search, so no lemma/root/fuzzy work is performed.
 const one = search('2:255', context); // 1 result: 2:255
 const seven = search('1:1-7', context); // 7 results: 1:1 … 1:7
 const sura = search('2:', context, {}, { page: 2, limit: 100 }); // page 2 of Al-Baqarah
+const scoped = search('1:1-4 العالمين', context); // 1 result: 1:2
 ```
 
 - **Boolean Search:** Boolean querying is detected automatically from the query itself — no
