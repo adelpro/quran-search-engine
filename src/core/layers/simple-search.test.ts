@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simpleSearch } from './simple-search';
+import { simpleSearch, filterVerses } from './simple-search';
 import { normalizeArabic } from '../../utils/normalization';
 import type { QuranText } from '../../types';
 
@@ -165,5 +165,36 @@ describe('simpleSearch', () => {
         );
       }
     });
+  });
+});
+
+describe('filterVerses suraName', () => {
+  it('filters by Arabic sura name', () => {
+    expect(filterVerses(mockQuranData, undefined, undefined, 'الفاتحة')).toHaveLength(3);
+  });
+
+  it('filters by English sura name', () => {
+    expect(filterVerses(mockQuranData, undefined, undefined, 'The Opening')).toHaveLength(3);
+  });
+
+  it('filters by romanized sura name', () => {
+    expect(filterVerses(mockQuranData, undefined, undefined, 'Al-Fatihah')).toHaveLength(3);
+    expect(filterVerses(mockQuranData, undefined, undefined, 'Al-Fatiha')).toHaveLength(3);
+  });
+
+  it('does not treat the hyphen in a Latin name as a wildcard', () => {
+    // Regression: normalizeArabic('Al-Baqarah') used to collapse to '-', which matched
+    // every romanized name containing a hyphen.
+    expect(filterVerses(mockQuranData, undefined, undefined, 'Al-Baqarah')).toHaveLength(0);
+  });
+
+  it('returns no verses for an unknown name', () => {
+    expect(filterVerses(mockQuranData, undefined, undefined, 'Not A Sura')).toHaveLength(0);
+  });
+
+  it('returns no verses when an Arabic sura name normalizes to empty', () => {
+    // Regression: ''.includes('') matched every verse and bypassed juzId.
+    expect(filterVerses(mockQuranData, undefined, undefined, '١')).toHaveLength(0);
+    expect(filterVerses(mockQuranData, undefined, undefined, 'َ')).toHaveLength(0);
   });
 });

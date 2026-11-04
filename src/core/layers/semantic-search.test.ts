@@ -72,6 +72,31 @@ describe('Semantic Search Verification', () => {
     expect(result.counts.semantic).toBeGreaterThan(0);
   });
 
+  it('scopes semantic matches by Arabic, English, or romanized sura name', () => {
+    const context = {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+      semanticMap: mockSemanticMap,
+    };
+    const baseOptions = { lemma: false, root: false, semantic: true, fuzzy: false } as const;
+    const gidsFor = (suraName: string) =>
+      search('إنسان', context, { ...baseOptions, suraName }).results.map((r) => r.gid);
+
+    // gid 1 is Al-Asr, gid 2 is Al-Alaq; the concept matches both without a filter.
+    expect(
+      search('إنسان', context, baseOptions)
+        .results.map((r) => r.gid)
+        .sort(),
+    ).toEqual([1, 2]);
+    expect(gidsFor('العصر')).toEqual([1]);
+    expect(gidsFor('The Declining Day')).toEqual([1]);
+    expect(gidsFor('Al-Asr')).toEqual([1]);
+    expect(gidsFor('العلق')).toEqual([2]);
+    expect(gidsFor('The Clot')).toEqual([2]);
+    expect(gidsFor('Al-Alaq')).toEqual([2]);
+  });
+
   it('should FAIL for English queries due to regex stripping (as identified in plan)', () => {
     // search.ts strips non-Arabic: query.replace(/[^\u0621-\u064A\s]/g, '').trim()
     // This will strip "Human" to "" → empty result

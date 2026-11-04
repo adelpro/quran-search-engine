@@ -2,6 +2,38 @@ import { normalizeArabic } from '../../utils/normalization';
 import type { VerseInput, WordIndex } from '../../types';
 
 /**
+ * Tests whether a verse belongs to the sura named by `suraName`.
+ *
+ * Arabic names are compared after normalization; Latin names are compared against both
+ * `sura_name_en` and `sura_name_romanization` case-insensitively.
+ *
+ * @param verse - The verse whose `sura_name` fields should be checked.
+ * @param suraName - Arabic, English, or romanized sura name.
+ * @returns `true` when the verse's sura metadata matches the requested name.
+ */
+export const matchesSuraName = (verse: VerseInput, suraName: string): boolean => {
+  const rawQuery = suraName.toLowerCase().trim();
+  if (!rawQuery) return false;
+
+  const isArabicQuery = /[\u0600-\u06FF]/.test(suraName);
+  if (isArabicQuery) {
+    const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
+    // An Arabic name made only of digits or diacritics normalizes to '', and
+    // ''.includes('') would match every verse. Treat it as an explicit miss.
+    if (!normalizedQuery) return false;
+
+    const normalizedSuraName = verse['sura_name']
+      ? normalizeArabic(verse['sura_name'] as string).toLowerCase()
+      : '';
+    return normalizedSuraName.includes(normalizedQuery);
+  }
+
+  const enName = ((verse['sura_name_en'] as string) || '').toLowerCase();
+  const romName = ((verse['sura_name_romanization'] as string) || '').toLowerCase();
+  return enName.includes(rawQuery) || romName.includes(rawQuery);
+};
+
+/**
  * Filters a collection of verses based on Surah ID, Surah Name, or Juz ID.
  * * **Filter Priority:**
  * 1. `suraId` (Highest priority, strict match)
@@ -31,20 +63,9 @@ export const filterVerses = <TVerse extends VerseInput>(
 
   // 2. Priority: suraName
   if (suraName) {
-    const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
-    if (normalizedQuery) {
-      return iterable.filter((verse) => {
-        const normalizedSuraName = verse['sura_name']
-          ? normalizeArabic(verse['sura_name'] as string)
-          : '';
-        const enName = ((verse['sura_name_en'] as string) || '').toLowerCase();
-        const romName = ((verse['sura_name_romanization'] as string) || '').toLowerCase();
-        return (
-          normalizedSuraName.includes(normalizedQuery) ||
-          enName.includes(normalizedQuery) ||
-          romName.includes(normalizedQuery)
-        );
-      });
+    const rawQuery = suraName.toLowerCase().trim();
+    if (rawQuery) {
+      return iterable.filter((verse) => matchesSuraName(verse, suraName));
     }
   }
 
