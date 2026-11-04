@@ -608,8 +608,17 @@ search pipeline.
 | `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7) |
 | `2:`    | Entire sura (all verses of Al-Baqarah)       |
 
-Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range
-queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
+Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Bounds are 1-based
+and inclusive; whitespace around `:` / `-` and leading zeros are accepted (`02:255` works). Aya numbers are not validated
+against the real length of the sura, so `2:300` parses but returns 0, while `1:1-300` returns the seven verses that exist.
+Malformed forms such as `0:1`, `115:1`, or `2:5-3` do not throw — they fall through to the standard linguistic search and
+normally return no results. Range queries ignore `suraId`, `juzId`, `suraName`, `isRegex`, and the linguistic toggles;
+results keep dataset order with `matchType: 'range'`, `matchScore: 1`, and `counts.range` equal to the total.
+
+The filter options are applied **to the matches** returned by the search layers. `suraName` scopes a query to a sura; it
+does not enumerate every verse in that sura. For example, `search('الله', { suraName: 'Al-Fatihah' })` returns only the
+Al-Fatihah verses that matched the word (two with lemma/root enabled), not all seven verses. Use a range query such as
+`1:` when you want the whole sura.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -1140,7 +1149,7 @@ export type SearchOptions = {
   isRegex?: boolean;
   suraId?: number;
   juzId?: number;
-  suraName?: string; // Arabic, English, or romanized name
+  suraName?: string; // scopes query matches to a sura; does not list the whole sura
   sura_name_en?: string; // alias for suraName
   sura_name_romanization?: string; // alias for suraName
 };

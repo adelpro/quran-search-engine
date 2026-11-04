@@ -55,8 +55,41 @@ const response2 = search('الله.*الرحمن', context, {
 });
 ```
 
-- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse
-  targets efficiently without iterating.
+### Range Queries
+
+A query matching `sura:aya`, `sura:start-end`, or `sura:` is intercepted before any linguistic
+layer and returns verses directly from `quranData` by coordinate. It is a lookup, not a text
+search, so no lemma/root/fuzzy work is performed.
+
+| Query       | Meaning                                | Bundled dataset |
+| ----------- | -------------------------------------- | --------------- |
+| `2:255`     | The single verse Al-Baqarah 255        | 1 verse         |
+| `1:1-7`     | Al-Fatihah 1 through 7 (inclusive)     | 7 verses        |
+| `2:`        | Every verse of Al-Baqarah              | 286 verses      |
+| `2:255-260` | Al-Baqarah 255 through 260 (inclusive) | 6 verses        |
+| `114:6`     | An-Nas 6                               | 1 verse         |
+
+- Coordinates are **1-based**. Sura/aya numbers must be positive; `endAya` must be greater
+  than or equal to `startAya`. The sura must be `1`–`114`.
+- Whitespace around the colon and hyphen is ignored, and leading zeros are accepted:
+  `2 : 255` and `02:255` both resolve to `2:255`.
+- Numbers are **not** validated against the real length of a sura. `2:300` parses successfully
+  but matches no verse, so it returns 0; `1:1-300` returns the 7 verses that exist.
+- A malformed range (`0:1`, `115:1`, `2:5-3`, `1:0`) does not throw. It falls through to the
+  normal text search and normally returns no results because it contains no Arabic words.
+- Range queries bypass `suraId`, `juzId`, `suraName`, `isRegex`, and the linguistic toggles —
+  the coordinates alone define the scope. Pagination still applies.
+- Results keep dataset order and are marked `matchType: 'range'`, `matchScore: 1`, with empty
+  `matchedTokens`. `counts.range` and `counts.total` both equal the number of matched verses.
+- The dataset must provide `sura_id` and `aya_id` on each verse. Custom data without those
+  fields returns 0 for every range query.
+
+```typescript
+const one = search('2:255', context); // 1 result: 2:255
+const seven = search('1:1-7', context); // 7 results: 1:1 … 1:7
+const sura = search('2:', context, {}, { page: 2, limit: 100 }); // page 2 of Al-Baqarah
+```
+
 - **Boolean Search:** Boolean querying is detected automatically from the query itself — no
   option is needed. It supports three operators:
   - `+term` (**AND / MUST**): the term must appear in the verse.

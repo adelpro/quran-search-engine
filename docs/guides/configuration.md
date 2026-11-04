@@ -51,7 +51,18 @@ export type SearchOptions = AdvancedSearchOptions;
   (`مطر`, not `أمطار`), since the root already covers the derived forms.
 - **Filtering Options:** Narrow searches spatially via explicit `{ suraId: 2, juzId: 3 }` etc.
   `suraName` accepts the Arabic name (`الفاتحة`), the English name (`The Opening`), or the
-  romanized name (`Al-Fatihah`).
+  romanized name (`Al-Fatihah`). Latin names are matched case-insensitively as substrings of
+  the dataset's `sura_name_en` / `sura_name_romanization` fields, so `Al-Fatiha` matches
+  `Al-Fatihah` but the spelling `El-Fatiha` does not.
+
+  Filters are applied **to the verses returned by the search layers**, so they scope a query;
+  they do not enumerate a sura. `search('الله', { suraName: 'Al-Fatihah' })` returns the
+  Al-Fatihah verses that matched the query, not all seven verses. To list a whole sura
+  independently of any words, use a range query such as `1:` (see
+  [Search Syntax](./search-syntax.md#range-queries)).
+
+  Filter priority is `suraId` → `suraName` → `juzId`: when more than one is supplied, only
+  the highest-priority filter runs.
 
 ## `PaginationOptions`
 

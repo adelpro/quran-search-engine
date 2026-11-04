@@ -25,7 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   letters but kept the hyphen, so `suraName: 'Al-Fatiha'` collapsed to `'-'` and matched every
   romanized name containing a hyphen; English names collapsed to `''` and skipped filtering
   entirely. Arabic, English (`The Opening`), and romanized (`Al-Fatihah`) names now each match
-  only their own sura.
+  only their own sura. The semantic and subject layers now use the same name matcher instead of
+  comparing only the Arabic `sura_name`, so their concept hits are no longer dropped when an
+  English or romanized name is supplied.
 - **Subject/semantic English queries and phonetic noise**: `--subject climate` and
   `search('climate', { semantic: true })` used to transliterate the English word through the
   phonetic map, injecting an unrelated Arabic term and returning thousands of unscored
