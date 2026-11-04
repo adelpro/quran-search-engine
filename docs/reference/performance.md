@@ -376,28 +376,37 @@ When Web Workers aren't supported, provide fallback dependencies:
 ```typescript
 import {
   createSearchWorker,
+  supportsWorkers,
   loadQuranData,
   loadMorphology,
   loadWordMap,
   loadSemanticData,
   loadPhoneticData,
+  loadSubjectData,
   buildInvertedIndex,
 } from 'quran-search-engine';
 
+// Optional feature check before choosing a transport
+console.log(supportsWorkers()); // false in Node/SSR
+
 // Load data on main thread
-const [quranData, morphologyMap, wordMap, semanticMap, phoneticMap] = await Promise.all([
-  loadQuranData(),
-  loadMorphology(),
-  loadWordMap(),
-  loadSemanticData().catch(() => null),
-  loadPhoneticData().catch(() => null),
-]);
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap, phoneticMap] = await Promise.all(
+  [
+    loadQuranData(),
+    loadMorphology(),
+    loadWordMap(),
+    loadSemanticData().catch(() => null),
+    loadSubjectData().catch(() => null),
+    loadPhoneticData().catch(() => null),
+  ],
+);
 
 const invertedIndex = buildInvertedIndex(
   morphologyMap,
   quranData,
   semanticMap ?? undefined,
-  phoneticMap ?? undefined,
+  subjectMap ?? undefined,
+  wordMap,
 );
 
 // Create fallback client
