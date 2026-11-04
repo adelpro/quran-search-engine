@@ -1279,10 +1279,12 @@ It focuses strictly on deterministic Quran text search with basic semantic synon
 
 Several example applications are available in the `examples/` directory:
 
-- **React + Vite**: Full-featured web app with search UI (`examples/vite-react`)
-- **Vanilla TypeScript**: Simple browser-based search without frameworks (`examples/vanilla-ts`)
-- **Angular**: Standalone Angular app with highlighted results (`examples/angular`)
-- **Node.js**: Server-side search with command-line interface (`examples/nodejs`)
+- **React + Vite**: Full search UI with highlighting, pagination, worker, subject and multi-term search
+  (`examples/vite-react`)
+- **Vanilla TypeScript**: Framework-free search with worker, subject and multi-term search (`examples/vanilla-ts`)
+- **Angular**: Standalone Angular app with highlighting, worker, subject and multi-term search (`examples/angular`)
+- **Node.js**: Server-side search demonstrating subject and multi-term search from the command line
+  (`examples/nodejs`)
 
 The bundled [CLI](#cli) is another way to try the engine without writing any code:
 `npx quran-search-engine "رحم"`.
@@ -1351,25 +1353,23 @@ The test suite covers:
 **Note**: These are **unit tests** that test individual functions in isolation. For integration testing, see the
 Verification Script below.
 
-### Verification Script
+### Example End-to-End Tests
 
-For comprehensive end-to-end verification, run the included verification script:
+For browser-level verification of the example applications, run:
 
 ```bash
 # Build the library first
 yarn build
 
-# Then run verification (requires tsx or similar TypeScript runner)
-yarn tsx scripts/verify-loader.ts
+# Start the example dev servers (if needed) and run real browser checks
+yarn test:e2e:examples
 ```
 
-This script performs **integration testing** that validates the complete search pipeline:
-
-- **Data Loading**: Tests Quran data, morphology, and word map loading with performance timing
-- **Simple Search**: Validates basic text search functionality
-- **Advanced Search**: Tests morphological matching (lemma/root), scoring, and pagination
-- **Pagination**: Verifies page navigation and result differentiation across pages
-- **Highlighting**: Tests token extraction for UI highlighting features
+The Puppeteer suite loads the React, Vanilla TypeScript, and Angular examples, runs exact,
+multi-term, subject, range-scoped, and boolean searches through the real UI, verifies range/filter
+intersection and that the Web Worker path is active, and fails on page or request errors. See
+[docs/guides/examples.md](docs/guides/examples.md#end-to-end-checks) for production-bundle testing
+with custom URLs.
 
 ## Performance Optimization (Advanced)
 

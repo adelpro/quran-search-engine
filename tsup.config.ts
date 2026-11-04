@@ -3,6 +3,9 @@ import { version } from './package.json';
 
 export default defineConfig([
   {
+    // `fuse.js` is bundled so the worker artifact works when loaded directly
+    // by URL (see the examples) instead of relying on the consumer's bundler
+    // to resolve bare imports.
     entry: ['src/index.ts', 'src/worker/search-worker.ts'],
     format: ['cjs', 'esm'],
     dts: true,
@@ -10,6 +13,7 @@ export default defineConfig([
     splitting: false,
     sourcemap: true,
     minify: false,
+    noExternal: ['fuse.js'],
   },
   {
     // The CLI is built separately so the shebang banner lands only on the executable,

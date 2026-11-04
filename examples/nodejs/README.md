@@ -14,6 +14,7 @@ always runs against the local `0.4.0` build.
 - Boolean queries with `+term`, `-term`, and `term | term`
 - Multi-term search with `rankBy: 'score' | 'coverage' | 'frequency'`
 - Range lookups (`2:255`, `1:1-7`, `2:`)
+- Range-scoped text search (`1:1-4 العالمين`) and range/filter intersection
 - Regex search with `validateRegex()`
 - Pre-computed Fuse index and LRU cache
 - Highlight ranges and JSON/CSV/TSV export helpers
@@ -48,6 +49,8 @@ always runs against the local `0.4.0` build.
 | Subject search    | `loadSubjectData()`, `subjectMap`, `{ subject: true }` |
 | Multi-term search | `search(string[], context, options, { rankBy })`       |
 | Range lookup      | `search('2:255', context)`                             |
+| Range-scoped text | `search('1:1-4 العالمين', context)`                    |
+| Range/filter      | `search('2:255', context, { suraId: 1 })` → 0 results  |
 | Boolean helpers   | `hasBooleanOperators()`, `clearBooleanOperators()`     |
 | Highlight/export  | `getHighlightRanges()`, `exportResults()`              |
 | Regex             | `validateRegex()`, `{ isRegex: true }`                 |

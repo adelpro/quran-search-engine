@@ -50,7 +50,8 @@
     "playground:react": "yarn workspace react-example dev",
     "playground:vanilla": "yarn workspace vanilla-ts-example dev",
     "playground:angular": "yarn workspace example-angular start",
-    "playground:node": "yarn workspace nodejs-example start"
+    "playground:node": "yarn workspace nodejs-example start",
+    "test:e2e:examples": "node scripts/e2e-examples.mjs"
   },
   "keywords": [
     "quran",

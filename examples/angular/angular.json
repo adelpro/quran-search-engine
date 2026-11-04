@@ -17,7 +17,13 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "polyfills": ["zone.js"],
-            "assets": [],
+            "assets": [
+              {
+                "glob": "search-worker.mjs",
+                "input": "node_modules/quran-search-engine/dist/worker",
+                "output": "."
+              }
+            ],
             "styles": ["src/styles.css"],
             "scripts": []
           },

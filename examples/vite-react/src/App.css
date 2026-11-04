@@ -205,6 +205,20 @@
   background-color: #334155;
 }
 
+.indicator-subject {
+  background-color: #8e44ad;
+}
+
+.highlight-subject {
+  background-color: #6b21a8;
+  color: #ffffff;
+}
+
+.tag-subject {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
 .results-list {
   display: flex;
   flex-direction: column;
@@ -409,6 +423,11 @@
   .highlight-semantic {
     background-color: #cbd5e1;
     color: #0f172a;
+  }
+
+  .highlight-subject {
+    background-color: #c084fc;
+    color: #581c87;
   }
 
   .indicator-exact {

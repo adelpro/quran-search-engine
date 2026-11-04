@@ -11,6 +11,7 @@ import {
   LRUCache,
   createSearchWorker,
   supportsWorkers,
+  hasBooleanOperators,
   type QuranText,
   type MorphologyAya,
   type WordMap,
@@ -26,6 +27,13 @@ import { VerseItem } from './components/VerseItem';
 import './App.css';
 
 const searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
+
+// A leading `sura:aya` / `sura:aya-aya` prefix means the string overload must
+// stay in charge so the v0.4.0 range-scoped text pipeline runs.
+const RANGE_PREFIX = /^\d{1,3}:\d{0,3}(?:-\d{1,3})?(?:\s|$)/;
+function isRangeScopedQuery(query: string): boolean {
+  return RANGE_PREFIX.test(query.trim());
+}
 
 let workerUrl: string | null = null;
 let workerInitPromise: Promise<SearchWorkerClient> | null = null;
@@ -51,6 +59,7 @@ function App() {
     rootCount: number;
     wordCount: number;
     semanticCount: number;
+    subjectCount: number;
   } | null>(null);
   const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,15 +71,12 @@ function App() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 300);
 
-  // Multi-term mode is auto-detected from the input: any 2+ whitespace-
-  // separated words dispatch to search()'s array overload (independent
-  // per-term search merged by gid); a single word goes through the normal
-  // single-query path. Memoized so `terms` keeps a stable reference across
-  // renders that don't change debouncedQuery — it's shared with the search
-  // effect below and included in that effect's own dependency array.
+  // Multi-term mode is auto-detected from the input: 2+ whitespace-separated
+  // words dispatch to search()'s array overload (independent per-term search
+  // merged by gid). Boolean queries and range-scoped text keep the string
+  // overload, and regex mode is never split. Memoized so `terms` keeps a stable
+  // reference across renders that don't change debouncedQuery.
   const terms = useMemo(() => debouncedQuery.split(/\s+/).filter(Boolean), [debouncedQuery]);
-  const isMultiTerm = terms.length > 1;
-  const singleQuery = terms[0] ?? debouncedQuery;
 
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
   const [rankBy, setRankBy] = useState<RankBy>('score');
@@ -87,6 +93,11 @@ function App() {
     juzId: undefined as number | undefined,
     suraName: '',
   });
+  const isMultiTerm =
+    terms.length > 1 &&
+    !options.isRegex &&
+    !hasBooleanOperators(debouncedQuery) &&
+    !isRangeScopedQuery(debouncedQuery);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -142,13 +153,14 @@ function App() {
                 rootCount: index.rootIndex.size,
                 wordCount: index.wordIndex.size,
                 semanticCount: index.semanticIndex?.size ?? 0,
+                subjectCount: index.subjectIndex?.size ?? 0,
               });
               setIndexBuildTime(buildMs);
             }
           }
         } else {
           // When using worker, still build index for stats display
-          const [data, morphology, dictionary, semantic, phonetic, subject] = await Promise.all([
+          const [data, morphology, dictionary, semantic, , subject] = await Promise.all([
             loadQuranData(),
             loadMorphology(),
             loadWordMap(),
@@ -169,6 +181,7 @@ function App() {
               rootCount: index.rootIndex.size,
               wordCount: index.wordIndex.size,
               semanticCount: index.semanticIndex?.size ?? 0,
+              subjectCount: index.subjectIndex?.size ?? 0,
             });
             setIndexBuildTime(buildMs);
           }
@@ -210,7 +223,7 @@ function App() {
               }
             })
         : workerClient.current
-            .runSearch(singleQuery, options, { page: currentPage, limit: PAGE_SIZE })
+            .runSearch(debouncedQuery.trim(), options, { page: currentPage, limit: PAGE_SIZE })
             .then((res) => {
               if (!cancelled) {
                 setSearchResponse(res);
@@ -258,7 +271,7 @@ function App() {
       } else {
         // String overload — the original single-query path, unchanged.
         const response = search(
-          singleQuery,
+          debouncedQuery.trim(),
           context,
           options,
           { page: currentPage, limit: PAGE_SIZE },
@@ -278,7 +291,6 @@ function App() {
     debouncedQuery,
     terms,
     isMultiTerm,
-    singleQuery,
     options,
     currentPage,
     rankBy,
@@ -287,6 +299,7 @@ function App() {
     wordMap,
     semanticMap,
     phoneticMap,
+    subjectMap,
     invertedIndex,
     loading,
   ]);
@@ -332,7 +345,8 @@ function App() {
                 <strong>{indexStats.wordCount.toLocaleString()}</strong> words
               </span>
               <span>
-                <strong>{indexStats.semanticCount.toLocaleString()}</strong> semantic
+                <strong>{indexStats.semanticCount.toLocaleString()}</strong> semantic ·{' '}
+                <strong>{indexStats.subjectCount.toLocaleString()}</strong> subject
               </span>
               {indexBuildTime !== null && <span>Index: {indexBuildTime.toFixed(1)}ms</span>}
             </span>
@@ -344,7 +358,7 @@ function App() {
         <div style={{ position: 'relative', flex: 1 }}>
           <input
             type="text"
-            placeholder="Search for a word (e.g. كتب) — or several words for independent multi-term search (e.g. الله الرحمن)..."
+            placeholder="Search a word, multiple words, a range (1:1-4 العالمين), or boolean (+الله -الرحمن)…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -508,7 +522,7 @@ function App() {
                 <span className="stat-value">{activeResponse.counts.semantic}</span>
               </span>
               <span className="stat-item">
-                <span className="indicator indicator-semantic"></span>
+                <span className="indicator indicator-subject"></span>
                 <span className="stat-label">Subject:</span>
                 <span className="stat-value">{activeResponse.counts.subject}</span>
               </span>

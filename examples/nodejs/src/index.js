@@ -141,10 +141,11 @@ async function main() {
     }
 
     // 2. Subject (thematic) search — v0.4.0.
+    // Lemma/root are disabled so this demonstrates the thematic layer alone.
     const subjectResponse = search(
       'climate',
       context,
-      { lemma: true, root: true, subject: true },
+      { lemma: false, root: false, fuzzy: false, subject: true },
       { page: 1, limit: 5 },
       undefined,
       cache,
@@ -172,6 +173,29 @@ async function main() {
       cache,
     );
     printResults('"2:255" — single-verse range lookup', rangeResponse);
+
+    // 4b. Range-scoped text search — v0.4.0.
+    const rangeTextResponse = search(
+      '1:1-4 العالمين',
+      context,
+      { lemma: true, root: true },
+      { page: 1, limit: 5 },
+      undefined,
+      cache,
+    );
+    printResults('"1:1-4 العالمين" — range-scoped text search', rangeTextResponse);
+
+    // 4c. Range/filter intersection — v0.4.0. A range is intersected with
+    // explicit sura/Juz filters, so this contradictory pair returns 0.
+    const rangeFilterResponse = search(
+      '2:255',
+      context,
+      { lemma: true, root: true, suraId: 1 },
+      { page: 1, limit: 5 },
+      undefined,
+      cache,
+    );
+    printResults('"2:255" with suraId: 1 — range/filter intersection', rangeFilterResponse);
 
     // 5. Boolean helper functions.
     console.log('🔧 Boolean helpers');

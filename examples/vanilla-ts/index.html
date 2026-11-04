@@ -151,6 +151,57 @@
       .indicator-semantic {
         background: #6c757d;
       }
+
+      .indicator-subject {
+        background: #8e44ad;
+      }
+
+      .highlight-subject {
+        background: #e8daef;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .worker-badge {
+        padding: 3px 10px;
+        border: 1px solid;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+
+      .worker-badge--active {
+        color: #1e7e34;
+        border-color: #28a745;
+        background: #eafaef;
+      }
+
+      .worker-badge--fallback {
+        color: #856404;
+        border-color: #ffc107;
+        background: #fff8e1;
+      }
+
+      .index-stats {
+        font-size: 13px;
+        color: #666;
+      }
+
+      .rank-option {
+        display: none;
+      }
+
+      .rank-option--visible {
+        display: flex;
+      }
     </style>
   </head>
 
@@ -158,12 +209,17 @@
     <div class="container">
       <h1>Quran Search Engine <small>Vanilla TypeScript Example</small></h1>
 
+      <div class="badges">
+        <span id="worker-badge" class="worker-badge">Initializing…</span>
+        <span id="stats" class="index-stats"></span>
+      </div>
+
       <div class="search-container">
         <input
           type="text"
           id="search-input"
           class="search-input"
-          placeholder="Search for a word (e.g., كتب, الله, رحم)..."
+          placeholder="Search a word, multiple words, a range (1:1-4 العالمين), or boolean (+الله -الرحمن)…"
         />
 
         <div class="options">
@@ -182,6 +238,22 @@
           <label class="option">
             <input type="checkbox" id="semantic" checked />
             Semantic Search
+          </label>
+          <label class="option">
+            <input type="checkbox" id="subject" />
+            Subject Search
+          </label>
+          <label class="option">
+            <input type="checkbox" id="is-regex" />
+            Regex Search
+          </label>
+          <label class="option rank-option" id="rank-option">
+            Rank by:
+            <select id="rank-by">
+              <option value="score">Score</option>
+              <option value="coverage">Coverage (distinct terms)</option>
+              <option value="frequency">Frequency (raw hits)</option>
+            </select>
           </label>
           <label class="option">
             Sura ID: <input type="number" id="sura-id" min="1" max="114" style="width: 50px" />

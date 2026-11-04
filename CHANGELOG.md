@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Worker artifact was not self-contained**: `dist/worker/search-worker.{js,mjs}` kept a bare
+  `import Fuse from 'fuse.js'`. It only worked when a dev bundler rewrote the specifier, so
+  production builds and directly served copies (the Angular example) failed to start and silently
+  fell back to the main thread. The worker entry now bundles `fuse.js`.
+- **Example applications now run the v0.4.0 API end to end**: the vanilla example's DOM was missing
+  the `#is-regex`, worker-badge, and stats elements added in v0.4.0, which threw during startup and
+  left the search box without listeners. The React example failed `tsc -b` on an unused variable,
+  and the Angular example always fell back to the main thread. Vanilla and Angular also gained
+  subject search, multi-term search, and `buildInvertedIndex(..., subjectMap, wordMap)` wiring.
+  Worker responses are now ignored when a newer query has started, preventing stale results from
+  overwriting the latest search.
+
+### Changed
+
+- **Playground query modes**: React, Vanilla, and Angular now route range-scoped text
+  (`1:1-4 العالمين`) and boolean queries (`+الله -الرحمن`) through the string overload instead of
+  splitting them into multi-term searches, and regex input is never split. The Node example adds
+  range-scoped text and range/filter-intersection demos. The browser E2E suite covers all three
+  modes plus range/filter overlap.
+
 ## [0.4.0] - 2026-11-03
 
 ### Fixed

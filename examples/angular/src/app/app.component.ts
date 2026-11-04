@@ -8,16 +8,21 @@ import {
   loadWordMap,
   loadSemanticData,
   loadPhoneticData,
+  loadSubjectData,
   buildInvertedIndex,
   search,
   LRUCache,
   createSearchWorker,
   supportsWorkers,
+  hasBooleanOperators,
   type AdvancedSearchOptions,
   type InvertedIndex,
   type MatchType,
+  type MergedSearchResult,
   type MorphologyAya,
+  type MultiTermResponse,
   type QuranText,
+  type RankBy,
   type ScoredVerse,
   type SearchResponse,
   type SearchWorkerClient,
@@ -26,6 +31,13 @@ import {
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type HighlightPart = { text: string; matchType: MatchType | null };
+
+// A leading `sura:aya` / `sura:aya-aya` prefix means the string overload must
+// stay in charge so the v0.4.0 range-scoped text pipeline runs.
+const RANGE_PREFIX = /^\d{1,3}:\d{0,3}(?:-\d{1,3})?(?:\s|$)/;
+function isRangeScopedQuery(query: string): boolean {
+  return RANGE_PREFIX.test(query.trim());
+}
 
 @Component({
   selector: 'app-root',
@@ -53,7 +65,8 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             <strong>{{ indexStats.lemmaCount.toLocaleString() }}</strong> lemmas ·
             <strong>{{ indexStats.rootCount.toLocaleString() }}</strong> roots ·
             <strong>{{ indexStats.wordCount.toLocaleString() }}</strong> words ·
-            <strong>{{ indexStats.semanticCount.toLocaleString() }}</strong> semantic · Index:
+            <strong>{{ indexStats.semanticCount.toLocaleString() }}</strong> semantic ·
+            <strong>{{ indexStats.subjectCount.toLocaleString() }}</strong> subject · Index:
             {{ indexBuildTime?.toFixed(1) }}ms
           </span>
         </div>
@@ -73,7 +86,7 @@ type HighlightPart = { text: string; matchType: MatchType | null };
             [disabled]="loadState !== 'ready'"
             [(ngModel)]="query"
             (ngModelChange)="onQueryChange()"
-            placeholder="مثال: الرحمن"
+            placeholder="مثال: الرحمن — أو 1:1-4 العالمين — أو +الله -الرحمن"
           />
           <button
             class="button"
@@ -114,6 +127,22 @@ type HighlightPart = { text: string; matchType: MatchType | null };
               (ngModelChange)="runSearch(true)"
             />
             Semantic
+          </label>
+          <label class="check">
+            <input
+              type="checkbox"
+              [(ngModel)]="options.subject"
+              (ngModelChange)="runSearch(true)"
+            />
+            Subject
+          </label>
+          <label class="label" *ngIf="isMultiTerm">
+            Rank by:
+            <select class="input" [(ngModel)]="rankBy" (ngModelChange)="runSearch(true)">
+              <option value="score">Score</option>
+              <option value="coverage">Coverage (distinct terms)</option>
+              <option value="frequency">Frequency (raw hits)</option>
+            </select>
           </label>
           <label class="label">
             Sura ID:
@@ -167,7 +196,8 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                 <strong>{{ response.counts.lemma }}</strong> • Root:
                 <strong>{{ response.counts.root }}</strong> • Fuzzy:
                 <strong>{{ response.counts.fuzzy }}</strong> • Semantic:
-                <strong>{{ response.counts.semantic }}</strong> • Range:
+                <strong>{{ response.counts.semantic }}</strong> • Subject:
+                <strong>{{ response.counts.subject }}</strong> • Range:
                 <strong>{{ response.counts.range }}</strong> • Regex:
                 <strong>{{ response.counts.regex }}</strong>
               </div>
@@ -202,6 +232,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
                   }}</span>
                   <span class="ref">{{ verse.sura_name_en }} • {{ verse.aya_id_display }}</span>
                   <span class="score">score {{ verse.matchScore }}</span>
+                  <span class="muted" *ngIf="matchedTermsLabel(verse) as termsLabel">{{
+                    termsLabel
+                  }}</span>
                 </div>
                 <p class="text arabic" dir="rtl">
                   <span
@@ -405,6 +438,9 @@ type HighlightPart = { text: string; matchType: MatchType | null };
       .highlight-semantic {
         background: rgba(108, 117, 125, 0.35);
       }
+      .highlight-subject {
+        background: rgba(142, 68, 173, 0.35);
+      }
     `,
   ],
 })
@@ -422,6 +458,7 @@ export class AppComponent implements OnInit, OnDestroy {
     rootCount: number;
     wordCount: number;
     semanticCount: number;
+    subjectCount: number;
   } | null = null;
   indexBuildTime: number | null = null;
 
@@ -431,6 +468,7 @@ export class AppComponent implements OnInit, OnDestroy {
     fuzzy: boolean;
     isRegex: boolean;
     semantic: boolean;
+    subject: boolean;
     suraId?: number;
     juzId?: number;
     suraName?: string;
@@ -440,21 +478,36 @@ export class AppComponent implements OnInit, OnDestroy {
     fuzzy: true,
     isRegex: false,
     semantic: true,
+    subject: false,
   };
 
-  response: SearchResponse<QuranText> | null = null;
+  response: SearchResponse<QuranText> | MultiTermResponse<QuranText> | null = null;
+  rankBy: RankBy = 'score';
+
+  get isMultiTerm(): boolean {
+    const query = this.query.trim();
+    return (
+      query.split(/\s+/).filter(Boolean).length > 1 &&
+      !this.options.isRegex &&
+      !hasBooleanOperators(query) &&
+      !isRangeScopedQuery(query)
+    );
+  }
 
   private quranData: Map<number, QuranText> | null = null;
   private morphologyMap: Map<number, MorphologyAya> | null = null;
   private wordMap: WordMap | null = null;
   private semanticMap: Map<string, string[]> | null = null;
   private phoneticMap: Map<string, string[]> | null = null;
+  private subjectMap: Map<string, string[]> | null = null;
   private invertedIndex: InvertedIndex | null = null;
   private uthmaniHighlightPartsByGid = new Map<number, readonly HighlightPart[]>();
 
   private debounceHandle: number | null = null;
   private searchCache = new LRUCache<string, SearchResponse<QuranText>>(50);
   private workerClient: SearchWorkerClient | null = null;
+  /** Invalidates async worker responses that arrive after a newer query. */
+  private searchRequestId = 0;
 
   async ngOnInit(): Promise<void> {
     this.loadState = 'loading';
@@ -463,8 +516,11 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       if (supportsWorkers()) {
         try {
+          // The worker bundle is copied to the app root by angular.json's
+          // assets glob, because Angular's builder cannot resolve the
+          // package's `quran-search-engine/worker` export to a dev-server URL.
           const client = createSearchWorker({
-            workerUrl: new URL('quran-search-engine/worker', import.meta.url),
+            workerUrl: new URL('search-worker.mjs', document.baseURI),
           });
           await client.initData();
           this.workerClient = client;
@@ -478,12 +534,13 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       if (!this.workerClient) {
-        const [data, morphology, dictionary, semantic, phonetic] = await Promise.all([
+        const [data, morphology, dictionary, semantic, phonetic, subject] = await Promise.all([
           loadQuranData(),
           loadMorphology(),
           loadWordMap(),
           loadSemanticData(),
           loadPhoneticData(),
+          loadSubjectData(),
         ]);
 
         this.quranData = data;
@@ -491,9 +548,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.wordMap = dictionary;
         this.semanticMap = semantic;
         this.phoneticMap = phonetic;
+        this.subjectMap = subject;
 
         const buildStart = performance.now();
-        this.invertedIndex = buildInvertedIndex(morphology, data, semantic);
+        this.invertedIndex = buildInvertedIndex(morphology, data, semantic, subject, dictionary);
         this.indexBuildTime = performance.now() - buildStart;
 
         this.indexStats = {
@@ -501,18 +559,21 @@ export class AppComponent implements OnInit, OnDestroy {
           rootCount: this.invertedIndex.rootIndex.size,
           wordCount: this.invertedIndex.wordIndex.size,
           semanticCount: this.invertedIndex.semanticIndex?.size ?? 0,
+          subjectCount: this.invertedIndex.subjectIndex?.size ?? 0,
         };
       } else {
-        const [data, morphology, , semantic, phonetic] = await Promise.all([
+        const [data, morphology, dictionary, semantic, , subject] = await Promise.all([
           loadQuranData(),
           loadMorphology(),
           loadWordMap(),
           loadSemanticData(),
           loadPhoneticData(),
+          loadSubjectData(),
         ]);
+        this.subjectMap = subject;
 
         const buildStart = performance.now();
-        const index = buildInvertedIndex(morphology, data, semantic);
+        const index = buildInvertedIndex(morphology, data, semantic, subject, dictionary);
         this.indexBuildTime = performance.now() - buildStart;
 
         this.indexStats = {
@@ -520,6 +581,7 @@ export class AppComponent implements OnInit, OnDestroy {
           rootCount: index.rootIndex.size,
           wordCount: index.wordIndex.size,
           semanticCount: index.semanticIndex?.size ?? 0,
+          subjectCount: index.subjectIndex?.size ?? 0,
         };
       }
 
@@ -550,12 +612,14 @@ export class AppComponent implements OnInit, OnDestroy {
   runSearch(resetPage: boolean): void {
     const trimmed = this.query.trim();
     if (!trimmed) {
+      this.searchRequestId++;
       this.response = null;
       this.uthmaniHighlightPartsByGid.clear();
       return;
     }
 
     if (resetPage) this.page = 1;
+    const requestId = ++this.searchRequestId;
 
     const searchOptions: AdvancedSearchOptions = {
       lemma: this.options.lemma,
@@ -566,16 +630,38 @@ export class AppComponent implements OnInit, OnDestroy {
       juzId: this.options.juzId,
       suraName: this.options.suraName,
       semantic: this.options.semantic,
+      subject: this.options.subject,
     };
 
+    const terms = trimmed.split(/\s+/).filter(Boolean);
+    const multiTerm =
+      terms.length > 1 &&
+      !searchOptions.isRegex &&
+      !hasBooleanOperators(trimmed) &&
+      !isRangeScopedQuery(trimmed);
+
     if (this.workerClient) {
-      this.workerClient
-        .runSearch(trimmed, searchOptions, { page: this.page, limit: this.limit })
+      const request = multiTerm
+        ? this.workerClient.runSearchMany(terms, searchOptions, {
+            page: this.page,
+            limit: this.limit,
+            rankBy: this.rankBy,
+          })
+        : this.workerClient.runSearch(trimmed, searchOptions, {
+            page: this.page,
+            limit: this.limit,
+          });
+      request
         .then((res) => {
+          if (requestId !== this.searchRequestId) return;
           this.response = res;
           this.rebuildHighlightCache();
         })
-        .catch((err) => console.error('Worker search error:', err));
+        .catch((err) => {
+          if (requestId === this.searchRequestId) {
+            console.error('Worker search error:', err);
+          }
+        });
       return;
     }
 
@@ -589,23 +675,41 @@ export class AppComponent implements OnInit, OnDestroy {
     )
       return;
 
-    this.response = search(
-      trimmed,
-      {
-        quranData: this.quranData,
-        morphologyMap: this.morphologyMap,
-        wordMap: this.wordMap,
-        semanticMap: this.semanticMap,
-        phoneticMap: this.phoneticMap,
-        invertedIndex: this.invertedIndex,
-      },
-      searchOptions,
-      { page: this.page, limit: this.limit },
-      undefined,
-      this.searchCache,
-    );
+    const context = {
+      quranData: this.quranData,
+      morphologyMap: this.morphologyMap,
+      wordMap: this.wordMap,
+      semanticMap: this.semanticMap,
+      phoneticMap: this.phoneticMap,
+      subjectMap: this.subjectMap ?? undefined,
+      invertedIndex: this.invertedIndex,
+    };
+
+    this.response = multiTerm
+      ? search(
+          terms,
+          context,
+          searchOptions,
+          { page: this.page, limit: this.limit, rankBy: this.rankBy },
+          undefined,
+          this.searchCache,
+        )
+      : search(
+          trimmed,
+          context,
+          searchOptions,
+          { page: this.page, limit: this.limit },
+          undefined,
+          this.searchCache,
+        );
 
     this.rebuildHighlightCache();
+  }
+
+  matchedTermsLabel(verse: ScoredVerse<QuranText>): string {
+    if (!('matchedTerms' in verse)) return '';
+    const merged = verse as MergedSearchResult<QuranText>;
+    return `${merged.distinctTermCount} term(s) · ${merged.totalFrequency} hit(s)`;
   }
 
   goToPage(nextPage: number): void {
