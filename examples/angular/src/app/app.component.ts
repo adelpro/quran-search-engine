@@ -32,6 +32,22 @@ import {
 type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 type HighlightPart = { text: string; matchType: MatchType | null };
 
+type FeatureExample = {
+  label: string;
+  query: string;
+  note: string;
+  options: {
+    lemma: boolean;
+    root: boolean;
+    fuzzy: boolean;
+    isRegex: boolean;
+    semantic: boolean;
+    subject: boolean;
+  };
+  rankBy?: RankBy;
+  suraId?: number;
+};
+
 // A leading `sura:aya` / `sura:aya-aya` prefix means the string overload must
 // stay in charge so the v0.4.0 range-scoped text pipeline runs.
 const RANGE_PREFIX = /^\d{1,3}:\d{0,3}(?:-\d{1,3})?(?:\s|$)/;
@@ -177,6 +193,25 @@ function isRangeScopedQuery(query: string): boolean {
             />
           </label>
         </fieldset>
+      </section>
+
+      <section class="panel examples-panel" aria-label="v0.4.0 feature examples">
+        <div class="examples-head">
+          <strong>New in v0.4.0</strong>
+          <span class="muted">Click an example</span>
+        </div>
+        <div class="examples">
+          <button
+            *ngFor="let example of examples"
+            class="chip"
+            type="button"
+            [title]="example.note"
+            [disabled]="loadState !== 'ready'"
+            (click)="applyExample(example)"
+          >
+            {{ example.label }}
+          </button>
+        </div>
       </section>
 
       <section class="panel" aria-label="Results">
@@ -375,6 +410,34 @@ function isRangeScopedQuery(query: string): boolean {
         align-items: center;
         gap: 10px;
       }
+      .examples-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .chip {
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+        color: inherit;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .chip:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .chip:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       .list {
         margin: 0;
         padding: 0 0 0 18px;
@@ -483,6 +546,63 @@ export class AppComponent implements OnInit, OnDestroy {
 
   response: SearchResponse<QuranText> | MultiTermResponse<QuranText> | null = null;
   rankBy: RankBy = 'score';
+
+  readonly examples: FeatureExample[] = [
+    {
+      label: 'Subject: مطر',
+      query: 'مطر',
+      note: 'v0.4.0 thematic search — weather theme, 127 verses',
+      options: {
+        lemma: false,
+        root: false,
+        fuzzy: false,
+        isRegex: false,
+        semantic: false,
+        subject: true,
+      },
+    },
+    {
+      label: 'Multi-term',
+      query: 'محمد يونس إبراهيم',
+      note: 'v0.4.0 array overload, ranked by distinct-term coverage',
+      options: {
+        lemma: true,
+        root: true,
+        fuzzy: false,
+        isRegex: false,
+        semantic: false,
+        subject: false,
+      },
+      rankBy: 'coverage',
+    },
+    {
+      label: 'Range + text',
+      query: '1:1-4 العالمين',
+      note: 'v0.4.0 range-scoped text search — only 1:2 matches',
+      options: {
+        lemma: false,
+        root: false,
+        fuzzy: false,
+        isRegex: false,
+        semantic: false,
+        subject: false,
+      },
+    },
+    {
+      label: 'Range + filter',
+      query: '2:255',
+      note: 'v0.4.0 range/filter intersection — 2:255 ∩ sura 1 = 0 results',
+      options: {
+        lemma: false,
+        root: false,
+        fuzzy: false,
+        isRegex: false,
+        semantic: false,
+        subject: false,
+      },
+      suraId: 1,
+    },
+  ];
 
   get isMultiTerm(): boolean {
     const query = this.query.trim();
@@ -607,6 +727,20 @@ export class AppComponent implements OnInit, OnDestroy {
     this.debounceHandle = window.setTimeout(() => {
       this.runSearch(true);
     }, 250);
+  }
+
+  applyExample(example: FeatureExample): void {
+    if (this.loadState !== 'ready') return;
+    this.query = example.query;
+    this.options = {
+      ...example.options,
+      suraId: example.suraId,
+      juzId: undefined,
+      suraName: undefined,
+    };
+    this.rankBy = example.rankBy ?? 'score';
+    this.page = 1;
+    this.runSearch(true);
   }
 
   runSearch(resetPage: boolean): void {
