@@ -700,6 +700,7 @@ export type VerseInput = {
 
 Minimum requirements:
 
+- Pass `quranData` as a `Map<number, VerseInput>` keyed by `gid` — `search` rejects arrays and empty maps
 - `gid`: unique verse id (used to join with `morphologyMap`)
 - `standard`: used for exact text matching
 - `uthmani`: used for fuzzy fallback and commonly used for highlighting in UI (if you don’t have it, set it to `standard`)
@@ -715,19 +716,22 @@ type MyVerse = VerseInput & {
   translation_en?: string;
 };
 
-const myQuranData: MyVerse[] = [
-  {
-    gid: 1,
-    standard: 'بسم الله الرحمن الرحيم',
-    uthmani: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
-    sura: 1,
-    aya: 1,
-    translation_en: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.',
-  },
-];
+const myQuranData = new Map<number, MyVerse>([
+  [
+    1,
+    {
+      gid: 1,
+      standard: 'بسم الله الرحمن الرحيم',
+      uthmani: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+      sura: 1,
+      aya: 1,
+      translation_en: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.',
+    },
+  ],
+]);
 
 const morphologyMap = new Map<number, MorphologyAya>();
-const wordMap: WordMap = {};
+const wordMap: WordMap = new Map();
 
 const response = search(
   'الله الرحمن',
@@ -741,10 +745,34 @@ const response = search(
 // response.results[0] => { gid: 1, sura: 1, aya: 1, matchType: 'exact', matchScore: 6, ... }
 ```
 
+Validate custom files before loading them. The validators take the **raw JSON shapes** (arrays and plain objects),
+not the `Map` instances returned by the loaders:
+
+```ts
+import {
+  validateQuranData,
+  validateMorphologyData,
+  validateWordMapData,
+  formatSchemaErrors,
+} from 'quran-search-engine';
+
+const check = validateQuranData(rawQuranArray);
+if (!check.valid) {
+  throw new Error(formatSchemaErrors(check));
+}
+
+// These expect raw JSON too:
+validateMorphologyData(rawMorphologyArray); // [{ gid, lemmas, roots }]
+validateWordMapData(rawWordMapObject); // { token: { lemma?, root? } }
+```
+
+`validateQuranData(new Map(...))` returns `valid: false` by design — pass the JSON you read from disk.
+
 For lemma/root matching, provide both:
 
 - `morphologyMap: Map<number, MorphologyAya>` where `MorphologyAya` is `{ gid, lemmas: string[], roots: string[] }`
-- `wordMap: WordMap` where each normalized token maps to `{ lemma?: string; root?: string }`
+- `wordMap: WordMap` — a `Map<string, { lemma?: string; root?: string }>`, not a plain object; each key is a
+  normalized token
 
 ### Highlighting (UI-agnostic)
 
