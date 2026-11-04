@@ -51,13 +51,17 @@ export const computeScore = <TVerse extends VerseInput>(
     const uniqueTextMatches = new Set(textMatches);
     if (uniqueTextMatches.size > 0) {
       score += 3;
-      if (matchType === 'none') matchType = 'exact';
+      // Exact matches always outrank lemma/root matches, even when an earlier
+      // token in a multi-word query matched by lemma or root first.
+      matchType = 'exact';
       matchedTokens.push(...uniqueTextMatches);
       uniqueTextMatches.forEach((t: string) => (tokenTypes[t] = 'exact'));
     }
 
     // 2. Lemma/Root Matches
-    const entry = wordMap[token];
+    // `wordMap` is a Map (see `WordMap`), so property access would always be
+    // undefined and silently leave every lemma/root-only match unscored.
+    const entry = wordMap.get(token);
     if (entry) {
       if (options.lemma && entry.lemma) {
         const lemmaMatches = getPositiveTokens(
@@ -67,6 +71,7 @@ export const computeScore = <TVerse extends VerseInput>(
           undefined,
           token,
           morphologyMap,
+          wordMap,
         );
         const uniqueLemmaMatches = new Set(lemmaMatches);
         if (uniqueLemmaMatches.size > 0) {
