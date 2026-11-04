@@ -52,8 +52,13 @@ const response2 = search('الله.*الرحمن', quranData, morphologyMap, wor
 });
 ```
 
-- **Range Queries:** Range parsing intercepts numeric combinations (e.g., `1:1-7` or `2:255`) returning matched verse
-  targets efficiently without iterating.
+- **Range Queries:** `sura:aya`, `sura:start-end`, and `sura:` return verses directly from `quranData` by
+  coordinate (`2:255`, `1:1-7`, `2:`). A coordinate-only range keeps `matchType: 'range'`, score `1`, and intersects
+  spatial filters — `search('2:255', ctx, { suraId: 1 })` returns 0, and a contradictory combination returns 0 instead
+  of throwing. When several filters are supplied, only the highest-priority one runs: `suraId` > `suraName` > `juzId`.
+  A range followed by text (`1:1-4 العالمين`, `2:255-260 +الله`) applies the range first and then runs the normal
+  pipeline only inside it, so linguistic, semantic, subject, boolean, and regex options stay scoped. Those results keep
+  their real `matchType` and `counts.range` is `0`.
 - **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser.
   This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like
   `(الله OR رب) AND (الرحمن NOT الرحيم)`.

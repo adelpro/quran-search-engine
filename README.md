@@ -556,17 +556,35 @@ const response2 = search(
 
 #### Range search
 
-`search` also supports range queries that return verses directly by sura/aya coordinates, bypassing the linguistic
-search pipeline.
+`search` supports coordinate-only range queries and range-scoped text queries.
 
-| Query   | Result                                       |
-| ------- | -------------------------------------------- |
-| `2:255` | Single verse (Al-Baqarah, verse 255)         |
-| `1:1-7` | Verse range (Al-Fatihah, verses 1 through 7) |
-| `2:`    | Entire sura (all verses of Al-Baqarah)       |
+| Query             | Result                                                   |
+| ----------------- | -------------------------------------------------------- |
+| `2:255`           | Single verse (Al-Baqarah, verse 255)                     |
+| `1:1-7`           | Verse range (Al-Fatihah, verses 1 through 7)             |
+| `2:`              | Entire sura (all verses of Al-Baqarah)                   |
+| `1:1-4 العالمين`  | Search for `العالمين` only inside Al-Fatihah 1–4 (`1:2`) |
+| `2:255-260 +الله` | Boolean search constrained to Al-Baqarah 255–260         |
 
-Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Invalid range
-queries (e.g. `0:1`, `115:1`, plain Arabic text) gracefully fall through to the standard linguistic search.
+Range queries require verses to have `sura_id` and `aya_id` fields (present in the bundled dataset). Bounds are 1-based
+and inclusive; whitespace around `:` / `-` and leading zeros are accepted (`02:255` works). Aya numbers are not validated
+against the real length of the sura, so `2:300` parses but returns 0, while `1:1-300` returns the seven verses that exist.
+Malformed forms such as `0:1`, `115:1`, or `2:5-3` do not throw — they fall through to the standard linguistic search and
+normally return no results.
+
+A coordinate-only range returns dataset order with `matchType: 'range'`, `matchScore: 1`, and `counts.range` equal to the
+total. Spatial filters intersect the range instead of being ignored, so `search('2:255', ctx, { suraId: 1 })` returns 0.
+When several filters are supplied, only the highest-priority one runs: `suraId` > `suraName` > `juzId`. A contradictory
+combination returns 0 and never throws.
+
+Adding text after the range (separated by whitespace) instead runs the normal pipeline **only over the verses in that
+range**, so lemma/root/fuzzy/phonetic/semantic/subject/regex all stay scoped. Those results carry their real `matchType`
+(for example `exact`) and `counts.range` is `0`; spatial filters apply on top of the range in the same way.
+
+The filter options are applied **to the matches** returned by the search layers. `suraName` scopes a query to a sura; it
+does not enumerate every verse in that sura. For example, `search('الله', { suraName: 'Al-Fatihah' })` returns only the
+Al-Fatihah verses that matched the word (two with lemma/root enabled), not all seven verses. Use a coordinate-only range
+query such as `1:` when you want the whole sura.
 
 ```ts
 import { search } from 'quran-search-engine';
@@ -579,6 +597,9 @@ const range = search('1:1-7', { quranData, morphologyMap, wordMap });
 
 // Entire sura
 const sura = search('1:', { quranData, morphologyMap, wordMap });
+
+// Text search constrained to a range
+const scoped = search('1:1-4 العالمين', { quranData, morphologyMap, wordMap });
 ```
 
 #### Semantic Search
