@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-term search**: `search()` now also accepts an array of terms (`search(['محمد', 'يونس'], ...)`),
   searching each independently and merging results by `gid` with score/coverage/frequency ranking.
   The existing string-query (AND-logic) behavior is unchanged.
+- **Range-scoped text search**: a range prefix followed by text (`1:1-4 العالمين`, `2:255-260 +الله`)
+  now runs the normal search pipeline only over the verses in that range. Previously the text token
+  made the range parser fall through, so the query searched the whole Quran.
 - **CLI multi-term search**: a single argument wrapped in `[ ... ]` (e.g.
   `quran-search-engine "[محمد, يونس]"`, ASCII or Arabic comma) now runs the array overload above,
   with a `--rank-by score|coverage|frequency` option and merged-result details (matched-term and
@@ -55,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Coordinate-only range queries now intersect spatial filters** instead of ignoring them:
+  `search('2:255', ctx, { suraId: 1 })` returns 0, and `1:1-7` combined with
+  `suraName: 'Al-Baqarah'` returns 0. Contradictory combinations return 0 rather than throwing.
+  Filter priority is `suraId` > `suraName` > `juzId`.
 - **`buildInvertedIndex`** accepts an optional fifth argument, `wordMap`. Supplying it lets each
   subject word resolve through its root, so `مطر` also covers `وأمطرنا`. The argument is optional
   and existing calls keep working; without it, subject words resolve by lemma and clitic form only.

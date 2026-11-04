@@ -29,6 +29,14 @@ export type RangeScopedQuery = {
   query: string;
 };
 
+const isValidCoordinateRange = (sura: number, startAya?: number, endAya?: number): boolean => {
+  if (sura < 1 || sura > MAX_SURA) return false;
+  if (startAya !== undefined && startAya < 1) return false;
+  if (endAya === undefined) return true;
+  if (endAya < 1) return false;
+  return startAya === undefined || endAya >= startAya;
+};
+
 const buildRange = (
   suraRaw: string,
   startAyaRawQuery?: string,
@@ -38,15 +46,7 @@ const buildRange = (
   const startAyaRaw = startAyaRawQuery ? Number(startAyaRawQuery) : undefined;
   const endAyaRaw = endAyaRawQuery ? Number(endAyaRawQuery) : undefined;
 
-  // Validate sura range
-  if (sura < 1 || sura > MAX_SURA) return null;
-
-  // Validate aya numbers when present
-  if (startAyaRaw !== undefined && startAyaRaw < 1) return null;
-  if (endAyaRaw !== undefined) {
-    if (endAyaRaw < 1) return null;
-    if (startAyaRaw !== undefined && endAyaRaw < startAyaRaw) return null;
-  }
+  if (!isValidCoordinateRange(sura, startAyaRaw, endAyaRaw)) return null;
 
   const result: ParsedRange = { sura };
   if (startAyaRaw !== undefined) result.startAya = startAyaRaw;

@@ -116,6 +116,25 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results[0].matchType).toBe('range');
   });
 
+  it('intersects coordinate-only ranges with spatial filters', () => {
+    const context = {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+    };
+
+    const match = search('1:1-3', context, { suraId: 1 });
+    expect(match.results.map((v) => v.gid)).toEqual([1, 2, 3]);
+    expect(match.counts.range).toBe(3);
+    expect(match.results.every((v) => v.matchType === 'range')).toBe(true);
+
+    expect(search('1:1', context, { suraId: 2 }).results).toHaveLength(0);
+    expect(search('1:1-3', context, { juzId: 1 }).results).toHaveLength(3);
+    expect(search('1:1-3', context, { juzId: 2 }).results).toHaveLength(0);
+    expect(search('1:1-3', context, { suraName: 'الفاتحة' }).results).toHaveLength(3);
+    expect(search('1:1-3', context, { suraName: 'البقرة' }).results).toHaveLength(0);
+  });
+
   it('scopes a text query to a range prefix', () => {
     const options = { lemma: false, root: false, fuzzy: false } as const;
     const inside = search(

@@ -129,11 +129,16 @@ export function search<TVerse extends VerseInput>(
   if (parsedRange) {
     const quranDataArray = Array.from(quranData.values());
     const rangeMatches = filterVersesByRange(quranDataArray, parsedRange);
-    const totalResults = rangeMatches.length;
+    // Spatial filters intersect the range: `2:255` + `suraId: 1` returns 0.
+    // Forward the documented name aliases as well so they scope the range the same way.
+    const suraNameFilter =
+      options.suraName ?? options.sura_name_en ?? options.sura_name_romanization;
+    const scopedMatches = filterVerses(rangeMatches, options.suraId, options.juzId, suraNameFilter);
+    const totalResults = scopedMatches.length;
     const totalPages = Math.ceil(totalResults / limit);
     const offset = (page - 1) * limit;
 
-    const results: ScoredVerse<TVerse>[] = rangeMatches
+    const results: ScoredVerse<TVerse>[] = scopedMatches
       .slice(offset, offset + limit)
       .map((verse) => ({
         ...verse,
@@ -174,17 +179,7 @@ export function search<TVerse extends VerseInput>(
     if (scopedVerses.length === 0) {
       return {
         results: [],
-        counts: {
-          simple: 0,
-          lemma: 0,
-          root: 0,
-          fuzzy: 0,
-          semantic: 0,
-          subject: 0,
-          regex: 0,
-          range: 0,
-          total: 0,
-        },
+        counts: buildSearchCounts([]),
         pagination: { totalResults: 0, totalPages: 0, currentPage: page, limit },
       };
     }
