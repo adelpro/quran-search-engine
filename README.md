@@ -615,11 +615,13 @@ against the real length of the sura, so `2:300` parses but returns 0, while `1:1
 Malformed forms such as `0:1`, `115:1`, or `2:5-3` do not throw — they fall through to the standard linguistic search and
 normally return no results.
 
-A coordinate-only range bypasses the linguistic layers and returns dataset order with `matchType: 'range'`,
-`matchScore: 1`, and `counts.range` equal to the total. It ignores `suraId`, `juzId`, `suraName`, `isRegex`, and the
-linguistic toggles. Adding text after the range (separated by whitespace) instead runs the normal pipeline **only over
-the verses in that range**, so lemma/root/fuzzy/phonetic/semantic/subject/regex all stay scoped. Those results carry their
-real `matchType` (for example `exact`) and `counts.range` is `0`.
+A coordinate-only range returns dataset order with `matchType: 'range'`, `matchScore: 1`, and `counts.range` equal to the
+total. Spatial filters intersect the range instead of being ignored, so `search('2:255', ctx, { suraId: 1 })` returns 0.
+When several filters are supplied, only the highest-priority one runs: `suraId` > `suraName` > `juzId`. A contradictory
+combination returns 0 and never throws. Adding text after the range (separated by whitespace) instead runs the normal
+pipeline **only over the verses in that range**, so lemma/root/fuzzy/phonetic/semantic/subject/regex all stay scoped.
+Those results carry their real `matchType` (for example `exact`) and `counts.range` is `0`; spatial filters apply on top
+of the range in the same way.
 
 The filter options are applied **to the matches** returned by the search layers. `suraName` scopes a query to a sura; it
 does not enumerate every verse in that sura. For example, `search('الله', { suraName: 'Al-Fatihah' })` returns only the

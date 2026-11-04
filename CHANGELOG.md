@@ -64,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Range-scoped text search**: a range prefix followed by text (`1:1-4 العالمين`, `2:255-260 +الله`)
   now runs the normal search pipeline only over the verses in that range. Previously the text token
   made the range parser fall through, so the query searched the whole Quran.
+- **Range/filter intersection**: coordinate-only ranges now intersect `suraId`, `juzId`, and
+  `suraName` instead of ignoring them. `search('2:255', ctx, { suraId: 1 })` returns 0, and
+  contradictory combinations return 0 rather than throwing. Filter priority is
+  `suraId` > `suraName` > `juzId`.
 - **CLI multi-term search**: a single argument wrapped in `[ ... ]` (e.g.
   `quran-search-engine "[محمد, يونس]"`, ASCII or Arabic comma) now runs the array overload above,
   with a `--rank-by score|coverage|frequency` option and merged-result details (matched-term and

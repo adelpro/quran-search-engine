@@ -79,8 +79,10 @@ pipeline to those verses instead.
   but matches no verse, so it returns 0; `1:1-300` returns the 7 verses that exist.
 - A malformed range (`0:1`, `115:1`, `2:5-3`, `1:0`) does not throw. It falls through to the
   normal text search and normally returns no results because it contains no Arabic words.
-- A **coordinate-only** range bypasses `suraId`, `juzId`, `suraName`, `isRegex`, and the
-  linguistic toggles — the coordinates alone define the scope.
+- A **coordinate-only** range intersects `suraId`, `juzId`, and `suraName`; a contradictory combination
+  returns 0 instead of throwing. Only the highest-priority filter runs:
+  `suraId` > `suraName` > `juzId`. The linguistic toggles and `isRegex` do not affect a
+  coordinate-only lookup.
 - A **range-scoped text query** must put the range first, separated from the text by whitespace:
   `1:1-4 العالمين`. The range is applied first, then the normal layers (lemma/root/fuzzy/
   phonetic/semantic/subject/regex) run only over those verses. Options such as `suraId` still
