@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-04
+
 ### Fixed
 
 - **Worker artifact was not self-contained**: `dist/worker/search-worker.{js,mjs}` kept a bare
@@ -20,18 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   subject search, multi-term search, and `buildInvertedIndex(..., subjectMap, wordMap)` wiring.
   Worker responses are now ignored when a newer query has started, preventing stale results from
   overwriting the latest search.
-
-### Changed
-
-- **Playground query modes**: React, Vanilla, and Angular now route range-scoped text
-  (`1:1-4 العالمين`) and boolean queries (`+الله -الرحمن`) through the string overload instead of
-  splitting them into multi-term searches, and regex input is never split. The Node example adds
-  range-scoped text and range/filter-intersection demos. The browser E2E suite covers all three
-  modes plus range/filter overlap.
-
-## [0.4.0] - 2026-11-03
-
-### Fixed
 
 - **Lemma and root matches were never scored**: `computeScore()` read `wordMap[token]` even though
   `WordMap` is a `Map`, so the lookup was always `undefined`. Every verse found only through the
@@ -113,6 +103,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the existing dataset validators.
 
 ### Changed
+
+- **Playground query modes**: React, Vanilla, and Angular now route range-scoped text
+  (`1:1-4 العالمين`) and boolean queries (`+الله -الرحمن`) through the string overload instead of
+  splitting them into multi-term searches, and regex input is never split. The Node example adds
+  range-scoped text and range/filter-intersection demos. The browser E2E suite covers all three
+  modes plus range/filter overlap, and the Angular playground exposes one-click v0.4.0 feature
+  examples for subject, multi-term, range-scoped, and range/filter searches.
 
 - **`buildInvertedIndex`** accepts an optional fifth argument, `wordMap`. Supplying it lets each
   subject word resolve through its root, so `مطر` also covers `وأمطرنا`. The argument is optional
