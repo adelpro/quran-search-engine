@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import { LRUCache } from '../utils/lru-cache';
 import { normalizeArabic, isArabic } from '../utils/normalization';
-import { parseRangeQuery, filterVersesByRange } from '../utils/range-parser';
+import { parseRangeQuery, parseRangeScopedQuery, filterVersesByRange } from '../utils/range-parser';
 import { getPhoneticFuse } from '../utils/phonetic';
 import { InvalidPaginationError, MissingDependenciesError, InvalidQueryError } from '../errors';
 
@@ -159,7 +159,46 @@ export function search<TVerse extends VerseInput>(
     };
   }
 
-  // 2. Regex query shortcut
+  // 2. Range-scoped text query, e.g. `1:1-4 العالمين`
+  // Run the normal search pipeline over only the verses inside the range, so every
+  // linguistic layer (lemma/root/fuzzy/semantic/subject/regex) is constrained too.
+  const scopedRange = parseRangeScopedQuery(query);
+  if (scopedRange) {
+    const scopedCacheKey = cache ? JSON.stringify({ query, options, pagination }) : '';
+    if (cache) {
+      const cached = cache.get(scopedCacheKey);
+      if (cached) return cached;
+    }
+
+    const scopedVerses = filterVersesByRange(Array.from(quranData.values()), scopedRange.range);
+    if (scopedVerses.length === 0) {
+      return {
+        results: [],
+        counts: {
+          simple: 0,
+          lemma: 0,
+          root: 0,
+          fuzzy: 0,
+          semantic: 0,
+          subject: 0,
+          regex: 0,
+          range: 0,
+          total: 0,
+        },
+        pagination: { totalResults: 0, totalPages: 0, currentPage: page, limit },
+      };
+    }
+
+    const scopedContext: SearchContext<TVerse> = {
+      ...context,
+      quranData: new Map(scopedVerses.map((verse) => [verse.gid, verse])),
+    };
+    const scopedResponse = search(scopedRange.query, scopedContext, options, pagination, fuseIndex);
+    cache?.set(scopedCacheKey, scopedResponse);
+    return scopedResponse;
+  }
+
+  // 3. Regex query shortcut
   if (options.isRegex) {
     const compiledRegex = validateRegex(query); // throws InvalidRegexError on bad input
     const filtered = filterVerses(quranData, options.suraId, options.juzId, options.suraName);
@@ -194,7 +233,7 @@ export function search<TVerse extends VerseInput>(
 
   const fuzzyEnabled = options.fuzzy !== false;
 
-  // 3. Boolean operator detection and parsing
+  // 4. Boolean operator detection and parsing
   // If the query contains boolean operators (+, -, |), parse them into structured form
   // and clean the query for normal search processing
   const booleanQuery: BooleanQuery | null = hasBooleanOperators(query)
@@ -205,7 +244,7 @@ export function search<TVerse extends VerseInput>(
   // Example: "+الله | الرحمن -الرحيم" → "الله الرحمن الرحيم"
   const operatorFreeQuery = clearBooleanOperators(query);
 
-  // 4. Setup phase: Tokenize and handle phonetic translation
+  // 5. Setup phase: Tokenize and handle phonetic translation
   const tokens = operatorFreeQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
@@ -274,7 +313,7 @@ export function search<TVerse extends VerseInput>(
     ? fuseIndex || createArabicFuseSearch(Array.from(quranData.values()), ['standard', 'uthmani'])
     : null;
 
-  // 5. Executing Search Layers
+  // 6. Executing Search Layers
   // Use OR logic for boolean queries to get union of all terms, then filter with boolean logic
   // Use AND logic for normal queries to get intersection (phrase matching)
   const simpleMatches = booleanQuery
@@ -312,7 +351,7 @@ export function search<TVerse extends VerseInput>(
     morphologyMap,
   );
 
-  // 6. Boolean filtering (if boolean operators were present in query)
+  // 7. Boolean filtering (if boolean operators were present in query)
 
   // Combine all four search layers (simple, advanced,semantic, and subject) into a single array
   const combinedMatches = [
@@ -346,7 +385,7 @@ export function search<TVerse extends VerseInput>(
   // 2. Filter results to keep only verses matching the boolean conditions
   const booleanMatches = booleanQuery ? performBooleanSearch(booleanQuery, allMatches) : allMatches;
 
-  // 7. Scored deduplication and ranking
+  // 8. Scored deduplication and ranking
   const gidSet = new Set<number>();
   const combined: ScoredVerse<TVerse>[] = [];
   const mapEntry = wordMap.get(cleanQuery);
@@ -376,7 +415,7 @@ export function search<TVerse extends VerseInput>(
   // Sort by relevance
   combined.sort((a, b) => b.matchScore - a.matchScore);
 
-  // 8. Pagination & Metadata
+  // 9. Pagination & Metadata
   const offset = (page - 1) * limit;
 
   const results = combined.slice(offset, offset + limit);

@@ -116,6 +116,34 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results[0].matchType).toBe('range');
   });
 
+  it('scopes a text query to a range prefix', () => {
+    const options = { lemma: false, root: false, fuzzy: false } as const;
+    const inside = search(
+      '1:1-3 العالمين',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      options,
+    );
+    expect(inside.results.map((v) => v.gid)).toEqual([2]);
+    expect(inside.results[0].matchType).toBe('exact');
+    expect(inside.counts.total).toBe(1);
+    expect(inside.counts.range).toBe(0);
+
+    const outside = search(
+      '1:3 العالمين',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      options,
+    );
+    expect(outside.results).toHaveLength(0);
+  });
+
   it('should perform semantic search when specified', () => {
     const result = search(
       'الرحمن',

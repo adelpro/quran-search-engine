@@ -14,6 +14,48 @@ const MAX_SURA = 114;
 const RANGE_QUERY_REGEX = /^\s*(\d{1,3})\s*:\s*(?:(\d{1,3})(?:\s*-\s*(\d{1,3}))?)?\s*$/;
 
 /**
+ * Regex matching a range prefix followed by a text query:
+ *   - `1:1-4 العالمين` → text search inside Al-Fatihah 1–4
+ *   - `2: mercy`       → text search inside the whole of Al-Baqarah
+ *
+ * Captures: (sura) : (startAya)? (- endAya)? then the remaining query.
+ */
+const RANGE_SCOPED_QUERY_REGEX =
+  /^\s*(\d{1,3})\s*:\s*(?:(\d{1,3})(?:\s*-\s*(\d{1,3}))?)?\s+(\S[\s\S]*)$/;
+
+/** A validated range plus the text query it should scope. */
+export type RangeScopedQuery = {
+  range: ParsedRange;
+  query: string;
+};
+
+const buildRange = (
+  suraRaw: string,
+  startAyaRawQuery?: string,
+  endAyaRawQuery?: string,
+): ParsedRange | null => {
+  const sura = Number(suraRaw);
+  const startAyaRaw = startAyaRawQuery ? Number(startAyaRawQuery) : undefined;
+  const endAyaRaw = endAyaRawQuery ? Number(endAyaRawQuery) : undefined;
+
+  // Validate sura range
+  if (sura < 1 || sura > MAX_SURA) return null;
+
+  // Validate aya numbers when present
+  if (startAyaRaw !== undefined && startAyaRaw < 1) return null;
+  if (endAyaRaw !== undefined) {
+    if (endAyaRaw < 1) return null;
+    if (startAyaRaw !== undefined && endAyaRaw < startAyaRaw) return null;
+  }
+
+  const result: ParsedRange = { sura };
+  if (startAyaRaw !== undefined) result.startAya = startAyaRaw;
+  if (endAyaRaw !== undefined) result.endAya = endAyaRaw;
+
+  return result;
+};
+
+/**
  * Parses a query string into sura/aya coordinates.
  *
  * Returns `null` if the query is not a valid range query.
@@ -31,25 +73,35 @@ export const parseRangeQuery = (query: string): ParsedRange | null => {
   const match = RANGE_QUERY_REGEX.exec(query);
   if (!match) return null;
 
-  const sura = Number(match[1]);
-  const startAyaRaw = match[2] ? Number(match[2]) : undefined;
-  const endAyaRaw = match[3] ? Number(match[3]) : undefined;
+  return buildRange(match[1], match[2], match[3]);
+};
 
-  // Validate sura range
-  if (sura < 1 || sura > MAX_SURA) return null;
+/**
+ * Parses a range prefix plus a text query, e.g. `1:1-4 العالمين`.
+ *
+ * The range must come first and be separated from the text by whitespace. Returns
+ * `null` when there is no text query or when the coordinate prefix is invalid, so
+ * the caller can fall back to a normal search.
+ *
+ * @param query - The raw search query string.
+ * @returns The validated range and remaining query, or `null`.
+ *
+ * @example
+ * parseRangeScopedQuery('1:1-4 العالمين');
+ * // { range: { sura: 1, startAya: 1, endAya: 4 }, query: 'العالمين' }
+ * parseRangeScopedQuery('1:1-4'); // null — use parseRangeQuery for coordinate-only lookups
+ */
+export const parseRangeScopedQuery = (query: string): RangeScopedQuery | null => {
+  const match = RANGE_SCOPED_QUERY_REGEX.exec(query);
+  if (!match) return null;
 
-  // Validate aya numbers when present
-  if (startAyaRaw !== undefined && startAyaRaw < 1) return null;
-  if (endAyaRaw !== undefined) {
-    if (endAyaRaw < 1) return null;
-    if (startAyaRaw !== undefined && endAyaRaw < startAyaRaw) return null;
-  }
+  const range = buildRange(match[1], match[2], match[3]);
+  if (!range) return null;
 
-  const result: ParsedRange = { sura };
-  if (startAyaRaw !== undefined) result.startAya = startAyaRaw;
-  if (endAyaRaw !== undefined) result.endAya = endAyaRaw;
+  const textQuery = match[4].trim();
+  if (!textQuery) return null;
 
-  return result;
+  return { range, query: textQuery };
 };
 
 /**
