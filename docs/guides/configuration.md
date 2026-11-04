@@ -22,9 +22,9 @@ export type AdvancedSearchOptions = {
   // Optional geographic filtering parameters
   suraId?: number;
   juzId?: number;
-  suraName?: string;
-  sura_name_en?: string;
-  sura_name_romanization?: string;
+  suraName?: string; // Arabic, English, or romanized
+  sura_name_en?: string; // alias for suraName
+  sura_name_romanization?: string; // alias for suraName
 };
 
 export type SearchOptions = AdvancedSearchOptions;

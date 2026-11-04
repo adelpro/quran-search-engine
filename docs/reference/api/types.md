@@ -204,11 +204,11 @@ type SearchOptions = {
   suraId?: number;
   /** Filter by juz number (optional) */
   juzId?: number;
-  /** Filter by Arabic surah name (optional) */
+  /** Filter by surah name: Arabic, English, or romanized (optional) */
   suraName?: string;
-  /** Filter by English surah name (optional) */
+  /** Alias for suraName (optional) */
   sura_name_en?: string;
-  /** Filter by romanized surah name (optional) */
+  /** Alias for suraName (optional) */
   sura_name_romanization?: string;
   /** Enable semantic matching (optional) */
   semantic?: boolean;

@@ -83,7 +83,9 @@ export type AdvancedSearchOptions = {
   suraId?: number;
   juzId?: number;
   suraName?: string;
+  /** Alias for `suraName`; forwarded to the same scope filter. */
   sura_name_en?: string;
+  /** Alias for `suraName`; forwarded to the same scope filter. */
   sura_name_romanization?: string;
   semantic?: boolean;
   subject?: boolean;
