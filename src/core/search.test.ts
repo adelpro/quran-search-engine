@@ -94,6 +94,25 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results[0].matchType).toBe('exact');
   });
 
+  it('forwards sura_name_en and sura_name_romanization as scope filters', () => {
+    const options = { lemma: false, root: false, fuzzy: false } as const;
+    const en = search(
+      'الله',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      { ...options, sura_name_en: 'The Opening' },
+    );
+    expect(en.results.length).toBeGreaterThan(0);
+    expect(en.results.every((v) => v.sura_name_en === 'The Opening')).toBe(true);
+
+    const rom = search(
+      'الله',
+      { quranData: mockQuranDataMap, morphologyMap: mockMorphologyMap, wordMap: mockWordMapMap },
+      { ...options, sura_name_romanization: 'Al-Fatihah' },
+    );
+    expect(rom.results.length).toBeGreaterThan(0);
+    expect(rom.results.every((v) => v.sura_name_romanization === 'Al-Fatihah')).toBe(true);
+  });
+
   it('should find phonetic matches with Latin query', () => {
     const result = search('bismi allahi', {
       quranData: mockQuranDataMap,
@@ -137,6 +156,24 @@ describe('Search Orchestrator (Integration)', () => {
     );
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.results.every((r) => r.matchType === 'semantic')).toBe(true);
+  });
+
+  it('should still transliterate non-concept tokens when semantic is enabled', () => {
+    // Regression: enabling semantic used to drop every Latin token, so a
+    // transliteration like `bismi allahi` stopped resolving through phoneticMap.
+    const result = search(
+      'bismi allahi',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+        phoneticMap: mockPhoneticMap,
+        semanticMap: new Map([['mercy', ['الرحمن']]]),
+      },
+      { lemma: true, root: true, semantic: true },
+    );
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.results[0].gid).toBe(1);
   });
 
   it('should handle range queries (e.g. 1:1)', () => {

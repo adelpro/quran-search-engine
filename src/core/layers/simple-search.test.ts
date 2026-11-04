@@ -190,5 +190,11 @@ describe('simpleSearch', () => {
     it('returns no verses for an unknown name', () => {
       expect(filterVerses(mockQuranData, undefined, undefined, 'Not A Sura')).toHaveLength(0);
     });
+
+    it('returns no verses when an Arabic sura name normalizes to empty', () => {
+      // Regression: ''.includes('') matched every verse and bypassed juzId.
+      expect(filterVerses(mockQuranData, undefined, undefined, '١')).toHaveLength(0);
+      expect(filterVerses(mockQuranData, undefined, undefined, 'َ')).toHaveLength(0);
+    });
   });
 });

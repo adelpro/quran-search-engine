@@ -212,12 +212,25 @@ export function search<TVerse extends VerseInput>(
   const conceptQuery =
     (options.subject === true && subjectMap !== undefined) ||
     (options.semantic === true && semanticMap !== undefined);
+  // Concept maps can hold multi-word keys (e.g. "eternal life"). Resolve the whole
+  // phrase first, then fall back to per-token lookups so a transliteration such as
+  // `bismi allahi` is still handled by the phonetic map when `semantic: true` is on.
+  const conceptPhrase = operatorFreeQuery
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .trim();
+  const isConceptPhrase =
+    conceptQuery &&
+    ((subjectMap?.has(conceptPhrase) ?? false) || (semanticMap?.has(conceptPhrase) ?? false));
   const tokens = operatorFreeQuery.split(/\s+/);
   const processedTokens = tokens.map((token) => {
     // If it's a non-Arabic word, look it up via phonetic or translation maps
     if (token && !isArabic(token)) {
-      if (conceptQuery) return '';
       const cleanToken = token.toLowerCase().trim();
+      const isConceptToken =
+        conceptQuery &&
+        ((subjectMap?.has(cleanToken) ?? false) || (semanticMap?.has(cleanToken) ?? false));
+      if (isConceptPhrase || isConceptToken) return '';
 
       // TODO: Add Transliteration or direct English-to-Arabic Translation (e.g. "Peace" -> "سلام") here.
       // This is the correct place to intercept non-Arabic tokens before they fall back to purely phonetic matching.
@@ -344,8 +357,11 @@ export function search<TVerse extends VerseInput>(
   // Convert the unique Map values back into a standard array of verse objects
   const versesArrOfObj = Array.from(verseMap.values());
 
-  // Pass the clean, deduplicated verses array to filter them by sura or juz options
-  const allMatches = filterVerses(versesArrOfObj, options.suraId, options.juzId, options.suraName);
+  // Pass the clean, deduplicated verses array to filter them by sura or juz options.
+  // `suraName` accepts Arabic, English, or romanized names; the two explicit
+  // name fields are forwarded as aliases so they behave as documented.
+  const suraNameFilter = options.suraName ?? options.sura_name_en ?? options.sura_name_romanization;
+  const allMatches = filterVerses(versesArrOfObj, options.suraId, options.juzId, suraNameFilter);
 
   // Then, if boolean query exists, filter combined results based on boolean logic
   // This allows queries like "+الله -الرحمن الرحيم | العليم" to:

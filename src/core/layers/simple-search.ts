@@ -34,6 +34,9 @@ export const filterVerses = <TVerse extends VerseInput>(
     const rawQuery = suraName.toLowerCase().trim();
     const normalizedQuery = normalizeArabic(suraName).toLowerCase().trim();
     const isArabicQuery = /[\u0600-\u06FF]/.test(suraName);
+    // An Arabic name made only of digits or diacritics normalizes to '', and
+    // ''.includes('') would match every verse. Treat it as an explicit miss.
+    if (isArabicQuery && !normalizedQuery) return [];
     if (rawQuery) {
       return iterable.filter((verse) => {
         if (isArabicQuery) {

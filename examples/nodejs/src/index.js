@@ -316,8 +316,19 @@ async function main() {
     console.log();
 
     // 11. Custom search from the command line.
-    const queryArg = process.argv[2];
-    if (queryArg) {
+    const rawArg = process.argv[2];
+    if (rawArg) {
+      // Bracketed input mirrors the CLI's array form: "[محمد, يونس]" becomes
+      // ['محمد', 'يونس'] so each term is searched independently.
+      const bracketed = rawArg.trim();
+      const queryArg =
+        bracketed.startsWith('[') && bracketed.endsWith(']')
+          ? bracketed
+              .slice(1, -1)
+              .split(',')
+              .map((term) => term.trim())
+              .filter(Boolean)
+          : rawArg;
       const customResults = search(
         queryArg,
         context,
@@ -326,7 +337,8 @@ async function main() {
         undefined,
         cache,
       );
-      printResults(`Custom search: "${queryArg}"`, customResults, 10);
+      const label = Array.isArray(queryArg) ? `[${queryArg.join(', ')}]` : `"${queryArg}"`;
+      printResults(`Custom search: ${label}`, customResults, 10);
     } else {
       console.log('💡 Tip: Run with a search term as argument:');
       console.log('   yarn playground:node "your search term"');
