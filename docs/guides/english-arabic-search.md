@@ -6,15 +6,32 @@ public API, and the guide that used to live here described code that no longer e
 
 Use one of the supported replacements instead.
 
-## For English concept words: subject search
+## Shared setup
 
-`loadSubjectData()` maps English concept words and phrases to curated Arabic lemmas grouped by
-theme (`"climate"`, `"worship"`, `"eternal life"`, …):
+Every example below assumes the bundled datasets are loaded once:
 
 ```typescript
-import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
+  loadPhoneticData,
+  buildInvertedIndex,
+} from 'quran-search-engine';
 
-const subjectMap = await loadSubjectData();
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap, phoneticMap] = await Promise.all(
+  [
+    loadQuranData(),
+    loadMorphology(),
+    loadWordMap(),
+    loadSemanticData(),
+    loadSubjectData(),
+    loadPhoneticData(),
+  ],
+);
+
 const invertedIndex = buildInvertedIndex(
   morphologyMap,
   quranData,
@@ -22,6 +39,15 @@ const invertedIndex = buildInvertedIndex(
   subjectMap,
   wordMap,
 );
+```
+
+## For English concept words: subject search
+
+`loadSubjectData()` maps English concept words and phrases to curated Arabic lemmas grouped by
+theme (`"climate"`, `"worship"`, `"eternal life"`, …):
+
+```typescript
+import { search } from 'quran-search-engine';
 
 const context = { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex };
 
@@ -36,20 +62,26 @@ matching rules.
 The semantic map links Arabic words to synonyms and related concepts:
 
 ```typescript
-const semanticMap = await loadSemanticData();
-const context = { quranData, morphologyMap, wordMap, semanticMap, invertedIndex };
+const context = { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex };
 
 search('إنسان', context, { lemma: true, root: true, semantic: true });
 ```
 
 ## For Latin transliteration: phonetic search
 
-The phonetic map still resolves Latin spellings to Arabic (for example `bismillah`). Load it
-with `loadPhoneticData()` and put it in the context as `phoneticMap`:
+The phonetic map still resolves Latin spellings to Arabic (for example `bismillah`). Put
+`phoneticMap` in the context:
 
 ```typescript
-const phoneticMap = await loadPhoneticData();
-const context = { quranData, morphologyMap, wordMap, invertedIndex, phoneticMap };
+const context = {
+  quranData,
+  morphologyMap,
+  wordMap,
+  semanticMap,
+  subjectMap,
+  invertedIndex,
+  phoneticMap,
+};
 
 search('bismillah', context, { lemma: true, root: true });
 ```

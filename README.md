@@ -363,9 +363,9 @@ Produces indices for lemma, root, word, semantic concepts, and (optionally) subj
 - `semanticIndex`: semantic concept → Set of verse GIDs (when `semanticMap` is provided)
 - `subjectIndex`: subject key → Set of verse GIDs (when `subjectMap` is provided)
 
-`wordMap` is optional and only affects `subjectIndex`: it lets each subject word resolve through
-its root, so `مطر` also covers `وأمطرنا`. Omit it and subject words resolve by lemma and clitic
-form only.
+`wordMap` is optional and is used to resolve each subject word through its root — both while
+building `subjectIndex` and during subject search — so `مطر` also covers `وأمطرنا`. Omit it and
+subject words resolve by lemma and clitic form only.
 
 This converts lemma/root lookups during search from **O(n)** linear scans to **O(1)** Map lookups.
 
@@ -1140,9 +1140,9 @@ export type SearchOptions = {
   isRegex?: boolean;
   suraId?: number;
   juzId?: number;
-  suraName?: string;
-  sura_name_en?: string;
-  sura_name_romanization?: string;
+  suraName?: string; // Arabic, English, or romanized name
+  sura_name_en?: string; // alias for suraName
+  sura_name_romanization?: string; // alias for suraName
 };
 ```
 

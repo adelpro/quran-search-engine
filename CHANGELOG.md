@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lemma or root layer stayed `matchType: 'none'`, `counts.lemma`/`counts.root` were always `0`,
   and totals were inflated with unscored results (for example `العلم` reported 728 results but
   only 29 exact matches). Scoring now uses `wordMap.get(token)`; per-type counts add up to
-  `counts.total` again. Exact text matches also take priority over an earlier lemma/root match in
+  `counts.total` when no result is unscored (`matchType: 'none'` results count only in
+  `counts.total`). Exact text matches also take priority over an earlier lemma/root match in
   multi-word queries, and lemma matches report the actual verse word (`الكتاب`) instead of the
   bare lemma (`كتب`) for highlighting.
 

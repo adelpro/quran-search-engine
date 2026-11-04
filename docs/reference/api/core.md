@@ -117,7 +117,9 @@ const invertedIndex = buildInvertedIndex(
 );
 ```
 
-- `subjectMap` (4th) is required for subject search to use the pre-built `subjectIndex`.
+- `subjectMap` (4th) is required for subject search. `buildInvertedIndex()` also precomputes a
+  `subjectIndex`, but `performSubjectSearch()` resolves subject words through
+  `rootIndex`/`lemmaIndex`/`wordIndex`; `subjectIndex` is exposed for callers that want it.
 - `wordMap` (5th) lets each subject word resolve through its root, so `مطر` also covers
   `وأمطرنا`. Without it, subject words resolve by lemma and clitic variants only.
 - Passing `semanticMap` builds `semanticIndex`.

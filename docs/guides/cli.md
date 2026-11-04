@@ -166,8 +166,9 @@ Showing 2 of 313 results (page 1 of 157)
 Matches: exact 201 · root 112
 ```
 
-`fuzzy` counts genuine fuzzy matches only. Each result is claimed by one layer, so the per-kind
-numbers add up to the total.
+`fuzzy` counts genuine fuzzy matches only. Per-kind numbers sum to the total when no result is
+unscored; a result with `matchType: 'none'` (for example from a caller-supplied Fuse index) is
+counted in `total` only.
 
 Multi-term results carry an extra `(N terms · M hits)` suffix per row:
 

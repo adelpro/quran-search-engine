@@ -54,7 +54,22 @@ console.log(`  Verses: ${quranData.size}`);
 Measure how long it takes to build or load the inverted index:
 
 ```typescript
-import { buildInvertedIndex } from 'quran-search-engine';
+import {
+  buildInvertedIndex,
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
+} from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(),
+]);
 
 const t0 = performance.now();
 const invertedIndex = buildInvertedIndex(

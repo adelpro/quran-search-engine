@@ -106,9 +106,10 @@ Non-exhaustive switches and string comparisons keep compiling unchanged.
 
 ### 3. `counts.fuzzy` changed meaning
 
-`counts.fuzzy` now counts **genuine fuzzy matches only**. Every result is claimed by exactly one
-layer, so the per-type fields add up to `counts.total`. If you displayed "fuzzy" as
-"everything else", use `counts.fuzzy` directly — it no longer absorbs unscored matches.
+`counts.fuzzy` now counts **genuine fuzzy matches only**. Per-type fields sum to `counts.total`
+when no result is unscored; a result with `matchType: 'none'` is counted in `counts.total` only.
+If you displayed "fuzzy" as "everything else", use `counts.fuzzy` directly — it no longer absorbs
+unscored matches.
 
 ---
 
