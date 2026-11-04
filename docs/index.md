@@ -56,7 +56,7 @@ framework. You control the data, the UI rendering, and the persistence layer.
 ### Migration & Contributing
 
 - [Migration Guide](./migration-guide.md)
-- [Release Notes: v0.4.0](./releases/v0.4.0.md)
+- [Release Notes: v0.4.0-rc.1](./releases/v0.4.0-rc.1.md)
 - [Contribution Guide](../CONTRIBUTING.md)
 
 ---
