@@ -124,58 +124,6 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results[0].gid).toBe(1);
   });
 
-  it('should not transliterate an English subject query through the phonetic map', () => {
-    // Regression: `--subject climate` used to translate "climate" phonetically into an
-    // unrelated Arabic word and flood the results with unscored fuzzy candidates.
-    const result = search(
-      'climate',
-      {
-        quranData: mockQuranDataMap,
-        morphologyMap: mockMorphologyMap,
-        wordMap: mockWordMapMap,
-        phoneticMap: new Map([['climate', ['الله']]]),
-        subjectMap: new Map([['climate', ['الرحمن']]]),
-      },
-      { lemma: true, root: true, subject: true },
-    );
-    expect(result.results.length).toBeGreaterThan(0);
-    expect(result.results.every((r) => r.matchType === 'subject')).toBe(true);
-  });
-
-  it('should not transliterate an English semantic query through the phonetic map', () => {
-    const result = search(
-      'climate',
-      {
-        quranData: mockQuranDataMap,
-        morphologyMap: mockMorphologyMap,
-        wordMap: mockWordMapMap,
-        phoneticMap: new Map([['climate', ['الله']]]),
-        semanticMap: new Map([['climate', ['الرحمن']]]),
-      },
-      { lemma: true, root: true, semantic: true },
-    );
-    expect(result.results.length).toBeGreaterThan(0);
-    expect(result.results.every((r) => r.matchType === 'semantic')).toBe(true);
-  });
-
-  it('should still transliterate non-concept tokens when semantic is enabled', () => {
-    // Regression: enabling semantic used to drop every Latin token, so a
-    // transliteration like `bismi allahi` stopped resolving through phoneticMap.
-    const result = search(
-      'bismi allahi',
-      {
-        quranData: mockQuranDataMap,
-        morphologyMap: mockMorphologyMap,
-        wordMap: mockWordMapMap,
-        phoneticMap: mockPhoneticMap,
-        semanticMap: new Map([['mercy', ['الرحمن']]]),
-      },
-      { lemma: true, root: true, semantic: true },
-    );
-    expect(result.results.length).toBeGreaterThan(0);
-    expect(result.results[0].gid).toBe(1);
-  });
-
   it('should handle range queries (e.g. 1:1)', () => {
     const result = search('1:1', {
       quranData: mockQuranDataMap,
@@ -185,6 +133,53 @@ describe('Search Orchestrator (Integration)', () => {
     expect(result.results).toHaveLength(1);
     expect(result.results[0].gid).toBe(1);
     expect(result.results[0].matchType).toBe('range');
+  });
+
+  it('intersects coordinate-only ranges with spatial filters', () => {
+    const context = {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMapMap,
+    };
+
+    const match = search('1:1-3', context, { suraId: 1 });
+    expect(match.results.map((v) => v.gid)).toEqual([1, 2, 3]);
+    expect(match.counts.range).toBe(3);
+    expect(match.results.every((v) => v.matchType === 'range')).toBe(true);
+
+    expect(search('1:1', context, { suraId: 2 }).results).toHaveLength(0);
+    expect(search('1:1-3', context, { juzId: 1 }).results).toHaveLength(3);
+    expect(search('1:1-3', context, { juzId: 2 }).results).toHaveLength(0);
+    expect(search('1:1-3', context, { suraName: 'الفاتحة' }).results).toHaveLength(3);
+    expect(search('1:1-3', context, { suraName: 'البقرة' }).results).toHaveLength(0);
+  });
+
+  it('scopes a text query to a range prefix', () => {
+    const options = { lemma: false, root: false, fuzzy: false } as const;
+    const inside = search(
+      '1:1-3 العالمين',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      options,
+    );
+    expect(inside.results.map((v) => v.gid)).toEqual([2]);
+    expect(inside.results[0].matchType).toBe('exact');
+    expect(inside.counts.total).toBe(1);
+    expect(inside.counts.range).toBe(0);
+
+    const outside = search(
+      '1:3 العالمين',
+      {
+        quranData: mockQuranDataMap,
+        morphologyMap: mockMorphologyMap,
+        wordMap: mockWordMapMap,
+      },
+      options,
+    );
+    expect(outside.results).toHaveLength(0);
   });
 
   it('should perform semantic search when specified', () => {

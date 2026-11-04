@@ -68,9 +68,10 @@ const describe = (error: unknown): string =>
 /**
  * Narrows the corpus to the requested sura and juz before searching.
  *
- * `search()` applies `suraId`/`juzId` after merging its layers, but scoping the corpus first
- * keeps the work smaller and the reported totals/page counts exact. It also lets the CLI
- * answer directly when a scope leaves no verses to search.
+ * `search()` accepts `suraId` and `juzId` but only honours them on its regex path — its
+ * linguistic path ignores them entirely (`filterVerses` is applied inside the regex branch
+ * of `src/core/search.ts` only). Scoping the input corpus rather than the results keeps the
+ * reported totals and page counts correct, which post-filtering would not.
  *
  * @param data - The full verse map.
  * @param options - Parsed search options carrying the optional scope filters.

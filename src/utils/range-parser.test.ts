@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRangeQuery, filterVersesByRange } from './range-parser';
+import { parseRangeQuery, parseRangeScopedQuery, filterVersesByRange } from './range-parser';
 import type { QuranText } from '../types';
 
 // Mock verse data (Al-Fatihah, 7 verses)
@@ -133,6 +133,39 @@ describe('parseRangeQuery', () => {
     it('should return null for only a colon', () => {
       expect(parseRangeQuery(':')).toBeNull();
     });
+  });
+});
+
+describe('parseRangeScopedQuery', () => {
+  it('splits a range prefix from the text query', () => {
+    expect(parseRangeScopedQuery('1:1-4 العالمين')).toEqual({
+      range: { sura: 1, startAya: 1, endAya: 4 },
+      query: 'العالمين',
+    });
+    expect(parseRangeScopedQuery('2: mercy')).toEqual({
+      range: { sura: 2 },
+      query: 'mercy',
+    });
+    expect(parseRangeScopedQuery('2:255-260 +الله -الرحمن')).toEqual({
+      range: { sura: 2, startAya: 255, endAya: 260 },
+      query: '+الله -الرحمن',
+    });
+  });
+
+  it('accepts whitespace around the range components', () => {
+    expect(parseRangeScopedQuery('  1 : 1 - 4   العالمين  ')).toEqual({
+      range: { sura: 1, startAya: 1, endAya: 4 },
+      query: 'العالمين',
+    });
+  });
+
+  it('returns null for coordinate-only or invalid ranges', () => {
+    expect(parseRangeScopedQuery('1:1-4')).toBeNull();
+    expect(parseRangeScopedQuery('1:1-4   ')).toBeNull();
+    expect(parseRangeScopedQuery('0:1 العالمين')).toBeNull();
+    expect(parseRangeScopedQuery('115:1 العالمين')).toBeNull();
+    expect(parseRangeScopedQuery('2:5-3 العالمين')).toBeNull();
+    expect(parseRangeScopedQuery('العالمين 1:1-4')).toBeNull();
   });
 });
 

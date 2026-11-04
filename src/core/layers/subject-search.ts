@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js';
 import { normalizeArabic, isArabic } from '../../utils/normalization';
 import { expandAffixVariants } from '../../utils/arabic-affixes';
+import { matchesSuraName } from './simple-search';
 import type {
   VerseInput,
   ScoredVerse,
@@ -196,7 +197,7 @@ const scoreVerse = <TVerse extends VerseInput>(
 ): ScoredVerse<TVerse> | null => {
   if (options.suraId && verse.sura_id !== options.suraId) return null;
   if (options.juzId && verse.juz_id !== options.juzId) return null;
-  if (options.suraName && verse.sura_name !== options.suraName) return null;
+  if (options.suraName && !matchesSuraName(verse, options.suraName)) return null;
 
   return {
     ...verse,

@@ -97,6 +97,26 @@ describe('Subject Search', () => {
     expect(result.counts.subject).toBeGreaterThan(0);
   });
 
+  it('scopes subject matches by Arabic, English, or romanized sura name', () => {
+    const context = {
+      quranData: mockQuranDataMap,
+      morphologyMap: mockMorphologyMap,
+      wordMap: mockWordMap,
+      subjectMap: mockSubjectMap,
+    };
+    const baseOptions = { lemma: false, root: false, subject: true, fuzzy: false } as const;
+    const gidsFor = (suraName: string) =>
+      search('climate', context, { ...baseOptions, suraName }).results.map((r) => r.gid);
+
+    // gid 2 (Al-Hijr) contains رياح; gid 1 (Al-Muminun) contains ماء.
+    expect(gidsFor('الحجر')).toEqual([2]);
+    expect(gidsFor('The Rocky Tract')).toEqual([2]);
+    expect(gidsFor('Al-Hijr')).toEqual([2]);
+    expect(gidsFor('المؤمنون')).toEqual([1]);
+    expect(gidsFor('The Believers')).toEqual([1]);
+    expect(gidsFor('Al-Muminun')).toEqual([1]);
+  });
+
   it('should find verses by English subject keyword (weather)', () => {
     const result = search(
       'weather',
