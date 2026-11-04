@@ -1,7 +1,7 @@
 # Search Configuration
 
-The main `search` function accepts two optional configuration layers allowing fine-tuned control over behavior and
-pagination limits.
+The main `search` function takes a required `SearchContext` plus optional `SearchOptions` and
+pagination layers, giving fine-tuned control over matching behaviour and page limits.
 
 ## `SearchOptions`
 
@@ -22,9 +22,9 @@ export type AdvancedSearchOptions = {
   // Optional geographic filtering parameters
   suraId?: number;
   juzId?: number;
-  suraName?: string;
-  sura_name_en?: string;
-  sura_name_romanization?: string;
+  suraName?: string; // Arabic, English, or romanized
+  sura_name_en?: string; // alias for suraName
+  sura_name_romanization?: string; // alias for suraName
 };
 
 export type SearchOptions = AdvancedSearchOptions;
@@ -50,14 +50,62 @@ export type SearchOptions = AdvancedSearchOptions;
   designed to be expanded by contributors over time; write new entries in their base form
   (`مطر`, not `أمطار`), since the root already covers the derived forms.
 - **Filtering Options:** Narrow searches spatially via explicit `{ suraId: 2, juzId: 3 }` etc.
+  `suraName` accepts the Arabic name (`الفاتحة`), the English name (`The Opening`), or the
+  romanized name (`Al-Fatihah`). Latin names are matched case-insensitively as substrings of
+  the dataset's `sura_name_en` / `sura_name_romanization` fields, so `Al-Fatiha` matches
+  `Al-Fatihah` but the spelling `El-Fatiha` does not.
+
+  Filters are applied **to the verses returned by the search layers**, so they scope a query;
+  they do not enumerate a sura. `search('الله', { suraName: 'Al-Fatihah' })` returns the
+  Al-Fatihah verses that matched the query, not all seven verses. To list a whole sura
+  independently of any words, use a range query such as `1:` (see
+  [Search Syntax](./search-syntax.md#range-queries)).
+
+  Filter priority is `suraId` → `suraName` → `juzId`: when more than one is supplied, only
+  the highest-priority filter runs.
 
 ## `PaginationOptions`
 
-Control bounds limit constraints natively. Omitting these defaults to logical page limits (typically page 1, limit 50).
+Control bounds limit constraints natively. Omitting these defaults to page `1` with `20`
+results per page.
 
 ```typescript
 export type PaginationOptions = {
   page?: number; // Starting return page.
   limit?: number; // Count return offset per page limit.
+};
+```
+
+## `MultiTermOptions`
+
+Used only by `search()`'s array overload. It adds `rankBy` on top of pagination:
+
+```typescript
+export type RankBy = 'score' | 'coverage' | 'frequency';
+
+export type MultiTermOptions = PaginationOptions & {
+  rankBy?: RankBy; // Default: 'score'
+};
+```
+
+| `rankBy`    | Orders by                              |
+| ----------- | -------------------------------------- |
+| `score`     | Accumulated `matchScore` (default)     |
+| `coverage`  | `distinctTermCount`, then `matchScore` |
+| `frequency` | `totalFrequency`, then `matchScore`    |
+
+## `SearchContext`
+
+The second argument to `search()`. Only the first three fields are required:
+
+```typescript
+export type SearchContext<TVerse extends VerseInput = QuranText> = {
+  quranData: Map<number, TVerse>; // required
+  morphologyMap: Map<number, MorphologyAya>; // required
+  wordMap: WordMap; // required
+  invertedIndex?: InvertedIndex; // recommended: O(1) lemma/root/word lookups
+  semanticMap?: Map<string, string[]>; // required for { semantic: true }
+  subjectMap?: Map<string, string[]>; // required for { subject: true }
+  phoneticMap?: Map<string, string[]>; // for Latin transliteration
 };
 ```

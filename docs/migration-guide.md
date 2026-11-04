@@ -1,430 +1,369 @@
-# Migration Guide: Upgrading to v0.3.x / v0.4.x
+# Migration Guide: v0.3.2 → v0.4.0
 
-This guide helps you migrate your application from v0.1.x/v0.2.x to the new architecture
-in `quran-search-engine`. Sections marked **v0.3.x** cover the inverted-index and semantic
-search changes introduced in that release. Sections marked **v0.4.x** cover the subject-based
-thematic search added in v0.4.0.
+This guide covers upgrading from **v0.3.2** to **v0.4.0**. The release adds thematic
+(subject) search, independent multi-term search, and a bundled CLI. Most existing calls keep
+working unchanged; the breaking changes are limited to the `SearchCounts` and `MatchType`
+types and to code that constructs those values by hand.
 
-## Overview of Breaking Changes
+> Upgrading from v0.1.x or v0.2.x? Those releases changed the whole call shape
+> (`search()` moved from positional arguments to a context object, and `quranData` became a
+> `Map`). Follow the v0.3.x migration steps first, then apply this guide.
 
-Version 0.3.x introduces significant architectural changes including:
+## What changed in v0.4.0
 
-- **Search Context Pattern**: Replaced positional arguments with a structured context object
-- **Map-based Data Structures**: `quranData` is now a `Map<number, TVerse>` instead of an array
-- **Inverted Index Required**: You must build and pass an inverted index for search
-- **Removed Features**: Phonetic search index, English-to-Arabic search, lemma/root/word index files
-
----
-
-## Breaking Changes
-
-### 1. `quranData` is Now a Map
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-const [quranData, setQuranData] = useState<QuranText[]>([]);
-```
-
-**New (v0.3.x):**
-
-```typescript
-const [quranData, setQuranData] = useState<Map<number, QuranText> | null>(null);
-```
-
-### 2. `search()` Function Signature Changed
-
-The `search()` function now uses a **Search Context Pattern** instead of positional arguments.
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-const response = search(
-  query,
-  quranData,           // QuranText[]
-  morphologyMap,       // Map<number, MorphologyAya>
-  wordMap,             // WordMap
-  options,             // SearchOptions
-  { page, limit },     // PaginationOptions
-  undefined,           // Previously unused
-  searchCache,          // LRUCache
-);
-```
-
-**New (v0.3.x):**
-
-```typescript
-const response = search(
-  query,                                                    // string
-  {
-    quranData,           // Map<number, TVerse>
-    morphologyMap,       // Map<number, MorphologyAya>
-    wordMap,             // WordMap
-    invertedIndex,       // InvertedIndex (required)
-    semanticMap,         // Map<string, string[]> (optional)
-    phoneticMap,         // Map<string, string[]> (optional)
-  },
-  options,             // SearchOptions
-  { page, limit },     // PaginationOptions
-  undefined,           // Unused
-  searchCache,          // LRUCache
-);
-```
-
-### 3. Inverted Index is Now Required
-
-You must build the inverted index before searching.
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-// No inverted index needed
-```
-
-**New (v0.3.x)** — inverted index + semantic; **New (v0.4.x)** — subject data:
-
-```typescript
-import { buildInvertedIndex, loadSemanticData, loadSubjectData } from 'quran-search-engine';
-
-const semanticMap = await loadSemanticData();
-const subjectMap = await loadSubjectData(); // v0.4.0+
-const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap, wordMap);
-```
-
-### 4. Data Loading Changes
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-const [data, morphology, dictionary] = await Promise.all([
-  loadQuranData(),
-  loadMorphology(),
-  loadWordMap(),
-]);
-```
-
-**New (v0.3.x):**
-
-```typescript
-const [data, morphology, dictionary, semantic] = await Promise.all([
-  loadQuranData(),
-  loadMorphology(),
-  loadWordMap(),
-  loadSemanticData(),  // New! Required for inverted index
-]);
-```
-
-### 5. Worker Initialization Changed
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-const client = createSearchWorker({
-  workerUrl: new URL('quran-search-engine/worker', import.meta.url),
-});
-await client.initData();
-```
-
-**New (v0.3.x):**
-
-```typescript
-// Dynamic import for worker URL
-const mod = await import('quran-search-engine/worker?url');
-const client = createSearchWorker({ workerUrl: mod.default });
-await client.initData();
-```
-
-### 6. Worker Client Type Renamed
-
-**Old (v0.1.x/v0.2.x):**
-
-```typescript
-import type { SearchWorkerClient } from 'quran-search-engine';
-```
-
-**New (v0.3.x):**
-
-```typescript
-// Still imported as SearchWorkerClient, but implementation is now simpler
-import type { SearchWorkerClient } from 'quran-search-engine';
-```
-
-### 7. Removed Features
-
-The following have been removed in v0.3.x:
-
-| Feature | Removed | Alternative |
-| --------- | --------- | ------------- |
-| Phonetic Search | `loadPhoneticData()` | Use exact Arabic text search |
-| English-to-Arabic Search | `loadEnglishToArabic()` | Semantic search with English concepts |
-| Lemma Index | `lemma-index.json` | Use semantic search instead |
-| Root Index | `root-index.json` | Use semantic search instead |
-| Word Index | `word-index.json` | Use semantic search instead |
-
-### 8. File Naming Convention
-
-Error files now use kebab-case:
-
-| Old | New |
-| ----- | ----- |
-| `base.error.ts` | `base-error.ts` |
-| `search.error.ts` | `search-error.ts` |
-| `validation.error.ts` | `validation-error.ts` |
-| `tokenization.error.ts` | `tokenization-error.ts` |
+| Area | Change | Breaking? |
+| ---- | ------ | --------- |
+| Subject search | New `loadSubjectData()`, `subjectMap` context field, `{ subject: true }`, `matchType: 'subject'` | No |
+| Multi-term search | `search()` accepts `string[]` and returns `MultiTermResponse` | No (new overload) |
+| CLI | New `quran-search-engine` binary (`bin` in `package.json`) | No |
+| Inverted index | `buildInvertedIndex()` now accepts `subjectMap` (4th) and `wordMap` (5th) | No (optional args) |
+| Counts | `SearchCounts.subject` is now **required** | **Yes** |
+| Match types | `MatchType` gained `'subject'` | **Yes** for exhaustive switches |
+| Fuzzy counts | `counts.fuzzy` no longer includes unscored (`matchType: 'none'`) matches | Behavioural |
+| Schema validators | `validateSubjectData()` and `validatePhoneticData()` exported | No |
 
 ---
 
-## Migration Steps
+## Breaking changes
 
-### Step 1: Update Data State
+### 1. `SearchCounts.subject` is required
 
-Change `quranData` from array to Map:
+Every response now reports subject matches. If you build a `SearchCounts` object literal
+yourself (for an empty state, a stub, or a custom cache entry), add the field.
+
+**Before (v0.3.2):**
 
 ```typescript
-const [quranData, setQuranData] = useState<Map<number, QuranText> | null>(null);
-const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
-const [semanticMap, setSemanticMap] = useState<Map<string, string[]> | null>(null);
+const emptyCounts: SearchCounts = {
+  simple: 0,
+  lemma: 0,
+  root: 0,
+  fuzzy: 0,
+  range: 0,
+  semantic: 0,
+  regex: 0,
+  total: 0,
+};
 ```
 
-### Step 2: Build Inverted Index After Loading
+**After (v0.4.0):**
 
 ```typescript
-const [data, morphology, dictionary, semantic] = await Promise.all([
+const emptyCounts: SearchCounts = {
+  simple: 0,
+  lemma: 0,
+  root: 0,
+  fuzzy: 0,
+  range: 0,
+  semantic: 0,
+  subject: 0, // new, required
+  regex: 0,
+  total: 0,
+};
+```
+
+Code that only *reads* counts (for example `response.counts.semantic`) needs no change, and
+code that relies on `response.counts` from `search()` already receives the new field.
+
+### 2. `MatchType` gained `'subject'`
+
+If you exhaustively switch over `MatchType`, TypeScript will now report a missing case. Add
+`'subject'` alongside the existing members.
+
+**Before (v0.3.2):**
+
+```typescript
+function label(type: MatchType): string {
+  switch (type) {
+    case 'exact':
+      return 'Exact';
+    case 'lemma':
+      return 'Lemma';
+    case 'root':
+      return 'Root';
+    case 'fuzzy':
+      return 'Fuzzy';
+    case 'semantic':
+      return 'Semantic';
+    case 'regex':
+      return 'Regex';
+    case 'range':
+      return 'Range';
+    case 'none':
+      return 'None';
+  }
+}
+```
+
+**After (v0.4.0):** add the new branch:
+
+```typescript
+    case 'subject':
+      return 'Subject';
+```
+
+Non-exhaustive switches and string comparisons keep compiling unchanged.
+
+### 3. `counts.fuzzy` changed meaning
+
+`counts.fuzzy` now counts **genuine fuzzy matches only**. Per-type fields sum to `counts.total`
+when no result is unscored; a result with `matchType: 'none'` is counted in `counts.total` only.
+If you displayed "fuzzy" as "everything else", use `counts.fuzzy` directly — it no longer absorbs
+unscored matches.
+
+---
+
+## Non-breaking additions
+
+### Subject (thematic) search
+
+`loadSubjectData()` returns a `Map<string, string[]>` that maps English concepts and Arabic
+words to a curated group of Arabic lemmas.
+
+```typescript
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
+  buildInvertedIndex,
+  search,
+} from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(),
+]);
+
+// subjectMap is optional; passing it pre-builds subjectIndex.
+// wordMap (5th argument) lets subject words resolve through their root.
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
+  quranData,
+  semanticMap,
+  subjectMap,
+  wordMap,
+);
+
+const context = {
+  quranData,
+  morphologyMap,
+  wordMap,
+  semanticMap,
+  subjectMap,
+  invertedIndex,
+};
+
+const response = search('climate', context, { lemma: true, root: true, subject: true });
+// → matchType: 'subject'
+```
+
+`subjectMap` is only required when `{ subject: true }` is used. If it is omitted, the option is
+ignored and every other search layer runs normally.
+
+### Multi-term search
+
+Pass an array instead of a string to search each term independently and merge results by verse
+`gid`:
+
+```typescript
+const response = search(
+  ['محمد', 'يونس', 'إبراهيم'],
+  context,
+  { lemma: true, root: true },
+  { page: 1, limit: 20, rankBy: 'coverage' },
+);
+// response.results[i].matchedTerms / distinctTermCount / totalFrequency
+```
+
+`rankBy` accepts `'score'` (default), `'coverage'`, or `'frequency'`. The string overload is
+unchanged.
+
+### CLI
+
+The package now ships a `quran-search-engine` command:
+
+```bash
+npx quran-search-engine "رحم"
+npx quran-search-engine "climate" --subject
+npx quran-search-engine "[محمد, يونس]" --rank-by coverage
+quran-search-engine --help
+```
+
+See the [CLI guide](./guides/cli.md) for every flag, output format, and exit code.
+
+### Schema validators
+
+`validateSubjectData()` and `validatePhoneticData()` join the existing validators:
+
+```typescript
+import { validateSubjectData, formatSchemaErrors } from 'quran-search-engine';
+
+const result = validateSubjectData(customSubjectArray);
+if (!result.valid) console.error(formatSchemaErrors(result));
+```
+
+> The validators expect the **raw JSON shapes** (`subjects.json`, `phonetic.json`, …), not the
+> `Map` instances returned by `loadSubjectData()` / `loadPhoneticData()`.
+
+---
+
+## Step-by-step upgrade
+
+### Step 1: Install v0.4.0
+
+```bash
+yarn add quran-search-engine@0.4.0
+# or: npm install quran-search-engine@0.4.0
+```
+
+### Step 2: Update hand-built `SearchCounts`
+
+Search the codebase for `SearchCounts` object literals and add `subject: 0`. Reading counts
+from `search()` needs no change.
+
+### Step 3: Handle the `'subject'` match type
+
+Search for `switch` statements and `Record<MatchType, ...>` maps. Add a `'subject'` case (or a
+default branch). Non-exhaustive code needs no change.
+
+### Step 4: Opt in to subject search (optional)
+
+If you want thematic search:
+
+1. Load `subjectMap` with `loadSubjectData()`.
+2. Pass it to `buildInvertedIndex()` as the 4th argument and to the search context.
+3. Pass `wordMap` as the 5th argument if you want root-based subject matching.
+4. Set `{ subject: true }` in the options for the relevant searches.
+
+### Step 5: Verify
+
+```bash
+yarn build
+yarn test --run
+yarn lint
+```
+
+The v0.4.0 test suite covers subject search, multi-term ranking, the CLI parser/formatter, and
+the new validators.
+
+---
+
+## Complete example: v0.3.2 → v0.4.0
+
+**Before (v0.3.2):**
+
+```typescript
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  buildInvertedIndex,
+  search,
+} from 'quran-search-engine';
+
+const [quranData, morphologyMap, wordMap, semanticMap] = await Promise.all([
   loadQuranData(),
   loadMorphology(),
   loadWordMap(),
   loadSemanticData(),
 ]);
 
-setQuranData(data);
-setMorphologyMap(morphology);
-setWordMap(dictionary);
-setSemanticMap(semantic);
+const invertedIndex = buildInvertedIndex(morphologyMap, quranData, semanticMap);
 
-// Build inverted index
-const subjectMap = await loadSubjectData();
-const index = buildInvertedIndex(morphology, data, semantic, subjectMap, wordMap);
-setInvertedIndex(index);
-```
-
-### Step 3: Update Search Call
-
-```typescript
 const response = search(
-  debouncedQuery,
-  {
-    quranData: quranData,
-    morphologyMap: morphologyMap,
-    wordMap: wordMap,
-    invertedIndex: invertedIndex,
-    semanticMap: semanticMap,
-    subjectMap: subjectMap, // v0.4.0+
-  },
-  options,
-  { page: currentPage, limit: PAGE_SIZE },
-  undefined,
-  searchCache,
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap, semanticMap, invertedIndex },
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
 );
 ```
 
-### Step 4: Update Worker Initialization (if using workers)
+**After (v0.4.0)** — same call, plus optional subject support:
 
 ```typescript
-let workerUrl: string | null = null;
+import {
+  loadQuranData,
+  loadMorphology,
+  loadWordMap,
+  loadSemanticData,
+  loadSubjectData,
+  buildInvertedIndex,
+  search,
+} from 'quran-search-engine';
 
-async function loadWorkerUrl() {
-  if (!workerUrl) {
-    const mod = await import('quran-search-engine/worker?url');
-    workerUrl = mod.default;
-  }
-  return workerUrl;
-}
+const [quranData, morphologyMap, wordMap, semanticMap, subjectMap] = await Promise.all([
+  loadQuranData(),
+  loadMorphology(),
+  loadWordMap(),
+  loadSemanticData(),
+  loadSubjectData(),
+]);
 
-// Then when initializing:
-const url = await loadWorkerUrl();
-const client = createSearchWorker({ workerUrl: url });
-await client.initData();
-```
-
-### Step 5: Remove Phonetic Options (if present)
-
-Remove any references to `loadPhoneticData()` and phonetic search options:
-
-```typescript
-// REMOVED - no longer needed
-const phoneticMap = await loadPhoneticData();
-```
-
----
-
-## New Features in v0.3.x / v0.4.x
-
-### Worker Status Tracking
-
-You can now track whether search runs on a worker or main thread:
-
-```typescript
-const [usingWorker, setUsingWorker] = useState<boolean | null>(null);
-
-// In search effect:
-setUsingWorker(true);  // or false for main thread
-```
-
-### Inverted Index Statistics
-
-Track index build performance:
-
-```typescript
-const [indexStats, setIndexStats] = useState<{
-  lemmaCount: number;
-  rootCount: number;
-  wordCount: number;
-  semanticCount: number;
-} | null>(null);
-const [indexBuildTime, setIndexBuildTime] = useState<number | null>(null);
-
-const buildStart = performance.now();
-const subjectMap = await loadSubjectData();
-const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap, wordMap);
-const buildMs = performance.now() - buildStart;
-
-setIndexStats({
-  lemmaCount: index.lemmaIndex.size,
-  rootCount: index.rootIndex.size,
-  wordCount: index.wordIndex.size,
-  semanticCount: index.semanticIndex?.size ?? 0,
-});
-setIndexBuildTime(buildMs);
-```
-
-### WorkerError Class
-
-New error handling for worker-related errors:
-
-```typescript
-import { WorkerError, ErrorCode } from 'quran-search-engine';
-
-try {
-  await client.runSearch(query, options, pagination);
-} catch (error) {
-  if (error instanceof WorkerError) {
-    console.error('Worker error:', error.code, error.message);
-  }
-}
-```
-
----
-
-## Complete Migration Example
-
-**Before (v0.2.x):**
-
-```typescript
-const [quranData, setQuranData] = useState<QuranText[]>([]);
-const [morphologyMap, setMorphologyMap] = useState<Map<number, MorphologyAya> | null>(null);
-const [wordMap, setWordMap] = useState<WordMap | null>(null);
-
-useEffect(() => {
-  async function init() {
-    const [data, morphology, dictionary] = await Promise.all([
-      loadQuranData(),
-      loadMorphology(),
-      loadWordMap(),
-    ]);
-    setQuranData(data);
-    setMorphologyMap(morphology);
-    setWordMap(dictionary);
-  }
-  init();
-}, []);
-
-const response = search(
-  query,
+const invertedIndex = buildInvertedIndex(
+  morphologyMap,
   quranData,
-  morphologyMap!,
-  wordMap!,
-  options,
-  { page: 1, limit: 10 },
-  undefined,
-  searchCache,
+  semanticMap,
+  subjectMap,
+  wordMap,
 );
-```
 
-**After (v0.3.x):**
+const context = { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex };
 
-```typescript
-const [quranData, setQuranData] = useState<Map<number, QuranText> | null>(null);
-const [morphologyMap, setMorphologyMap] = useState<Map<number, MorphologyAya> | null>(null);
-const [wordMap, setWordMap] = useState<WordMap | null>(null);
-const [semanticMap, setSemanticMap] = useState<Map<string, string[]> | null>(null);
-const [invertedIndex, setInvertedIndex] = useState<InvertedIndex | null>(null);
+// Existing string search — unchanged
+const normal = search(
+  'الله الرحمن',
+  context,
+  { lemma: true, root: true },
+  { page: 1, limit: 20 },
+);
 
-useEffect(() => {
-  async function init() {
-    const [data, morphology, dictionary, semantic, subject] = await Promise.all([
-      loadQuranData(),
-      loadMorphology(),
-      loadWordMap(),
-      loadSemanticData(),
-      loadSubjectData(), // v0.4.0+
-    ]);
-    setQuranData(data);
-    setMorphologyMap(morphology);
-    setWordMap(dictionary);
-    setSemanticMap(semantic);
+// New: thematic search
+const thematic = search('climate', context, { lemma: true, root: true, subject: true });
 
-    const index = buildInvertedIndex(morphology, data, semantic, subject, wordMap);
-    setInvertedIndex(index);
-  }
-  init();
-}, []);
-
-const response = search(
-  query,
-  {
-    quranData: quranData,
-    morphologyMap: morphologyMap,
-    wordMap: wordMap,
-    invertedIndex: invertedIndex,
-    semanticMap: semanticMap,
-    subjectMap: subject, // v0.4.0+
-  },
-  options,
-  { page: 1, limit: 10 },
-  undefined,
-  searchCache,
+// New: independent multi-term search
+const multi = search(
+  ['محمد', 'يونس', 'إبراهيم'],
+  context,
+  { lemma: true, root: true },
+  { page: 1, limit: 20, rankBy: 'coverage' },
 );
 ```
 
 ---
 
-## New in v0.4.x: Subject-Based Thematic Search
+## Troubleshooting
 
-v0.4.0 adds `loadSubjectData()` and the `subject` search option, which maps English concept
-words (e.g. `"climate"`, `"worship"`) to curated Arabic lemmas grouped by Islamic theme.
+### `Property 'subject' is missing ... but required in type 'SearchCounts'`
 
-```typescript
-import { loadSubjectData, buildInvertedIndex, search } from 'quran-search-engine';
+Add `subject: 0` to the object literal, or type the value as a partial/`Omit` if it is only a
+stub.
 
-// Load alongside other data
-const subjectMap = await loadSubjectData();
-const index = buildInvertedIndex(morphologyMap, quranData, semanticMap, subjectMap, wordMap);
+### `Not all code paths return a value` after upgrading TypeScript
 
-// Enable subject search
-search(
-  'climate',
-  { quranData, morphologyMap, wordMap, semanticMap, subjectMap, invertedIndex: index },
-  { subject: true },
-);
-// → returns verses about مطر، رياح، عاصفة، سحاب...
-```
+Your `MatchType` switch is exhaustive. Add a `'subject'` case.
 
-The initial `src/data/subjects.json` seeds 20 Islamic themes and is designed to grow —
-contributions for more themes, synonyms, and Arabic lemmas are welcome.
+### `climate` returns nothing with `{ subject: true }`
+
+- Confirm `subjectMap` is in the context **and** in `buildInvertedIndex()`.
+- Confirm the dataset ships `src/data/subjects.json` (20 themes in v0.4.0).
+- If you use a custom dataset, validate it with `validateSubjectData()`.
+- English lookups fall back to a strict fuzzy match, but only against keys that exist.
+
+### Subject results are too broad or too narrow
+
+Pass `wordMap` as the 5th argument to `buildInvertedIndex()` and in the context. Without it,
+subject words resolve by lemma and clitic variants only, so root-derived forms such as
+`وأمطرنا` will not be included for `مطر`.
 
 ---
 
-## Need Help?
+## Need help?
 
-If you encounter issues during migration, please [open an issue](https://github.com/adelpro/quran-search-engine/issues)
-or reach out to the community.
+Open an issue at
+[github.com/adelpro/quran-search-engine/issues](https://github.com/adelpro/quran-search-engine/issues).

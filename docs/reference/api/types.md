@@ -121,6 +121,7 @@ type MatchType =
   | 'fuzzy' // Approximate/fuzzy match
   | 'range' // Range query match
   | 'semantic' // Semantic/concept match
+  | 'subject' // Subject/theme match
   | 'regex' // Regular expression match
   | 'none'; // No match
 ```
@@ -153,11 +154,35 @@ type SearchCounts = {
   simple: number; // Exact matches
   lemma: number; // Lemma matches
   root: number; // Root matches
-  fuzzy: number; // Fuzzy matches
+  fuzzy: number; // Fuzzy matches (genuine only, not matchType: 'none')
   range: number; // Range matches
   semantic: number; // Semantic matches
+  subject: number; // Subject/theme matches
   regex: number; // Regex matches
   total: number; // Total matches
+};
+```
+
+### `SearchContext<TVerse>`
+
+The data and optional indexes passed as the second argument to `search()`.
+
+```typescript
+type SearchContext<TVerse extends VerseInput = QuranText> = {
+  /** Required: verses keyed by gid (from loadQuranData) */
+  quranData: Map<number, TVerse>;
+  /** Required: morphology per verse (from loadMorphology) */
+  morphologyMap: Map<number, MorphologyAya>;
+  /** Required: normalized token → lemma/root (from loadWordMap) */
+  wordMap: WordMap;
+  /** Optional: pre-built index for O(1) lemma/root/word lookups */
+  invertedIndex?: InvertedIndex;
+  /** Optional: required for { semantic: true } */
+  semanticMap?: Map<string, string[]>;
+  /** Optional: required for { subject: true } */
+  subjectMap?: Map<string, string[]>;
+  /** Optional: Latin → Arabic transliteration */
+  phoneticMap?: Map<string, string[]>;
 };
 ```
 
@@ -171,7 +196,7 @@ type SearchOptions = {
   lemma: boolean;
   /** Enable root-based matching */
   root: boolean;
-  /** Enable fuzzy matching (optional, default: false) */
+  /** Enable fuzzy matching (optional, default: true) */
   fuzzy?: boolean;
   /** Treat query as regex pattern (optional) */
   isRegex?: boolean;
@@ -179,14 +204,16 @@ type SearchOptions = {
   suraId?: number;
   /** Filter by juz number (optional) */
   juzId?: number;
-  /** Filter by Arabic surah name (optional) */
+  /** Filter by surah name: Arabic, English, or romanized (optional) */
   suraName?: string;
-  /** Filter by English surah name (optional) */
+  /** Alias for suraName (optional) */
   sura_name_en?: string;
-  /** Filter by romanized surah name (optional) */
+  /** Alias for suraName (optional) */
   sura_name_romanization?: string;
   /** Enable semantic matching (optional) */
   semantic?: boolean;
+  /** Enable subject/theme matching (optional) */
+  subject?: boolean;
 };
 ```
 
@@ -312,6 +339,7 @@ Inverted index structures for fast lookups.
 type LemmaIndex = Map<string, Set<number>>; // lemma → verse GIDs
 type RootIndex = Map<string, Set<number>>; // root → verse GIDs
 type WordIndex = Map<string, Set<number>>; // word → verse GIDs
+type SubjectIndex = Map<string, Set<number>>; // subject/theme → verse GIDs
 ```
 
 ### `InvertedIndex`
@@ -324,6 +352,7 @@ type InvertedIndex = {
   rootIndex: RootIndex;
   wordIndex: WordIndex;
   semanticIndex?: Map<string, Set<number>>;
+  subjectIndex?: SubjectIndex;
 };
 ```
 

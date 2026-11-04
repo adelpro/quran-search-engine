@@ -3,33 +3,36 @@
 The structure of `quran-search-engine` intentionally sidesteps traditional database-heavy approaches to text searching
 for smaller bound datasets (like the Quran). Most Quran apps bind logic to server queries.
 
-## Folder Structure (v0.2.0)
+## Folder Structure (v0.4.0)
 
 ```text
 src/
+├── cli.ts                   ← CLI entry point (bin)
+├── cli/                     ← Argument parsing, output formatting, runner
 ├── core/
 │   ├── search.ts            ← Orchestrator: single public entry point
-│   ├── search.test.ts       ← Integration tests for the orchestrator
 │   └── layers/              ← One file per search strategy
-│       ├── simple-search.ts
-│       ├── simple-search.test.ts
+│       ├── boolean-search.ts
 │       ├── fuse-search.ts
-│       ├── fuse-search.test.ts
 │       ├── linguistic-search.ts
 │       ├── regex-search.ts
-│       ├── regex-search.test.ts
+│       ├── search-many.ts   ← independent multi-term merge
 │       ├── semantic-search.ts
-│       └── phonetic-search.ts
+│       ├── simple-search.ts
+│       └── subject-search.ts
 ├── utils/                   ← Generic, reusable helpers
 │   ├── tokenization.ts      ← Token → word matching (used for highlighting)
 │   ├── lru-cache.ts         ← Generic LRU cache
 │   ├── range-parser.ts      ← Parse sura:aya range queries
 │   ├── normalization.ts
 │   ├── phonetic.ts          ← Phonetic map builder
+│   ├── schema.ts            ← Custom-dataset validators
 │   ├── loader.ts
 │   └── ...
+├── worker/                  ← Web worker entry and client
 ├── errors/
 ├── types/
+├── data/                    ← Bundled JSON datasets
 └── index.ts
 ```
 
@@ -59,13 +62,20 @@ endlessly, meaning:
 The `search()` orchestrator routes each query through a strict priority cascade. Each layer is an isolated,
 independently testable module in `core/layers/`:
 
-1. **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
-2. **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
-3. **Simple layer** — Exact token matching in normalized Arabic text.
-4. **Linguistic layer** — Lemma and root matching via morphology data.
-5. **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
-6. **Semantic layer** — Concept expansion (when `semantic: true`).
-7. **Phonetic layer** — Latin→Arabic transliteration for non-Arabic queries.
+1. **Phonetic resolution** — Latin tokens are resolved to Arabic through `phoneticMap` before
+   any layer runs.
+2. **Range layer** — Verse-coordinate queries (`2:255`, `1:1-7`) short-circuit all linguistic processing.
+3. **Regex layer** — Pattern queries (when `isRegex: true`) run in isolation; linguistic layers are skipped.
+4. **Simple layer** — Exact token matching in normalized Arabic text.
+5. **Linguistic layer** — Lemma and root matching via morphology data.
+6. **Fuse layer** — Fuzzy fallback (Fuse.js) for tokens that produced no matches above.
+7. **Semantic layer** — Concept expansion (when `semantic: true`).
+8. **Subject layer** — Thematic expansion (when `subject: true`).
+9. **Merge, deduplicate, and scope** — Results from all layers are merged by `gid`, then filtered
+   by `suraId`/`juzId`/`suraName`.
+10. **Boolean filter** — Queries containing `+`, `-`, or `|` filter the merged, scoped result set.
+11. **Multi-term merge** — When `search()` receives a `string[]`, each term runs the pipeline
+    above independently and the results are merged by `gid`.
 
 ### 4. Modular Scale
 

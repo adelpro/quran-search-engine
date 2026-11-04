@@ -7,8 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-03
+
 ### Fixed
 
+- **Lemma and root matches were never scored**: `computeScore()` read `wordMap[token]` even though
+  `WordMap` is a `Map`, so the lookup was always `undefined`. Every verse found only through the
+  lemma or root layer stayed `matchType: 'none'`, `counts.lemma`/`counts.root` were always `0`,
+  and totals were inflated with unscored results (for example `العلم` reported 728 results but
+  only 29 exact matches). Scoring now uses `wordMap.get(token)`; per-type counts add up to
+  `counts.total` when no result is unscored (`matchType: 'none'` results count only in
+  `counts.total`). Exact text matches also take priority over an earlier lemma/root match in
+  multi-word queries, and lemma matches report the actual verse word (`الكتاب`) instead of the
+  bare lemma (`كتب`) for highlighting.
+
+- **`suraName` filtering for English and romanized names**: `normalizeArabic()` stripped Latin
+  letters but kept the hyphen, so `suraName: 'Al-Fatiha'` collapsed to `'-'` and matched every
+  romanized name containing a hyphen; English names collapsed to `''` and skipped filtering
+  entirely. Arabic, English (`The Opening`), and romanized (`Al-Fatihah`) names now each match
+  only their own sura. The semantic and subject layers now use the same name matcher instead of
+  comparing only the Arabic `sura_name`, so their concept hits are no longer dropped when an
+  English or romanized name is supplied.
+- **Subject/semantic English queries and phonetic noise**: `--subject climate` and
+  `search('climate', { semantic: true })` used to transliterate the English word through the
+  phonetic map, injecting an unrelated Arabic term and returning thousands of unscored
+  `matchType: 'none'` hits. English concept queries now skip phonetic translation, so
+  `--subject climate` returns the 127 weather-theme verses and `semantic: 'climate'` returns 0
+  when the semantic map has no entry.
 - **Subject search precision**: subject words no longer match by bare substring. A word now
   matches a verse only when it shares the verse's root, is one of its lemmas, or appears as a
   whole token once Arabic clitics are attached (`الرياح` for `رياح`). Substring matching pulled
@@ -39,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Range-scoped text search**: a range prefix followed by text (`1:1-4 العالمين`, `2:255-260 +الله`)
   now runs the normal search pipeline only over the verses in that range. Previously the text token
   made the range parser fall through, so the query searched the whole Quran.
+- **Range/filter intersection**: coordinate-only ranges now intersect `suraId`, `juzId`, and
+  `suraName` instead of ignoring them. `search('2:255', ctx, { suraId: 1 })` returns 0, and
+  contradictory combinations return 0 rather than throwing. Filter priority is
+  `suraId` > `suraName` > `juzId`.
 - **CLI multi-term search**: a single argument wrapped in `[ ... ]` (e.g.
   `quran-search-engine "[محمد, يونس]"`, ASCII or Arabic comma) now runs the array overload above,
   with a `--rank-by score|coverage|frequency` option and merged-result details (matched-term and
@@ -55,13 +84,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the terminal. Mirrors `--semantic`: off by default, ignored (with a warning) under `--regex`,
   and reported in the match breakdown footer. Subject data loads lazily, only when the flag is
   passed.
+- **Subject lookup resilience**: English subject aliases fall back to a strict fuzzy match, so a
+  typo such as `climte` still resolves. Arabic words are also registered as subject keys, so
+  looking one up opens its whole theme instead of a plain root/lemma match.
+- **Schema validators**: new `validateSubjectData()` and `validatePhoneticData()` exports, joining
+  the existing dataset validators.
 
 ### Changed
 
-- **Coordinate-only range queries now intersect spatial filters** instead of ignoring them:
-  `search('2:255', ctx, { suraId: 1 })` returns 0, and `1:1-7` combined with
-  `suraName: 'Al-Baqarah'` returns 0. Contradictory combinations return 0 rather than throwing.
-  Filter priority is `suraId` > `suraName` > `juzId`.
 - **`buildInvertedIndex`** accepts an optional fifth argument, `wordMap`. Supplying it lets each
   subject word resolve through its root, so `مطر` also covers `وأمطرنا`. The argument is optional
   and existing calls keep working; without it, subject words resolve by lemma and clitic form only.
@@ -73,6 +103,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`SearchCounts.subject`** is a required field, and **`MatchType`** gains a `'subject'` member.
   Code that constructs a `SearchCounts` object literal or exhaustively switches on `MatchType`
   needs updating; see the [Migration Guide](./docs/migration-guide.md).
+- **Documentation**: guides, API reference, README, and the migration guide now match the v0.4.0
+  API. Removed stale references to `loadInvertedIndex()` and `isBoolean`, corrected the
+  `loadQuranData()` return type, documented subject and multi-term search, and fixed the boolean
+  operator syntax (`+term`, `-term`, `term | term`). Boolean search is documented as supported and
+  auto-detected, with verified result counts and a note that `AND`/`OR`/`NOT` are not operators
+  (`OR`/`NOT` are dropped, `AND` resolves to `عند` through the phonetic map) and that
+  `invertedIndex` counts differ from the linear-scan fallback.
 
 ## [0.3.2]
 

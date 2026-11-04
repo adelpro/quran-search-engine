@@ -15,8 +15,11 @@ framework. You control the data, the UI rendering, and the persistence layer.
 - Lemma & Root matching (via morphology and word maps)
 - Regular Expression search with ReDoS safety validation
 - Advanced Fuzzy fallback
+- Semantic (related-concept) search
+- Subject (thematic) search over curated Arabic lemma groups
 - Independent multi-term search (`search()` with an array of terms) with score/coverage/frequency ranking
 - Computed highlight ranges (UI-agnostic)
+- A bundled `quran-search-engine` CLI
 
 ---
 
@@ -35,7 +38,7 @@ framework. You control the data, the UI rendering, and the persistence layer.
 - [Subject & Multi-Word Search](./guides/subjects-and-multiword.md)
 - [Advanced Configuration](./guides/configuration.md)
 - [Examples & Integrations](./guides/examples.md)
-- [English-Arabic Search](./guides/english-arabic-search.md)
+- [English-Arabic Search (removed)](./guides/english-arabic-search.md)
 
 ### Reference
 
@@ -53,6 +56,7 @@ framework. You control the data, the UI rendering, and the persistence layer.
 ### Migration & Contributing
 
 - [Migration Guide](./migration-guide.md)
+- [Release Notes: v0.4.0](./releases/v0.4.0.md)
 - [Contribution Guide](../CONTRIBUTING.md)
 
 ---

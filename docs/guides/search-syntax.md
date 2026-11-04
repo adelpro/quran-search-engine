@@ -13,10 +13,11 @@ The engine intersects matches **per token**. This guarantees all returned result
 term either by exact match, lemma fallback, root fallback, or fuzzy match fallback conditionally based on configuration.
 
 ```typescript
-const response = search('الله الرحمن', quranData, morphologyMap, wordMap, {
-  lemma: true,
-  root: true,
-});
+const response = search(
+  'الله الرحمن',
+  { quranData, morphologyMap, wordMap, invertedIndex },
+  { lemma: true, root: true },
+);
 // Internally:
 // Token 1 => Matches 'الله'
 // AND
@@ -37,35 +38,103 @@ Beyond multi-word string queries, the engine supports multiple alternative synta
   filtered subset.
 
 ```typescript
+const context = { quranData, morphologyMap, wordMap, invertedIndex };
+
 // Find all verses ending with "ون"
-const response = search('^.*ون$', quranData, morphologyMap, wordMap, {
+const response = search('^.*ون$', context, {
   lemma: false,
   root: false,
   isRegex: true,
 });
 
 // Find verses containing "الله" followed by "الرحمن" with any text between them
-const response2 = search('الله.*الرحمن', quranData, morphologyMap, wordMap, {
+const response2 = search('الله.*الرحمن', context, {
   lemma: false,
   root: false,
   isRegex: true,
 });
 ```
 
-- **Range Queries:** `sura:aya`, `sura:start-end`, and `sura:` return verses directly from `quranData` by
-  coordinate (`2:255`, `1:1-7`, `2:`). A coordinate-only range keeps `matchType: 'range'`, score `1`, and intersects
-  spatial filters — `search('2:255', ctx, { suraId: 1 })` returns 0, and a contradictory combination returns 0 instead
-  of throwing. When several filters are supplied, only the highest-priority one runs: `suraId` > `suraName` > `juzId`.
-  A range followed by text (`1:1-4 العالمين`, `2:255-260 +الله`) applies the range first and then runs the normal
-  pipeline only inside it, so linguistic, semantic, subject, boolean, and regex options stay scoped. Those results keep
-  their real `matchType` and `counts.range` is `0`.
-- **Boolean Search:** When `{ isBoolean: true }` is enabled, the engine uses a sophisticated boolean expression parser.
-  This supports `AND`, `OR`, `NOT` operators and nested grouping with `()`. It allows for complex queries like
-  `(الله OR رب) AND (الرحمن NOT الرحيم)`.
-  - **AND**: Intersection of results. Both terms must match.
-  - **OR**: Union of results. Either term can match.
-  - **NOT**: Exclusion of results. The term must not match.
-  - **Grouping**: Controls precedence, e.g., `A AND (B OR C)`.
+### Range Queries
+
+A query matching `sura:aya`, `sura:start-end`, or `sura:` returns verses directly from
+`quranData` by coordinate. A range followed by text (`1:1-4 العالمين`) scopes the normal search
+pipeline to those verses instead.
+
+| Query             | Meaning                                       | Bundled dataset |
+| ----------------- | --------------------------------------------- | --------------- |
+| `2:255`           | The single verse Al-Baqarah 255               | 1 verse         |
+| `1:1-7`           | Al-Fatihah 1 through 7 (inclusive)            | 7 verses        |
+| `2:`              | Every verse of Al-Baqarah                     | 286 verses      |
+| `2:255-260`       | Al-Baqarah 255 through 260 (inclusive)        | 6 verses        |
+| `114:6`           | An-Nas 6                                      | 1 verse         |
+| `1:1-4 العالمين`  | Text search for العالمين inside 1:1–1:4       | 1 verse (1:2)   |
+| `2:255-260 +الله` | Text/boolean search inside Al-Baqarah 255–260 | 5 verses        |
+
+- Coordinates are **1-based**. Sura/aya numbers must be positive; `endAya` must be greater
+  than or equal to `startAya`. The sura must be `1`–`114`.
+- Whitespace around the colon and hyphen is ignored, and leading zeros are accepted:
+  `2 : 255` and `02:255` both resolve to `2:255`.
+- Numbers are **not** validated against the real length of a sura. `2:300` parses successfully
+  but matches no verse, so it returns 0; `1:1-300` returns the 7 verses that exist.
+- A malformed range (`0:1`, `115:1`, `2:5-3`, `1:0`) does not throw. It falls through to the
+  normal text search and normally returns no results because it contains no Arabic words.
+- A **coordinate-only** range intersects `suraId`, `juzId`, and `suraName`; a contradictory combination
+  returns 0 instead of throwing. Only the highest-priority filter runs:
+  `suraId` > `suraName` > `juzId`. The linguistic toggles and `isRegex` do not affect a
+  coordinate-only lookup.
+- A **range-scoped text query** must put the range first, separated from the text by whitespace:
+  `1:1-4 العالمين`. The range is applied first, then the normal layers (lemma/root/fuzzy/
+  phonetic/semantic/subject/regex) run only over those verses. Options such as `suraId` still
+  apply afterwards. Text before the range (`العالمين 1:1-4`) is not treated as a scope.
+- Coordinate-only results keep dataset order and are marked `matchType: 'range'`,
+  `matchScore: 1`, with empty `matchedTokens`; `counts.range` and `counts.total` both equal the
+  match count. Range-scoped text results keep their real `matchType` (e.g. `exact`) and
+  `counts.range` is `0`.
+- Pagination applies in both forms.
+- The dataset must provide `sura_id` and `aya_id` on each verse. Custom data without those
+  fields returns 0 for every range query.
+
+```typescript
+const one = search('2:255', context); // 1 result: 2:255
+const seven = search('1:1-7', context); // 7 results: 1:1 … 1:7
+const sura = search('2:', context, {}, { page: 2, limit: 100 }); // page 2 of Al-Baqarah
+const scoped = search('1:1-4 العالمين', context); // 1 result: 1:2
+```
+
+- **Boolean Search:** Boolean querying is detected automatically from the query itself — no
+  option is needed. It supports three operators:
+  - `+term` (**AND / MUST**): the term must appear in the verse.
+  - `-term` (**NOT / EXCLUDE**): the term must not appear in the verse.
+  - `term | term` (**OR / EITHER**): at least one of the terms must appear. Bare terms without
+    an operator are treated as `EITHER` terms as well.
+
+  Boolean search is fully supported and needs no option. The operators are symbols — `+`, `-`,
+  and `|` — not the words `AND`, `OR`, or `NOT`. A query like `'الله AND الرحمن'` is not boolean
+  syntax.
+
+  ```typescript
+  // Verses containing الله but not الرحمن, and either الرحيم or العليم
+  search('+الله -الرحمن الرحيم | العليم', context, { lemma: true, root: true });
+  ```
+
+  Tested against the bundled dataset with `{ lemma: true, root: true, fuzzy: false }`:
+
+  | Query             | Meaning                   | Linear scan | With `invertedIndex` |
+  | ----------------- | ------------------------- | ----------- | -------------------- |
+  | `+الله -الرحمن`   | MUST الله, EXCLUDE الرحمن | 1741        | 1571                 |
+  | `الله \| الرحمن`  | الله OR الرحمن            | 1789        | 1616                 |
+  | `الله AND الرحمن` | not boolean — AND→عند     | 5           | 5                    |
+  | `الله NOT الرحمن` | not boolean — NOT dropped | 130         | 124                  |
+
+  **Why `AND` / `OR` / `NOT` do nothing:** they are not operators. `OR` and `NOT` are dropped as
+  unknown non-Arabic tokens, so `'الله NOT الرحمن'` becomes `'الله الرحمن'` — an intersection of
+  the two Arabic words. `AND` is present in the phonetic map and resolves to `عند`, so
+  `'الله AND الرحمن'` searches three Arabic words (`الله عند الرحمن`) and returns 5 verses.
+
+  **Why the counts differ with an index:** the `invertedIndex` path matches exact normalized
+  tokens, while the linear-scan fallback uses substring matching. A clitic form such as `بالله`
+  is found only by the fallback. Choose one path and keep it consistent across environments.
 
 ### Boolean Search Helper Functions
 

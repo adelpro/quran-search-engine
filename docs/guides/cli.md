@@ -67,21 +67,46 @@ because they address result pages.
 
 The same list, with defaults, is printed by `quran-search-engine --help`.
 
+`--subject` and `--semantic` are designed for English concept queries (`climate`, `worship`,
+`human`). Those queries skip the phonetic transliteration layer, so the result set is limited to
+the theme or synonym group instead of being fuzzy-matched to an unrelated Arabic word. For
+example, `quran-search-engine "climate" --subject` returns the weather theme (127 verses), not a
+mix of unscored fuzzy hits.
+
 ## Query shapes recognised without a flag
 
 These are detected from the query itself, so no option enables them:
 
-| Shape                 | Example                                          | Behaviour                     |
-| --------------------- | ------------------------------------------------ | ----------------------------- |
-| Verse coordinates     | `2:255`, `1:1-7`, `2:`                           | Returns those verses directly |
-| Logical operators     | `الله AND (الرحمن OR الرحيم)`, `الله NOT الرحمن` | Operators are honoured        |
-| Latin transliteration | `rahman`, `bismi allah`                          | Treated as a transliteration  |
+| Shape                 | Example                             | Behaviour                     |
+| --------------------- | ----------------------------------- | ----------------------------- |
+| Verse coordinates     | `2:255`, `1:1-7`, `2:`              | Returns those verses directly |
+| Boolean operators     | `+الله -الرحمن`, `الرحيم \| العليم` | Operators are honoured        |
+| Latin transliteration | `rahman`, `bismi allah`             | Treated as a transliteration  |
 
 ```bash
 quran-search-engine "2:255"
-quran-search-engine "الله NOT الرحمن"
+quran-search-engine "+الله -الرحمن"
+quran-search-engine "الرحيم | العليم"
 quran-search-engine "rahman"
 ```
+
+Boolean operators are symbols, not words: `+term` must appear, `-term` must not appear, and
+`term | term` is an OR group. A query containing the word `AND` is not boolean syntax.
+
+Tested with the bundled CLI (`--no-fuzzy`, linear scan — no index):
+
+| Command                                 | Results | Meaning                   |
+| --------------------------------------- | ------- | ------------------------- |
+| `quran-search-engine "+الله -الرحمن"`   | 1741    | MUST الله, EXCLUDE الرحمن |
+| `quran-search-engine "الله \| الرحمن"`  | 1789    | الله OR الرحمن            |
+| `quran-search-engine "الله AND الرحمن"` | 5       | not boolean — AND → عند   |
+| `quran-search-engine "الله NOT الرحمن"` | 130     | not boolean — NOT dropped |
+
+`OR` and `NOT` are dropped as unknown non-Arabic text, so `"الله NOT الرحمن"` behaves like
+`"الله الرحمن"` (intersection of the two Arabic words). `AND` resolves through the phonetic map
+to `عند`, so `"الله AND الرحمن"` searches three Arabic words. The library's `invertedIndex` path
+matches exact tokens instead of substrings, so counts differ from the CLI; see the
+[search syntax guide](./search-syntax.md#advanced-search-types) for the indexed numbers.
 
 Transliteration is matched word by word, so write each word separately: `bismi allah` rather
 than `bismillah`.
@@ -138,12 +163,12 @@ left out.
 1:3  الرحمن الرحيم
 
 Showing 2 of 313 results (page 1 of 157)
-Matches: exact 201 · fuzzy 112
+Matches: exact 201 · root 112
 ```
 
-Note that `fuzzy` currently includes unscored matches, which is a quirk of the library's own
-counts rather than of the CLI. Tracked in
-[#102](https://github.com/adelpro/quran-search-engine/issues/102).
+`fuzzy` counts genuine fuzzy matches only. Per-kind numbers sum to the total when no result is
+unscored; a result with `matchType: 'none'` (for example from a caller-supplied Fuse index) is
+counted in `total` only.
 
 Multi-term results carry an extra `(N terms · M hits)` suffix per row:
 

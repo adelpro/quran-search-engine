@@ -1,15 +1,22 @@
 # Node.js Example
 
-A Node.js example demonstrating the Quran Search Engine library for server-side usage.
+A Node.js (ESM) example demonstrating the v0.4.0 `quran-search-engine` API for server-side
+usage.
+
+The example imports `quran-search-engine` through the Yarn workspace (`workspace:*`), so it
+always runs against the local `0.4.0` build.
 
 ## Features
 
-- Load and search Quran data programmatically
-- Multiple search modes: exact, lemma, root, and semantic matching
-- Display search statistics and results
-
-- Command-line interface for custom searches
-- Example searches for common Arabic words
+- Load every dataset: Quran text, morphology, word map, semantic map, phonetic map, and subjects
+- Build the inverted index once with `buildInvertedIndex(..., subjectMap, wordMap)`
+- Exact, lemma, root, fuzzy, phonetic, semantic, and subject search
+- Boolean queries with `+term`, `-term`, and `term | term`
+- Multi-term search with `rankBy: 'score' | 'coverage' | 'frequency'`
+- Range lookups (`2:255`, `1:1-7`, `2:`)
+- Regex search with `validateRegex()`
+- Pre-computed Fuse index and LRU cache
+- Highlight ranges and JSON/CSV/TSV export helpers
 
 ## Getting Started
 
@@ -25,20 +32,27 @@ A Node.js example demonstrating the Quran Search Engine library for server-side 
    yarn playground:node
    ```
 
-3. For custom searches, provide a search term as an argument:
+3. Run a custom search:
 
    ```bash
    yarn workspace nodejs-example start "الله"
+   yarn workspace nodejs-example start "+الله -الرحمن"
+   yarn workspace nodejs-example start "[محمد, يونس]"
    ```
 
-## Usage
+## What it demonstrates
 
-The script will:
-
-1. Load all Quran data, morphology, and word mappings
-2. Run example searches for common words
-3. Display results with match types and scores
-4. Allow custom searches via command line arguments
+| Section           | API                                                    |
+| ----------------- | ------------------------------------------------------ |
+| Standard search   | `search(query, context, options, pagination)`          |
+| Subject search    | `loadSubjectData()`, `subjectMap`, `{ subject: true }` |
+| Multi-term search | `search(string[], context, options, { rankBy })`       |
+| Range lookup      | `search('2:255', context)`                             |
+| Boolean helpers   | `hasBooleanOperators()`, `clearBooleanOperators()`     |
+| Highlight/export  | `getHighlightRanges()`, `exportResults()`              |
+| Regex             | `validateRegex()`, `{ isRegex: true }`                 |
+| Caching           | `LRUCache`, pre-computed Fuse index                    |
+| Metadata          | `SURAS`, `normalizeArabic()`                           |
 
 ## Output Example
 
@@ -47,18 +61,32 @@ The script will:
 
 ✅ Loaded 6236 verses
 ✅ Loaded morphology data for 6236 verses
-✅ Loaded word map with 77403 entries
+✅ Loaded word map with 18005 entries
+✅ Loaded semantic data with 3180 entries
+✅ Loaded phonetic data with 31417 entries
+✅ Loaded subject data with 488 entries
 
-🔍 Search for "Allah": "الله"
+✅ Built inverted index in 185ms
+   - Lemma entries:    4,282
+   - Root entries:     1,642
+   - Word entries:     14,667
+   - Semantic entries: 3,138
+   - Subject entries:  488
+
+🔍 "climate" — subject (thematic) search
 ──────────────────────────────────────────────────
-📊 Found 2568 matches
-   - Exact: 2568
-   - Lemma: 0
-   - Root: 0
-   - Fuzzy: 0
-
-1. Al-Fatiha (1:1)
-   Match: exact (Score: 1)
-   Text: بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-   ...
+📊 Found 127 matches
+   Counts: subject 127 · total 127
+   1. البقرة (2:164) — subject
+      إِنَّ فِی خَلۡقِ ٱلسَّمَٰوَٰتِ وَٱلۡأَرۡضِ ...
+──────────────────────────────────────────────────
 ```
+
+## Notes
+
+- `loadQuranData()` returns `Map<number, QuranText>`, not an array.
+- `buildInvertedIndex()` takes `(morphologyMap, quranData, semanticMap?, subjectMap?, wordMap?)`.
+- Boolean operators are symbols. The words `AND`, `OR`, and `NOT` are not operators; non-Arabic
+  text is stripped before searching, so `الله NOT الرحمن` behaves like `الله الرحمن`.
+- Passing `invertedIndex` uses exact-token matching; the linear-scan fallback uses substring
+  matching, so counts can differ between the two paths.
