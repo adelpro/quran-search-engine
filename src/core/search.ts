@@ -337,8 +337,11 @@ export function search<TVerse extends VerseInput>(
   // Convert the unique Map values back into a standard array of verse objects
   const versesArrOfObj = Array.from(verseMap.values());
 
-  // Pass the clean, deduplicated verses array to filter them by sura or juz options
-  const allMatches = filterVerses(versesArrOfObj, options.suraId, options.juzId, options.suraName);
+  // Pass the clean, deduplicated verses array to filter them by sura or juz options.
+  // `suraName` accepts Arabic, English, or romanized names; the two explicit
+  // name fields are forwarded as aliases so they behave as documented.
+  const suraNameFilter = options.suraName ?? options.sura_name_en ?? options.sura_name_romanization;
+  const allMatches = filterVerses(versesArrOfObj, options.suraId, options.juzId, suraNameFilter);
 
   // Then, if boolean query exists, filter combined results based on boolean logic
   // This allows queries like "+الله -الرحمن الرحيم | العليم" to:

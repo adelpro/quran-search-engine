@@ -1,5 +1,6 @@
 import semanticData from '../../data/semantic.json';
 import { normalizeArabic, isArabic } from '../../utils/normalization';
+import { matchesSuraName } from './simple-search';
 import type { VerseInput, ScoredVerse, AdvancedSearchOptions, InvertedIndex } from '../../types';
 
 interface SemanticConcept {
@@ -110,7 +111,7 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
     for (const verse of quranData.values()) {
       if (options.suraId && verse.sura_id !== options.suraId) continue;
       if (options.juzId && verse.juz_id !== options.juzId) continue;
-      if (options.suraName && verse.sura_name !== options.suraName) continue;
+      if (options.suraName && !matchesSuraName(verse, options.suraName)) continue;
 
       const normalizedVerse = normalizeArabic(verse.standard);
       const matchedKeywords: string[] = [];
@@ -164,7 +165,7 @@ export const performSemanticSearch = <TVerse extends VerseInput>(
     if (!verse) continue;
     if (options.suraId && verse.sura_id !== options.suraId) continue;
     if (options.juzId && verse.juz_id !== options.juzId) continue;
-    if (options.suraName && verse.sura_name !== options.suraName) continue;
+    if (options.suraName && !matchesSuraName(verse, options.suraName)) continue;
 
     const matchedKeywords = Array.from(matchedArabicWords).filter((word) => {
       const normalizedVerse = normalizeArabic(verse.standard);
