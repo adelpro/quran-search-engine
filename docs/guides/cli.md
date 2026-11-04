@@ -91,7 +91,7 @@ quran-search-engine "rahman"
 ```
 
 Boolean operators are symbols, not words: `+term` must appear, `-term` must not appear, and
-`term | term` is an OR group. A query containing the word `AND` is treated as ordinary text.
+`term | term` is an OR group. A query containing the word `AND` is not boolean syntax.
 
 Tested with the bundled CLI (`--no-fuzzy`, linear scan — no index):
 
@@ -99,10 +99,12 @@ Tested with the bundled CLI (`--no-fuzzy`, linear scan — no index):
 | --------------------------------------- | ------- | ------------------------- |
 | `quran-search-engine "+الله -الرحمن"`   | 1741    | MUST الله, EXCLUDE الرحمن |
 | `quran-search-engine "الله \| الرحمن"`  | 1789    | الله OR الرحمن            |
-| `quran-search-engine "الله NOT الرحمن"` | 130     | not boolean — see below   |
+| `quran-search-engine "الله AND الرحمن"` | 5       | not boolean — AND → عند   |
+| `quran-search-engine "الله NOT الرحمن"` | 130     | not boolean — NOT dropped |
 
-`AND`, `OR`, and `NOT` are stripped as non-Arabic text, so `"الله NOT الرحمن"` behaves like
-`"الله الرحمن"` (intersection of the two Arabic words). The library's `invertedIndex` path
+`OR` and `NOT` are dropped as unknown non-Arabic text, so `"الله NOT الرحمن"` behaves like
+`"الله الرحمن"` (intersection of the two Arabic words). `AND` resolves through the phonetic map
+to `عند`, so `"الله AND الرحمن"` searches three Arabic words. The library's `invertedIndex` path
 matches exact tokens instead of substrings, so counts differ from the CLI; see the
 [search syntax guide](./search-syntax.md#advanced-search-types) for the indexed numbers.
 

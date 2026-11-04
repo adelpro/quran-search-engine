@@ -97,8 +97,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   API. Removed stale references to `loadInvertedIndex()` and `isBoolean`, corrected the
   `loadQuranData()` return type, documented subject and multi-term search, and fixed the boolean
   operator syntax (`+term`, `-term`, `term | term`). Boolean search is documented as supported and
-  auto-detected, with verified result counts and a note that `AND`/`OR`/`NOT` are stripped as
-  non-Arabic text and that `invertedIndex` counts differ from the linear-scan fallback.
+  auto-detected, with verified result counts and a note that `AND`/`OR`/`NOT` are not operators
+  (`OR`/`NOT` are dropped, `AND` resolves to `عند` through the phonetic map) and that
+  `invertedIndex` counts differ from the linear-scan fallback.
 
 ## [0.3.2]
 

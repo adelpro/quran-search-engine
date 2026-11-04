@@ -65,8 +65,8 @@ const response2 = search('الله.*الرحمن', context, {
     an operator are treated as `EITHER` terms as well.
 
   Boolean search is fully supported and needs no option. The operators are symbols — `+`, `-`,
-  and `|` — not the words `AND`, `OR`, or `NOT`. A query like `'الله AND الرحمن'` is searched as
-  ordinary text rather than as boolean syntax.
+  and `|` — not the words `AND`, `OR`, or `NOT`. A query like `'الله AND الرحمن'` is not boolean
+  syntax.
 
   ```typescript
   // Verses containing الله but not الرحمن, and either الرحيم or العليم
@@ -79,11 +79,13 @@ const response2 = search('الله.*الرحمن', context, {
   | ----------------- | ------------------------- | ----------- | -------------------- |
   | `+الله -الرحمن`   | MUST الله, EXCLUDE الرحمن | 1741        | 1571                 |
   | `الله \| الرحمن`  | الله OR الرحمن            | 1789        | 1616                 |
-  | `الله AND الرحمن` | not boolean — see below   | 130         | 124                  |
+  | `الله AND الرحمن` | not boolean — AND→عند     | 5           | 5                    |
+  | `الله NOT الرحمن` | not boolean — NOT dropped | 130         | 124                  |
 
-  **Why `AND` / `OR` / `NOT` do nothing:** non-Arabic characters are stripped before searching.
-  `'الله NOT الرحمن'` therefore becomes `'الله الرحمن'`, which is an intersection of the two
-  Arabic words — the same as `'الله AND الرحمن'`.
+  **Why `AND` / `OR` / `NOT` do nothing:** they are not operators. `OR` and `NOT` are dropped as
+  unknown non-Arabic tokens, so `'الله NOT الرحمن'` becomes `'الله الرحمن'` — an intersection of
+  the two Arabic words. `AND` is present in the phonetic map and resolves to `عند`, so
+  `'الله AND الرحمن'` searches three Arabic words (`الله عند الرحمن`) and returns 5 verses.
 
   **Why the counts differ with an index:** the `invertedIndex` path matches exact normalized
   tokens, while the linear-scan fallback uses substring matching. A clitic form such as `بالله`

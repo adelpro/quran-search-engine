@@ -584,11 +584,14 @@ Verified against the bundled dataset with `{ lemma: true, root: true, fuzzy: fal
 | ----------------- | ------------------------- | ----------- | -------------------- |
 | `+الله -الرحمن`   | MUST الله, EXCLUDE الرحمن | 1741        | 1571                 |
 | `الله \| الرحمن`  | الله OR الرحمن            | 1789        | 1616                 |
-| `الله AND الرحمن` | not boolean — see below   | 130         | 124                  |
+| `الله AND الرحمن` | not boolean — AND→عند     | 5           | 5                    |
+| `الله NOT الرحمن` | not boolean — NOT dropped | 130         | 124                  |
 
-> The words `AND`, `OR`, and `NOT` are not operators. Non-Arabic characters are stripped before
-> searching, so `'الله NOT الرحمن'` behaves like `'الله الرحمن'` — an intersection of the two
-> Arabic words — and `'الله AND الرحمن'` returns the same verses.
+> The words `AND`, `OR`, and `NOT` are not operators. `OR` and `NOT` are dropped as unknown
+> non-Arabic tokens, so `'الله NOT الرحمن'` behaves like `'الله الرحمن'` — an intersection of
+> the two Arabic words (124 with the index, 130 on a linear scan). `AND` is present in the
+> phonetic map and resolves to `عند`, so `'الله AND الرحمن'` searches three Arabic words and
+> returns 5. Use the symbol operators (`+`, `-`, `|`) for boolean logic.
 
 **Index note:** the `invertedIndex` path matches exact normalized tokens, while the linear-scan
 fallback uses substring matching, so clitic forms such as `بالله` are found only without an
