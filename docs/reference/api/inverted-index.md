@@ -55,6 +55,30 @@ const [quranData, morphologyMap] = await Promise.all([loadQuranData(), loadMorph
 const invertedIndex = buildInvertedIndex(morphologyMap, quranData);
 ```
 
+Pass the result as `context.invertedIndex`. Keep one object and reuse it across searches:
+
+```typescript
+import { search } from 'quran-search-engine';
+
+const context = { quranData, morphologyMap, wordMap, invertedIndex };
+const response = search('الله', context, { lemma: true, root: true });
+```
+
+### Exact tokens vs substring scans
+
+The index path matches **whole normalized tokens**. The linear fallback (no `invertedIndex`)
+uses substring matching, so totals can differ. Measured on the bundled dataset with
+`{ lemma: true, root: true, fuzzy: false }`:
+
+| Query           | With `invertedIndex` | Without (linear scan) |
+| --------------- | -------------------- | --------------------- |
+| `الله`          | 1821                 | 1880                  |
+| `كتب`           | 279                  | 279                   |
+| `الرحمن الرحيم` | 313                  | 313                   |
+
+Pick one path and stay on it so counts remain stable across environments. The index is also
+required for the fastest lemma/root/semantic/subject lookups.
+
 By building these structures, the `search` engine eliminates iteration layers for simple
 keyword validation logic and behaves remarkably fast in completely detached client-side or
 server-side boundaries.
